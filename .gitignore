@@ -1,0 +1,17 @@
+# Secrets — jamais committer
+vin-decoder-api/.env
+
+# Dépendances
+node_modules/
+
+# Sauvegardes automatiques (mutuellepro-deploy.sh / mutuellepro-restore.sh)
+Sauvegardes/
+
+# Fichiers de sauvegarde manuels horodatés (tous formats rencontrés)
+*.bak_*
+*.avant_correctif_*
+*~
+
+# Logs
+*.log
+npm-debug.log*
