@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivre ma demande — Mutuelle Pro Assurances</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+    :root { --navy:#0f172a; --purple:#7c3aed; --border:#e5e7eb; --gray:#94a3b8; --green:#047857; --red:#dc2626; --amber:#b45309; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; margin: 0; color: var(--navy); }
+    header { background: var(--navy); padding: 14px 24px; display:flex; align-items:center; gap:10px; }
+    header img { height: 32px; width:auto; background:white; border-radius:6px; padding:2px 6px; }
+    header span { color:white; font-weight:800; font-size:14px; }
+    .carte { max-width: 440px; margin: 60px auto; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: max-width 0.2s; }
+    /* Vue résultats : au moins la moitié d'un écran 15" (≈1440px) en
+       desktop, plein écran sur mobile — demande explicite de Roger,
+       27/08/2026. Ce n'est pas un ajout au minimum : tri par colonne,
+       recherche et regroupement par date sont le standard attendu
+       d'une grille de tickets, pas une fonctionnalité à part. */
+    .carte.carte-large { max-width: 1000px; margin: 40px auto; }
+    h2 { font-size: 17px; margin: 0 0 8px; }
+    p.sous-titre { font-size: 12px; color: var(--gray); margin: 0 0 20px; }
+    label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; color: #475569; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px; font-size: 14px; box-sizing: border-box; }
+    button { width: 100%; background: var(--purple); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    button:hover { background: #6d28d9; }
+    button.secondaire { background: #f1f5f9; color: #475569; margin-top: 8px; }
+    button.secondaire:hover { background: #e2e8f0; }
+    #message { font-size: 13px; margin-top: 14px; padding: 10px; border-radius: 8px; display: none; }
+    #message.erreur { background: #fef2f2; color: var(--red); display: block; }
+    #message.succes { background: #ecfdf5; color: var(--green); display: block; }
+    #message.attente { background: #fffbeb; color: var(--amber); display: block; }
+    #recherche-resultats { width: auto; max-width: 320px; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    th { background: #f1f5f9; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; cursor: pointer; user-select: none; white-space: nowrap; }
+    th:hover { background: #e2e8f0; }
+    th .fleche-tri { font-size: 9px; color: var(--gray); margin-left: 4px; }
+    tr.ligne-groupe td { background: #faf5ff; font-weight: 700; font-size: 11px; color: var(--purple); text-transform: uppercase; padding: 8px 12px; border-bottom: 1px solid #e9d5ff; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid; }
+    .badge-recu { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .badge-en_cours { background: #fffbeb; color: var(--amber); border-color: #fde68a; }
+    .badge-resolu { background: #ecfdf5; color: var(--green); border-color: #a7f3d0; }
+    .vide { text-align: center; padding: 24px; color: var(--gray); font-size: 13px; }
+    @media (max-width: 700px) {
+        .carte.carte-large { max-width: 100%; margin: 0; border-radius: 0; min-height: 100vh; }
+        table { font-size: 12px; }
+        th, td { padding: 8px 6px; }
+    }
+    @media (max-width: 700px) and (orientation: landscape) {
+        .carte { padding: 16px; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances">
+    <span>Suivre ma demande</span>
+</header>
+
+<div class="carte" id="conteneur-carte">
+    <div id="etape-identifiant">
+        <h2>Retrouver le statut de ma demande</h2>
+        <p class="sous-titre">Entrez l'email ou le téléphone utilisé lors de votre devis, sinistre ou question — sans compte, sans mot de passe.</p>
+        <label for="identifiant">Email ou téléphone</label>
+        <input type="text" id="identifiant" placeholder="vous@exemple.com ou +237...">
+        <button type="button" onclick="demanderCode()">Recevoir mon code</button>
+        <p id="message"></p>
+    </div>
+
+    <div id="etape-code" style="display:none;">
+        <h2>Code reçu</h2>
+        <p class="sous-titre" id="texte-code-envoye"></p>
+        <label for="code">Code à 6 chiffres</label>
+        <input type="text" id="code" maxlength="6" placeholder="000000">
+        <button type="button" onclick="verifierCode()">Voir mes demandes</button>
+        <button type="button" class="secondaire" onclick="recommencer()">Utiliser un autre identifiant</button>
+        <p id="message-code"></p>
+    </div>
+
+    <div id="resultats" style="display:none;">
+        <h2>Vos demandes</h2>
+        <input type="text" id="recherche-resultats" placeholder="Rechercher…" oninput="afficherTableauResultats()" style="display:none;">
+        <div id="liste-resultats"></div>
+        <button type="button" class="secondaire" onclick="recommencer()" style="max-width:260px;">Nouvelle recherche</button>
+    </div>
+</div>
+
+<script>
+    let identifiantCourant = '';
+
+    async function demanderCode() {
+        const identifiant = document.getElementById('identifiant').value.trim();
+        const messageEl = document.getElementById('message');
+        if (!identifiant) return;
+        identifiantCourant = identifiant;
+
+        messageEl.className = '';
+        messageEl.style.display = 'block';
+        messageEl.textContent = 'Envoi en cours…';
+
+        try {
+            const resp = await fetch('/api/suivi-ticket/demander-code', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiant }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                messageEl.className = 'erreur';
+                messageEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                return;
+            }
+
+            if (!data.canal_disponible) {
+                messageEl.className = 'attente';
+                messageEl.textContent = "Le suivi par telephone arrive bientot. En attendant, utilisez plutot l'adresse e-mail fournie lors de votre demande, ou contactez-nous directement.";
+                return;
+            }
+
+            document.getElementById('etape-identifiant').style.display = 'none';
+            document.getElementById('etape-code').style.display = 'block';
+            document.getElementById('texte-code-envoye').textContent = `Un code a été envoyé à ${identifiant} — valable 10 minutes.`;
+        } catch (err) {
+            console.error(err);
+            messageEl.className = 'erreur';
+            messageEl.textContent = 'Erreur réseau.';
+        }
+    }
+
+    async function verifierCode() {
+        const code = document.getElementById('code').value.trim();
+        const messageEl = document.getElementById('message-code');
+        if (!code) return;
+
+        messageEl.className = '';
+        messageEl.style.display = 'block';
+        messageEl.textContent = 'Vérification…';
+
+        try {
+            const resp = await fetch('/api/suivi-ticket/verifier-code', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiant: identifiantCourant, code }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                messageEl.className = 'erreur';
+                messageEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                return;
+            }
+
+            document.getElementById('etape-code').style.display = 'none';
+            document.getElementById('resultats').style.display = 'block';
+
+            if (!data.tickets.length) {
+                document.getElementById('liste-resultats').innerHTML = '<p class="vide">Aucune demande trouvée pour cet identifiant.</p>';
+                return;
+            }
+
+            document.getElementById('conteneur-carte').classList.add('carte-large');
+            document.getElementById('recherche-resultats').style.display = 'block';
+            ticketsCourants = data.tickets;
+            afficherTableauResultats();
+        } catch (err) {
+            console.error(err);
+            messageEl.className = 'erreur';
+            messageEl.textContent = 'Erreur réseau.';
+        }
+    }
+
+    // ---------------- Grille : tri, recherche, regroupement par date ----------------
+    // Standard attendu d'une grille de tickets, pas une fonctionnalité en
+    // plus (Roger, 27/08/2026) : les trois s'appliquent ensemble.
+
+    let ticketsCourants = [];
+    let triColonne = 'date_creation';
+    let triDescendant = true;
+
+    function libelleGroupeDate(dateStr) {
+        const date = new Date(dateStr);
+        const maintenant = new Date();
+        const joursEcoules = Math.floor((maintenant - date) / (1000 * 60 * 60 * 24));
+        if (joursEcoules < 7) return 'Cette semaine';
+        if (joursEcoules < 30) return 'Ce mois-ci';
+        return 'Plus ancien';
+    }
+
+    function trierColonne(colonne) {
+        if (triColonne === colonne) { triDescendant = !triDescendant; }
+        else { triColonne = colonne; triDescendant = true; }
+        afficherTableauResultats();
+    }
+
+    function afficherTableauResultats() {
+        const conteneur = document.getElementById('liste-resultats');
+        const recherche = (document.getElementById('recherche-resultats').value || '').toLowerCase();
+
+        let tickets = ticketsCourants.filter((t) =>
+            !recherche ||
+            t.code_ticket.toLowerCase().includes(recherche) ||
+            t.type_libelle_fr.toLowerCase().includes(recherche) ||
+            t.statut_libelle_fr.toLowerCase().includes(recherche)
+        );
+
+        tickets = [...tickets].sort((a, b) => {
+            const valA = a[triColonne], valB = b[triColonne];
+            const comparaison = valA < valB ? -1 : valA > valB ? 1 : 0;
+            return triDescendant ? -comparaison : comparaison;
+        });
+
+        if (!tickets.length) {
+            conteneur.innerHTML = '<p class="vide">Aucun résultat pour cette recherche.</p>';
+            return;
+        }
+
+        const fleche = (colonne) => triColonne === colonne ? `<span class="fleche-tri">${triDescendant ? '▼' : '▲'}</span>` : '';
+        let html = `<table><thead><tr>
+            <th onclick="trierColonne('code_ticket')">Référence${fleche('code_ticket')}</th>
+            <th onclick="trierColonne('type_libelle_fr')">Type${fleche('type_libelle_fr')}</th>
+            <th onclick="trierColonne('statut_libelle_fr')">Statut${fleche('statut_libelle_fr')}</th>
+            <th onclick="trierColonne('date_creation')">Date${fleche('date_creation')}</th>
+        </tr></thead><tbody>`;
+
+        // Regroupement par date UNIQUEMENT quand le tri est sur la date —
+        // regrouper pendant un tri par référence/type/statut n'aurait pas
+        // de sens visuel (les groupes seraient éclatés).
+        let dernierGroupe = null;
+        tickets.forEach((t) => {
+            if (triColonne === 'date_creation') {
+                const groupe = libelleGroupeDate(t.date_creation);
+                if (groupe !== dernierGroupe) {
+                    html += `<tr class="ligne-groupe"><td colspan="4">${groupe}</td></tr>`;
+                    dernierGroupe = groupe;
+                }
+            }
+            const codeClasse = t.statut_libelle_fr === 'Résolu' ? 'resolu' : t.statut_libelle_fr === 'En cours' ? 'en_cours' : 'recu';
+            const dateStr = new Date(t.date_creation).toLocaleDateString('fr-FR');
+            html += `<tr><td><strong>${t.code_ticket}</strong></td><td>${t.type_libelle_fr}</td><td><span class="badge badge-${codeClasse}">${t.statut_libelle_fr}</span></td><td>${dateStr}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        conteneur.innerHTML = html;
+    }
+
+    function recommencer() {
+        identifiantCourant = '';
+        ticketsCourants = [];
+        document.getElementById('identifiant').value = '';
+        document.getElementById('code').value = '';
+        document.getElementById('recherche-resultats').value = '';
+        document.getElementById('recherche-resultats').style.display = 'none';
+        document.getElementById('conteneur-carte').classList.remove('carte-large');
+        document.getElementById('message').style.display = 'none';
+        document.getElementById('message-code').style.display = 'none';
+        document.getElementById('etape-identifiant').style.display = 'block';
+        document.getElementById('etape-code').style.display = 'none';
+        document.getElementById('resultats').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>

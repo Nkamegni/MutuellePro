@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Réinitialisation du mot de passe — Mutuelle Pro Assurances</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; margin: 0; }
+    .carte { max-width: 400px; margin: 80px auto; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    h2 { font-size: 16px; margin: 0 0 20px; color: #0f172a; }
+    label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; color: #475569; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 6px; font-size: 14px; box-sizing: border-box; }
+    .barre-conteneur { height: 4px; width: 100%; background-color: #e5e7eb; border-radius: 9999px; margin-bottom: 16px; overflow: hidden; }
+    .barre { height: 100%; width: 0%; transition: width 0.2s, background-color 0.2s; }
+    button { width: 100%; background: #7c3aed; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    button:hover { background: #6d28d9; }
+    #message { font-size: 13px; margin-top: 14px; padding: 10px; border-radius: 8px; display: none; }
+    #message.erreur { background: #fef2f2; color: #dc2626; display: block; }
+    #message.succes { background: #ecfdf5; color: #047857; display: block; }
+</style>
+</head>
+<body>
+
+<div class="carte">
+    <h2>Réinitialiser mon mot de passe</h2>
+    <form id="form-reinit">
+        <label for="mdp">Nouveau mot de passe (10 caractères min., 1 lettre, 1 chiffre, 1 caractère spécial)</label>
+        <input type="password" id="mdp" required minlength="10">
+        <div class="barre-conteneur"><div id="barre-force" class="barre" style="background-color:#f87171;"></div></div>
+
+        <label for="mdp-confirm">Confirmer le mot de passe</label>
+        <input type="password" id="mdp-confirm" required>
+        <div class="barre-conteneur"><div id="barre-correspondance" class="barre" style="background-color:#d1d5db;"></div></div>
+
+        <button type="submit">Réinitialiser</button>
+    </form>
+    <p id="message"></p>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (!token) {
+        document.querySelector('.carte').innerHTML = '<p style="color:#dc2626; font-size:14px;">Lien invalide — aucun jeton de réinitialisation trouvé dans l\'URL.</p>';
+    }
+
+    function evaluerForce() {
+        const val = document.getElementById('mdp').value;
+        const barre = document.getElementById('barre-force');
+        let score = 0;
+        if (val.length >= 10) score++;
+        if (/[a-zA-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^a-zA-Z0-9]/.test(val)) score++;
+        const pct = val.length ? (score / 4) * 100 : 0;
+        barre.style.width = pct + '%';
+        barre.style.backgroundColor = score <= 1 ? '#f87171' : score === 2 ? '#fb923c' : score === 3 ? '#facc15' : '#10b981';
+        evaluerCorrespondance();
+    }
+
+    function evaluerCorrespondance() {
+        const val = document.getElementById('mdp').value;
+        const confirm = document.getElementById('mdp-confirm').value;
+        const barre = document.getElementById('barre-correspondance');
+        if (!confirm) { barre.style.width = '0%'; barre.style.backgroundColor = '#d1d5db'; return; }
+        let divergence = false;
+        for (let i = 0; i < confirm.length; i++) { if (confirm[i] !== val[i]) { divergence = true; break; } }
+        if (divergence) { barre.style.width = '100%'; barre.style.backgroundColor = '#ef4444'; return; }
+        const pct = val.length ? Math.min(100, (confirm.length / val.length) * 100) : 0;
+        barre.style.width = pct + '%';
+        barre.style.backgroundColor = pct >= 100 ? '#10b981' : '#60a5fa';
+    }
+
+    document.getElementById('mdp').addEventListener('input', evaluerForce);
+    document.getElementById('mdp-confirm').addEventListener('input', evaluerCorrespondance);
+
+    document.getElementById('form-reinit').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const messageEl = document.getElementById('message');
+        messageEl.className = '';
+        messageEl.style.display = 'none';
+
+        const mot_de_passe = document.getElementById('mdp').value;
+        const mot_de_passe_confirmation = document.getElementById('mdp-confirm').value;
+
+        if (mot_de_passe !== mot_de_passe_confirmation) {
+            messageEl.textContent = 'Les mots de passe ne correspondent pas.';
+            messageEl.className = 'erreur';
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/reinitialiser-mot-de-passe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, mot_de_passe, mot_de_passe_confirmation }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                messageEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur, veuillez réessayer.';
+                messageEl.className = 'erreur';
+                return;
+            }
+            messageEl.textContent = 'Mot de passe réinitialisé avec succès ! Vous pouvez retourner sur le site et vous connecter.';
+            messageEl.className = 'succes';
+            document.getElementById('form-reinit').style.display = 'none';
+        } catch (err) {
+            console.error('Erreur de réinitialisation :', err);
+            messageEl.textContent = 'Erreur réseau, veuillez réessayer.';
+            messageEl.className = 'erreur';
+        }
+    });
+</script>
+
+</body>
+</html>

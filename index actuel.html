@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutuelle Pro Assurances — Courtier en Assurances au Cameroun</title>
+    <!-- SEO & Social Share -->
+    <meta name="description" content="Mutuelle Pro Assurances : Courtier en Assurances au Cameroun. Automobile, santé, voyage et risques divers.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://mutuelleproassurances.com/">
+
+    <meta property="og:title" content="Mutuelle Pro Assurances — Votre Partenaire Confiance">
+    <meta property="og:description" content="Courtier en Assurances au Cameroun, agréé par le MINFI. Automobile, santé, habitation, voyage et risques professionnels.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mutuelleproassurances.com/">
+    <meta property="og:image" content="https://mutuelleproassurances.com/Logo_MPRO.png">
+    <meta property="og:locale" content="fr_CM">
+    <meta property="og:site_name" content="Mutuelle Pro Assurances">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Mutuelle Pro Assurances — Votre Partenaire Confiance">
+    <meta name="twitter:description" content="Courtier en Assurances au Cameroun, agréé par le MINFI.">
+    <meta name="twitter:image" content="https://mutuelleproassurances.com/Logo_MPRO.png">
+
+    <!-- NNR - 22/08/2026 : dossier favicon --> 
+    <link rel="icon" href="https://mutuelleproassurances.com/favicon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://mutuelleproassurances.com/favicon/android-chrome-192x192.png">
+    <link rel="apple-touch-icon" href="https://mutuelleproassurances.com/favicon/apple-touch-icon.png">
+
+    <!-- Google Analytics — chargé UNIQUEMENT après consentement (voir
+         bandeau cookies, fonction loadGoogleAnalytics() dans le body).
+         Ne JAMAIS remettre un chargement inconditionnel ici : ce serait
+         contraire à la loi camerounaise n°2024/017 citée dans nos
+         mentions légales, et au but même du bandeau de consentement. -->
+
+    <!-- Police Roboto (Google Fonts) — rendu identique sur tous les
+         appareils (native sur Android, chargée ailleurs). preconnect
+         accélère la négociation avant le chargement du fichier lui-même. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS compilé localement (migration du 17/08/2026 --
+         remplace le CDN cdn.tailwindcss.com, non recommandé en
+         production par Tailwind lui-même). La configuration
+         personnalisée (couleurs, police) est désormais dans
+         tailwind-migration/tailwind.config.js, plus dans ce fichier.
+         RAPPEL : après toute modification d'index.html qui ajoute une
+         NOUVELLE classe Tailwind, il faut relancer
+         recompiler_tailwind.ps1 avant de déployer, sinon cette
+         nouvelle classe n'aura aucun style. -->
+    <link rel="stylesheet" href="tailwind.css">
+
+    <!-- EmailJS retiré le 05/08/2026 : plus utilisé nulle part depuis la
+         migration vers Nodemailer (server.js). Chargeait un SDK externe
+         et exposait une clé API pour rien. -->
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet.js CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- PWA : rend le site installable comme application -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1454C4">
+
+    <!-- Style additionnel : marqueurs animés de la carte (agence + position utilisateur) -->
+    <style>
+        .pulse-dot {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #8B5CF6; border: 2px solid white;
+            box-shadow: 0 0 0 rgba(139, 92, 246, 0.6);
+            animation: pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+            70% { box-shadow: 0 0 0 14px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+        .user-dot {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #1454C4; border: 2px solid white;
+            box-shadow: 0 0 6px rgba(0,0,0,0.4);
+        }
+        /* Curseur personnalisé (éclair) au survol de l'affichette de proximité,
+           pour la différencier visuellement du bouton de fermeture (croix). */
+        .badge-cursor-bolt {
+            cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%3E%3Ctext%20x%3D%222%22%20y%3D%2224%22%20font-size%3D%2226%22%3E%E2%9A%A1%3C%2Ftext%3E%3C%2Fsvg%3E") 16 16, pointer;
+        }
+        /* Bande défilante des partenaires — boucle continue, pause au survol
+           (lecture plus facile), et immobile si l'utilisateur préfère moins
+           d'animation (accessibilité). */
+        @keyframes scroll-partners {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .partners-track {
+            animation: scroll-partners 40s linear infinite;
+        }
+        .partners-track:hover {
+            animation-play-state: paused;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .partners-track {
+                animation: none;
+            }
+        }
+    </style>
+
+    <!-- Tom Select — remplace le rendu natif des listes déroulantes sur
+         mobile (illisible/peu soigné) par un composant personnalisable en
+         CSS, cohérent partout. Choisi le 08/08/2026 après comparatif avec
+         Preline/Tailwind UI (voir échange dédié). -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/js/tom-select.complete.min.js"></script>
+    <style>
+        /* Habillage Tom Select aux couleurs Mutuelle Pro (navy/purple),
+           plutôt que le thème par défaut générique. */
+        .ts-wrapper.single .ts-control {
+            border-radius: 0.5rem;
+            border-color: #d1d5db;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            /* CORRECTIF du 20/08/2026 : "min-height: unset" (précédent)
+               retirait TOUTE hauteur stable -- la boîte se redimensionnait
+               selon son contenu (vide, court, long), donnant l'impression
+               que le champ "se déformait" ou que le texte était incomplet.
+               42px = hauteur cohérente avec les autres champs du site
+               (inputs/select classiques en py-2.5), fixe quel que soit
+               le contenu affiché. */
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+        }
+        .ts-wrapper.single.focus .ts-control {
+            border-color: #1454C4;
+            box-shadow: 0 0 0 2px rgba(10, 75, 124, 0.15);
+        }
+        .ts-dropdown {
+            border-radius: 0.5rem;
+            border-color: #d1d5db;
+            font-size: 0.75rem;
+            z-index: 60;
+        }
+        .ts-dropdown .option.active {
+            background-color: #f3e8ff;
+            color: #1454C4;
+        }
+        .ts-dropdown .optgroup-header {
+            font-weight: 700;
+            color: #1454C4;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+    </style>
+
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <!-- TOP BAR DE CONTACT ET COMMUTATEUR DE LANGUE -->
+    <div class="bg-navy text-white text-[9px] lg:text-xs py-2 px-4 border-b border-purple-400/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
+            <!-- Gauche : Tel & Localisation -->
+            <div class="flex items-center gap-3 truncate text-[9px] lg:text-xs">
+                <span class="flex items-center gap-1.5 shrink-0 text-gray-200">
+                    <i class="fa-solid fa-location-dot text-purple-300"></i> Yaoundé
+                </span>
+                <a href="tel:+237697717334" class="font-bold hover:text-purple-300 transition shrink-0 text-gray-200 flex items-center gap-1">
+                    <i class="fa-solid fa-phone text-purple-300"></i> +237 6 97 71 73 34
+                </a>
+            </div>
+            
+            <!-- Droite : WhatsApp + Switcher de Langue + Espace Client -->
+            <div class="flex items-center gap-3 shrink-0">
+                <!-- Selecteur de Langue FR / EN -->
+                <div class="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-md border border-white/20 text-[8px] lg:text-[11px] font-bold">
+                    <button onclick="setLanguage('fr')" id="btn-lang-fr" aria-label="Passer le site en français" class="text-purple-300 font-extrabold">FR</button>
+                    <span class="text-gray-400">|</span>
+                    <button onclick="setLanguage('en')" id="btn-lang-en" aria-label="Switch site to English" class="text-gray-300 hover:text-white transition font-normal">EN</button>
+                </div>
+
+                <a href="https://wa.me/237697717334" target="_blank" class="hidden sm:flex bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-md text-[8px] lg:text-[11px] font-semibold items-center gap-1 transition">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+                <a href="/myspace.html" id="topbar-espace-link" target="_blank" rel="noopener" class="bg-brandPurple/40 hover:bg-brandPurple text-white px-2.5 py-1 rounded-md font-bold text-[8px] lg:text-[11px] flex items-center gap-1 border border-purple-400/30 transition">
+                    <i class="fa-solid fa-user-lock text-[9px] lg:text-xs" id="topbar-espace-icon"></i> <span data-i18n="topbar.clientSpace" id="topbar-espace-label">Espace Client</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+<!-- NAVIGATION PRINCIPALE -->
+    <header class="bg-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-2 lg:px-4 py-2.5 flex items-center justify-between">
+            <a href="#accueil" class="flex items-center gap-1.5 lg:gap-3">
+                <img src="Logo_MPRO.png" alt="Logo Mutuelle Pro Assurances" class="h-10 w-auto object-contain">
+                <div class="flex flex-col min-w-[120px] lg:min-w-0">
+                    <span class="font-extrabold text-base text-navy leading-tight tracking-tight whitespace-nowrap">Mutuelle Pro</span>
+                    <span class="text-base font-bold text-brandPurple tracking-wide whitespace-nowrap">Assurances</span>
+                </div>
+            </a>
+
+            <!-- Menu Desktop -->
+            <nav id="desktop-menu" class="hidden lg:flex items-center gap-8 text-xs font-bold text-navy">
+                <a href="#accueil" class="nav-link py-1 transition text-brandPurple border-b-2 border-brandPurple" data-i18n="nav.home">Accueil</a>
+                <a href="#solutions" class="nav-link py-1 hover:text-brandPurple transition" data-i18n="nav.solutions">Nos Solutions</a>
+                <a href="#cabinet" class="nav-link py-1 hover:text-brandPurple transition" data-i18n="nav.about">Le Cabinet</a>
+                <a href="#assistance" class="nav-link py-1 hover:text-brandPurple transition flex items-center gap-1" data-i18n="nav.helpdesk">Assistance</a>
+                <a href="#contact" class="nav-link py-1 hover:text-brandPurple transition flex items-center gap-1">
+                    <i class="fa-solid fa-headset text-brandPurple"></i> <span data-i18n="nav.agencies">Agences & Contact</span>
+                </a>
+            </nav>
+
+            <!-- Actions Navbar -->
+            <div class="flex items-center gap-2">
+                <a href="#devis" class="bg-brandRed hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow flex items-center gap-1.5 max-w-[100px] lg:max-w-none">
+                    <i class="fa-solid fa-calculator"></i> <span data-i18n="nav.getQuote">Demander un Devis</span>
+                </a>
+
+                <!-- Hamburger Mobile -->
+                <button id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu de navigation" class="lg:hidden text-navy text-xl p-2 rounded-lg hover:bg-gray-100 focus:outline-none">
+                    <i id="hamburger-icon" class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- MENU MOBILE DÉROULANT -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-3 shadow-lg">
+            <a href="#accueil" onclick="toggleMobileMenu()" class="mobile-nav-link block py-2 font-semibold text-navy border-b border-gray-100" data-i18n="nav.home">Accueil</a>
+            <a href="#solutions" onclick="toggleMobileMenu()" class="mobile-nav-link block py-2 font-semibold text-navy border-b border-gray-100" data-i18n="nav.solutions">Nos Solutions</a>
+            <a href="#cabinet" onclick="toggleMobileMenu()" class="mobile-nav-link block py-2 font-semibold text-navy border-b border-gray-100" data-i18n="nav.about">Le Cabinet</a>
+            <a href="#assistance" onclick="toggleMobileMenu()" class="mobile-nav-link block py-2 font-semibold text-navy border-b border-gray-100" data-i18n="nav.helpdesk">Assistance</a>
+            <a href="#contact" onclick="toggleMobileMenu()" class="mobile-nav-link block py-2 font-semibold text-navy border-b border-gray-100" data-i18n="nav.agencies">Agences & Contact</a>
+        </div>
+    </header>
+
+
+    <!-- ================================================================= -->
+    <!-- SECTION EN-TÊTE : BADGE + TITRE PRINCIPAL -->
+    <!-- ================================================================= -->
+    <section class="pt-8 pb-6 bg-gray-50 text-slate-800">
+        <div class="container mx-auto px-4 text-center sm:text-left">
+            <div class="max-w-4xl space-y-3">
+                
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 border border-purple-200 text-brandPurple text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-brandRed animate-pulse"></span>
+                    <span data-i18n="hero.badge">Mutuelle Pro Assurances</span>
+                </div>
+
+                <!-- Titre Principal -->
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-navy tracking-tight leading-tight">
+                    <span data-i18n="hero.title">Vos Assurances Sur-Mesure</span> 
+                    <span class="text-brandRed" data-i18n="hero.titleSub">au Cameroun</span>
+                </h1>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ================================================================= -->
+    <!-- PARTIE 1 : BANDEAU IMAGES (Encapsulé en max-w-7xl pour limiter le rognage) -->
+    <!-- ================================================================= -->
+    <div class="w-full bg-slate-900 border-b-4 border-brandRed">
+        <div style="position: relative; width: 100%; height: 380px; overflow: hidden;" class="max-w-7xl mx-auto lg:!h-[480px]">
+            
+            <!-- Slides 1 à 6 -->
+            <img src="hero-famille.jpg" alt="Hero Famille" class="hero-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; opacity: 1; transition: opacity 2000ms ease-in-out; z-index: 1;">
+            <img data-src="hero-automobile.jpg" alt="Hero Auto" class="hero-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 80%; opacity: 0; transition: opacity 2000ms ease-in-out; z-index: 1;">
+            <img data-src="hero-habitation.jpg" alt="Hero Habitation" class="hero-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0; transition: opacity 2000ms ease-in-out; z-index: 1;">
+            <img data-src="hero-entreprise.jpg" alt="Hero Entreprise" class="hero-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0; transition: opacity 2000ms ease-in-out; z-index: 1;">
+            <img data-src="hero-petits-metiers.jpg" alt="Hero Petits Métiers" class="hero-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0; transition: opacity 2000ms ease-in-out; z-index: 1;">
+            <img data-src="hero-reussite.jpg" alt="Hero Réussite" class="hero-slide" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity 2000ms ease-in-out; z-index: 1;">
+
+            <!-- Dots / Indicateurs -->
+            <div style="position: absolute; bottom: 16px; right: 20px; z-index: 10;" class="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+                <span class="hero-dot w-2.5 h-2.5 rounded-full bg-white transition-all duration-300"></span>
+                <span class="hero-dot w-2.5 h-2.5 rounded-full bg-white/40 transition-all duration-300"></span>
+                <span class="hero-dot w-2.5 h-2.5 rounded-full bg-white/40 transition-all duration-300"></span>
+                <span class="hero-dot w-2.5 h-2.5 rounded-full bg-white/40 transition-all duration-300"></span>
+                <span class="hero-dot w-2.5 h-2.5 rounded-full bg-white/40 transition-all duration-300"></span>
+                <span class="hero-dot w-2.5 h-2.5 rounded-full bg-white/40 transition-all duration-300"></span>
+            </div>
+
+            <!-- Bouton d'ancrage -->
+            <div style="position: absolute; bottom: 16px; left: 20px; z-index: 10;">
+                <a href="#hero-devis-form" class="inline-flex items-center gap-2 px-4 py-2 bg-brandRed hover:bg-red-700 text-white text-xs font-bold rounded-full shadow-lg transition">
+                    <span>Faire une simulation</span>
+                    <i class="fa-solid fa-arrow-down"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <!-- ================================================================= -->
+    <!-- PARTIE 2 : CONTENU PRINCIPAL (CÔTE À CÔTE FORCÉ SUR LAPTOP/DESKTOP) -->
+    <!-- ================================================================= -->
+        <div class="container mx-auto px-4 max-w-7xl">
+            
+            <!--
+            Utilisation d'un style inline avec Media Query CSS standard
+            pour GARANTIR le côte-à-côte dès 992px (laptops 15" avec zoom Windows)
+            -->
+            <style>
+                @media (min-width: 992px) {
+                    .hero-split-container {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        align-items: flex-start !important;
+                        gap: 2.5rem !important;
+                    }
+                    .hero-split-col {
+                        flex: 1 1 50% !important;
+                        width: 50% !important;
+                    }
+                }
+            </style>
+
+            <div class="hero-split-container flex flex-col gap-8">
+                
+                <!-- COLONNE GAUCHE : Mot de la DG -->
+                <div class="hero-split-col w-full flex flex-col justify-start">
+                    
+                    <!-- Sous-titre Aéré -->
+                    <!-- LIGNE VIDE -->
+                    <div style="grid-column: span 2; height: 40px;"></div>
+
+                    <div class="mb-4 lg:mb-6">
+                        <h2 class="text-xl sm:text-2xl font-bold text-brandPurple leading-snug" data-i18n="hero.subtitle">
+                            Parce que l’imprévu n’a pas sa place dans vos plans
+                        </h2>
+                    </div>
+                    <!-- LIGNE VIDE -->
+                    <div style="grid-column: span 2; height: 40px;"></div>
+
+                    <!-- Message DG + Signature -->
+                    <div style="border-left: 4px solid #6b21a8 !important; padding-left: 18px !important; margin-left: 4px !important;" class="text-slate-600 text-base leading-relaxed italic space-y-4">
+                        
+                        <p data-i18n="hero.description">
+                            Depuis plus de 30 ans, nous veillons sur ce qui compte vraiment pour vous.
+                        </p>
+                        
+                        <p data-i18n="hero.description2">
+                            Le monde est entré dans la « digitalisation » — nous avons choisi d'y répondre en restant à vos côtés : nos équipes interviennent directement sur le terrain, avec la rapidité et la rigueur qui font toute la différence le jour où vous en avez besoin.
+                        </p>
+                        
+                        <p data-i18n="hero.description3">
+                            Ce que vous découvrez aujourd'hui est déjà votre quotidien, et nous continuons, brique après brique, à vous faciliter le parcours — de la souscription au règlement du sinistre. Sans hésiter, allez-y : cet espace est le vôtre.
+                        </p>
+
+                        <!-- Signature -->
+                        <div class="not-italic text-right pt-2">
+                            <span class="text-xs font-bold text-navy uppercase tracking-wider block">La Direction Générale</span>
+                            <span class="text-xs font-bold text-navy uppercase tracking-wider block">Mutuelle Pro Assurances</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- COLONNE DROITE : Formulaire de Devis -->
+                <div class="hero-split-col w-full">
+                    <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xl border border-gray-200">
+                        
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-navy" data-i18n="devis.title">Obtenir un devis rapide</h3>
+                                <p class="text-xs text-gray-500" data-i18n="devis.subtitle">Choisissez votre formule et laissez-nous votre numéro.</p>
+                            </div>
+                            <span class="text-[10px] font-bold bg-purple-50 text-brandPurple border border-purple-200 px-2.5 py-1 rounded-full whitespace-nowrap">Étape 1/2</span>
+                        </div>
+
+                        <form id="hero-devis-form" class="space-y-4" onsubmit="event.preventDefault();">
+                            
+                            <!-- Choix du Risque -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2" data-i18n="devis.selectProduct">Vous souhaitez assurer :</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="risque" value="Auto" class="peer hidden" checked>
+                                        <div class="p-3 text-center border-2 border-gray-200 rounded-xl peer-checked:border-brandPurple peer-checked:bg-purple-50 peer-checked:text-brandPurple transition">
+                                            <i class="fa-solid fa-car text-xl block mb-1"></i>
+                                            <span class="text-xs font-bold" data-i18n="devis.auto">Auto</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="risque" value="Sante" class="peer hidden">
+                                        <div class="p-3 text-center border-2 border-gray-200 rounded-xl peer-checked:border-brandPurple peer-checked:bg-purple-50 peer-checked:text-brandPurple transition">
+                                            <i class="fa-solid fa-heart-pulse text-xl block mb-1"></i>
+                                            <span class="text-xs font-bold" data-i18n="devis.sante">Santé</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="risque" value="Pro" class="peer hidden">
+                                        <div class="p-3 text-center border-2 border-gray-200 rounded-xl peer-checked:border-brandPurple peer-checked:bg-purple-50 peer-checked:text-brandPurple transition">
+                                            <i class="fa-solid fa-briefcase text-xl block mb-1"></i>
+                                            <span class="text-xs font-bold" data-i18n="devis.pro">Pro</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Champ Téléphone -->
+                            <div>
+                                <label for="devis-phone" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1" data-i18n="devis.phoneLabel">Téléphone</label>
+                                <div class="flex rounded-lg overflow-hidden border border-gray-300">
+                                    <select onchange="handlePhonePrefixChange(this, 'devis-city-select')" class="devis-prefix-select w-28 px-2 py-2.5 text-xs font-bold bg-gray-100 border-r border-gray-300 text-navy focus:outline-none">
+                                        <option value="+237" selected>🇨🇲 +237</option>
+                                    </select>
+                                    <input type="tel" id="devis-phone" name="phone" required placeholder="697 71 73 34" class="w-full px-3 py-2.5 text-sm focus:outline-none text-navy">
+                                </div>
+                            </div>
+
+                            <!-- Sélection Ville -->
+                            <div>
+                                <label for="devis-city-select" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1" data-i18n="devis.cityLabel">Ville</label>
+                                <select id="devis-city-select" name="city" class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none bg-white text-navy">
+                                    <option value="Douala" selected>Douala</option>
+                                    <option value="Yaoundé">Yaoundé</option>
+                                    <option value="Bafoussam">Bafoussam</option>
+                                    <option value="Garoua">Garoua</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
+                            </div>
+
+                            <!-- Bouton devis -->
+                            <button type="button" id="btn-devis-hero" onclick="openDevisModal()" class="w-full bg-brandRed hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm mt-2">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span data-i18n="devis.submitBtn">Obtenir mon Devis Sur-Mesure</span>
+                            </button>
+                        </form>
+
+                        <!-- Contact WhatsApp -->
+                        <div class="mt-4 pt-3 border-t border-gray-100 text-center">
+                            <a href="https://wa.me/237697717334" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition">
+                                <i class="fa-brands fa-whatsapp text-sm"></i>
+                                <span>Une question ? Échangez avec un conseiller WhatsApp</span>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- BLOC : COMMENT ÇA MARCHE -->
+    <section id="comment-ca-marche" class="py-16 sm:py-20 bg-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-14">
+                <p class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-navy leading-tight tracking-tight uppercase mb-3" data-i18n="howitworks.brandTitle">Assurances Digitales</p>
+                <span class="inline-flex items-center gap-2 bg-purple-50 text-brandPurple px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="howitworks.tag">Comment ça marche</span>
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-navy mt-4" data-i18n="howitworks.title">Quatre étapes, un dossier prêt</h2>
+            </div>
+
+            <!-- ===== TIMELINE MOBILE/TABLETTE (jusqu'à 1023px) ===== -->
+            <!-- Bloc séparé du desktop (pas de breakpoint intermédiaire flou) :
+                 fil continu positionné en absolu, du centre de la 1ère bulle
+                 au centre de la dernière, qui "suit" les bulles sans jamais
+                 se rompre — quelle que soit la hauteur des textes. -->
+            <div class="lg:hidden relative">
+                <div class="absolute left-[27px] top-7 bottom-7 w-0.5 bg-purple-200"></div>
+                <div class="space-y-7">
+                    <div class="fade-in-section relative flex items-start gap-4 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:0ms">
+                        <div class="relative z-10 w-14 h-14 shrink-0 rounded-full bg-brandPurple text-white flex items-center justify-center text-lg font-extrabold shadow-lg shadow-purple-200">1</div>
+                        <div class="flex-1 pt-2">
+                            <i class="fa-solid fa-pen-to-square text-brandPurple text-2xl mb-2 block"></i>
+                            <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step1Title">Décrivez votre besoin</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed" data-i18n="howitworks.step1Desc">Choisissez votre risque et remplissez vos informations en quelques minutes.</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-section relative flex items-start gap-4 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:150ms">
+                        <div class="relative z-10 w-14 h-14 shrink-0 rounded-full bg-brandPurple text-white flex items-center justify-center text-lg font-extrabold shadow-lg shadow-purple-200">2</div>
+                        <div class="flex-1 pt-2">
+                            <i class="fa-solid fa-magnifying-glass-location text-brandPurple text-2xl mb-2 block"></i>
+                            <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step2Title">Détection intelligente</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed" data-i18n="howitworks.step2Desc">Votre véhicule et l'agence la plus proche de vous sont identifiés automatiquement.</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-section relative flex items-start gap-4 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:300ms">
+                        <div class="relative z-10 w-14 h-14 shrink-0 rounded-full bg-brandPurple text-white flex items-center justify-center text-lg font-extrabold shadow-lg shadow-purple-200">3</div>
+                        <div class="flex-1 pt-2">
+                            <i class="fa-solid fa-folder-tree text-brandPurple text-2xl mb-2 block"></i>
+                            <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step3Title">Dossier complet en un clic</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed" data-i18n="howitworks.step3Desc">Photos compressées, mémo structuré : tout est prêt à transmettre, sans ressaisie.</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-section relative flex items-start gap-4 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:450ms">
+                        <div class="relative z-10 w-14 h-14 shrink-0 rounded-full bg-brandPurple text-white flex items-center justify-center text-lg font-extrabold shadow-lg shadow-purple-200">4</div>
+                        <div class="flex-1 pt-2">
+                            <i class="fa-solid fa-handshake-angle text-brandPurple text-2xl mb-2 block"></i>
+                            <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step4Title">Réponse humaine, rapidement</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed" data-i18n="howitworks.step4Desc">Votre demande part directement vers l'agence concernée, prête à être traitée.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== GRILLE DESKTOP (1024px et plus) ===== -->
+            <!-- Bloc totalement séparé : jamais de largeur intermédiaire sans
+                 fil, contrairement à l'ancienne version à breakpoints partagés. -->
+            <div class="hidden lg:grid relative grid-cols-4 gap-8">
+                <div class="absolute top-8 left-[12.5%] right-[12.5%] h-0.5 bg-purple-100"></div>
+
+                <div class="fade-in-section relative text-center px-2 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:0ms">
+                    <div class="relative z-10 w-16 h-16 mx-auto rounded-full bg-brandPurple text-white flex items-center justify-center text-xl font-extrabold shadow-lg shadow-purple-200">1</div>
+                    <i class="fa-solid fa-pen-to-square text-brandPurple text-2xl mt-4 mb-2"></i>
+                    <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step1Title">Décrivez votre besoin</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed !text-left" data-i18n="howitworks.step1Desc">Choisissez votre risque et remplissez vos informations en quelques minutes.</p>
+                </div>
+
+                <div class="fade-in-section relative text-center px-2 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:150ms">
+                    <div class="relative z-10 w-16 h-16 mx-auto rounded-full bg-brandPurple text-white flex items-center justify-center text-xl font-extrabold shadow-lg shadow-purple-200">2</div>
+                    <i class="fa-solid fa-magnifying-glass-location text-brandPurple text-2xl mt-4 mb-2"></i>
+                    <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step2Title">Détection intelligente</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed !text-left" data-i18n="howitworks.step2Desc">Votre véhicule et l'agence la plus proche de vous sont identifiés automatiquement.</p>
+                </div>
+
+                <div class="fade-in-section relative text-center px-2 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:300ms">
+                    <div class="relative z-10 w-16 h-16 mx-auto rounded-full bg-brandPurple text-white flex items-center justify-center text-xl font-extrabold shadow-lg shadow-purple-200">3</div>
+                    <i class="fa-solid fa-folder-tree text-brandPurple text-2xl mt-4 mb-2"></i>
+                    <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step3Title">Dossier complet en un clic</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed !text-left" data-i18n="howitworks.step3Desc">Photos compressées, mémo structuré : tout est prêt à transmettre, sans ressaisie.</p>
+                </div>
+
+                <div class="fade-in-section relative text-center px-2 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:450ms">
+                    <div class="relative z-10 w-16 h-16 mx-auto rounded-full bg-brandPurple text-white flex items-center justify-center text-xl font-extrabold shadow-lg shadow-purple-200">4</div>
+                    <i class="fa-solid fa-handshake-angle text-brandPurple text-2xl mt-4 mb-2"></i>
+                    <h3 class="font-bold text-navy text-sm mb-1" data-i18n="howitworks.step4Title">Réponse humaine, rapidement</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed !text-left" data-i18n="howitworks.step4Desc">Votre demande part directement vers l'agence concernée, prête à être traitée.</p>
+                </div>
+            </div>
+
+            <!-- ===== HORIZON : pas une 5e étape, la destination des 4 étapes -----
+                 Un seul bloc, partagé mobile/desktop (pas de duplication) : il
+                 suit naturellement la timeline mobile OU la grille desktop,
+                 quelle que soit celle affichée. ===== -->
+            <div class="fade-in-section flex flex-col items-center text-center mt-10 opacity-0 translate-y-6 transition-all duration-700 ease-out" style="transition-delay:600ms">
+                <i class="fa-solid fa-chevron-down text-purple-300 text-lg mb-3"></i>
+                <div class="inline-flex flex-col items-center bg-purple-50 border-2 border-dashed border-brandPurple/40 rounded-2xl px-6 py-5 max-w-md">
+                    <i class="fa-solid fa-flag-checkered text-brandPurple text-2xl mb-2"></i>
+                    <h3 class="font-extrabold text-navy text-sm mb-1" data-i18n="howitworks.step5Title">Attestation dématérialisée</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed !text-left" data-i18n="howitworks.step5Desc">Votre démarche amorce le processus de dématérialisation qui vous permettra d'obtenir votre attestation numérique.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOC : SIMULATEUR RAPIDE -->
+    <section id="simulateur" class="py-16 sm:py-20 bg-gradient-to-br from-purple-50 via-white to-white relative overflow-hidden">
+        <div class="max-w-2xl mx-auto px-4">
+            <div class="text-center mb-10">
+                <p class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-navy leading-tight tracking-tight mb-3" data-i18n="sim.brandTitle">Agissez maintenant pour votre protection</p>
+                <span class="inline-flex items-center gap-2 bg-purple-50 text-brandPurple px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide">
+                    <i class="fa-solid fa-bolt"></i> <span data-i18n="sim.tag">Simulateur rapide</span>
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-navy mt-4" data-i18n="sim.title">Trouvez votre besoin en 10 secondes</h2>
+                <p class="text-xs text-gray-500 mt-2 !text-left" data-i18n="sim.subtitle">Une orientation immédiate — le devis précis se fait ensuite avec un conseiller.</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-purple-100">
+
+                <!-- Étape 1 : choix du risque -->
+                <div id="sim-step-1">
+                    <p class="text-sm font-bold text-navy mb-4 text-center" data-i18n="sim.step1Question">Quel risque souhaitez-vous assurer ?</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <button onclick="simSelectBranch('Auto')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-4 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-car text-2xl text-brandPurple"></i> <span data-i18n="sim.branchAuto">Auto</span>
+                        </button>
+                        <button onclick="simSelectBranch('Sante')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-4 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-heart-pulse text-2xl text-red-500"></i> <span data-i18n="sim.branchHealth">Santé</span>
+                        </button>
+                        <button onclick="simSelectBranch('Habitation')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-4 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-house text-2xl text-amber-500"></i> <span data-i18n="sim.branchHome">Habitation</span>
+                        </button>
+                        <button onclick="simSelectBranch('Voyage')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-4 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-plane-departure text-2xl text-sky-500"></i> <span data-i18n="sim.branchTravel">Voyage</span>
+                        </button>
+                        <button onclick="simSelectBranch('Rc')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-4 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-shield-halved text-2xl text-navy"></i> <span data-i18n="sim.branchRc">RC Diverses</span>
+                        </button>
+                        <button onclick="simSelectBranch('MultirisquePro')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-4 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-warehouse text-2xl text-emerald-600"></i> <span data-i18n="sim.branchProMulti">Multirisque Pro</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Étape 2 : profil -->
+                <div id="sim-step-2" class="hidden">
+                    <p class="text-sm font-bold text-navy mb-4 text-center" data-i18n="sim.step2Question">Vous êtes plutôt...</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="simSelectProfile('particulier')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-5 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-user text-2xl text-brandPurple"></i> <span data-i18n="sim.profileIndividual">Particulier</span>
+                        </button>
+                        <button onclick="simSelectProfile('professionnel')" class="bg-gray-50 hover:bg-purple-50 hover:border-brandPurple border border-gray-200 rounded-xl py-5 text-xs font-bold text-navy transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-building text-2xl text-navy"></i> <span data-i18n="sim.profileBusiness">Professionnel</span>
+                        </button>
+                    </div>
+                    <button onclick="simReset()" class="mt-4 text-[11px] text-gray-400 hover:text-gray-600 transition block mx-auto">
+                        <i class="fa-solid fa-arrow-left"></i> <span data-i18n="sim.restart">Recommencer</span>
+                    </button>
+                </div>
+
+                <!-- Étape 3 : résultat -->
+                <div id="sim-step-3" class="hidden text-center">
+                    <div class="text-4xl mb-3 text-emerald-500"><i class="fa-solid fa-circle-check"></i></div>
+                    <p id="sim-result-text" class="text-sm text-gray-700 mb-6 leading-relaxed !text-left"></p>
+                    <button onclick="simGoToDevis()" class="bg-brandRed hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl transition inline-flex items-center gap-2 text-sm">
+                        <span data-i18n="sim.ctaBtn">Obtenir mon devis maintenant</span> <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button onclick="simReset()" class="block mx-auto mt-4 text-[11px] text-gray-400 hover:text-gray-600 transition">
+                        <i class="fa-solid fa-rotate-left"></i> <span data-i18n="sim.restart">Recommencer</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOC : ASSISTANT IA (annonce) -->
+    <section id="assistant-ia" class="py-16 sm:py-20 bg-gradient-to-br from-navy to-purple-900 text-white relative overflow-hidden">
+        <div class="max-w-3xl mx-auto px-4 text-center relative z-10">
+            <p class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight mb-3" data-i18n="assistant.brandTitle">L'IA à votre service 24/7 !</p>
+            <span class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-purple-200 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border border-white/15">
+                <i class="fa-solid fa-hammer"></i> <span data-i18n="assistant.badge">En construction</span>
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold mt-5 leading-tight" data-i18n="assistant.title">
+                Bientôt : une réponse avant même d'avoir fini de poser la question
+            </h2>
+            <p class="text-purple-100 text-sm sm:text-base mt-4 leading-relaxed text-left" data-i18n="assistant.desc">
+                Nous construisons, en ce moment même, une intelligence dédiée à Mutuelle Pro — formée sur nos garanties, le Code CIMA, et votre dossier. Comprendre une clause, savoir quoi faire après un sinistre, poser la question qui vous tracasse à 23h : la réponse arrivera en quelques secondes, jour et nuit.
+            </p>
+            <p class="text-white font-bold text-sm sm:text-base mt-4 text-left" data-i18n="assistant.commitment">
+                Ce n'est pas une simple promesse : c'est un engagement. Nous ne le lancerons que lorsqu'il sera digne de votre confiance.
+            </p>
+            <a href="https://wa.me/237697717334" id="assistant-whatsapp-cta" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mt-7 bg-white text-navy font-bold px-6 py-3 rounded-xl hover:bg-purple-50 transition text-sm shadow-xl">
+                <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i> <span data-i18n="assistant.cta">En attendant, nous vous répondons !</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- BLOC 4 : NOS SOLUTIONS -->
+    <section id="solutions" class="py-16 sm:py-24 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4">
+            
+            <div class="text-center max-w-3xl mx-auto mb-12">
+                <h2 class="text-xs font-extrabold text-brandPurple uppercase tracking-widest mb-2">
+                    <i class="fa-solid fa-shield-heart mr-1"></i> <span data-i18n="solutions.tag">Protections Sur-Mesure</span>
+                </h2>
+                <h3 class="text-3xl sm:text-4xl font-extrabold text-navy" data-i18n="solutions.title">
+                    Des solutions adaptées à chaque étape de votre vie et de votre activité
+                </h3>
+                <p class="text-gray-600 text-sm mt-3 !text-left" data-i18n="solutions.subtitle">
+                    Que vous soyez un particulier soucieux de sa famille ou un dirigeant protégeant ses actifs, Mutuelle Pro Assurances négocie les meilleures garanties du marché CIMA.
+                </p>
+
+                <!-- Boutons d'Onglets -->
+                <div class="inline-flex p-1.5 bg-gray-200/80 rounded-2xl mt-8 shadow-inner">
+                    <button id="tab-particuliers-btn" onclick="switchTab('particuliers')" 
+                            class="px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 bg-white text-navy shadow-md">
+                        <i class="fa-solid fa-user mr-1.5 text-brandPurple"></i> <span data-i18n="solutions.tabIndividuals">Particuliers & Familles</span>
+                    </button>
+                    <button id="tab-entreprises-btn" onclick="switchTab('entreprises')" 
+                            class="px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 text-gray-600 hover:text-navy">
+                        <i class="fa-solid fa-building-user mr-1.5"></i> <span data-i18n="solutions.tabBusinesses">Entreprises & Professionnels</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- OFFRES PARTICULIERS -->
+            <div id="tab-particuliers" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/auto_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-purple-50 text-brandPurple rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-brandPurple group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-car"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.autoTitle">Assurance Automobile</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.autoDesc">
+                            Responsabilité civile obligatoire, tiers étendu ou tous risques. Attestation rapide et assistance panne 24h/7 à Yaoundé.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.autoF1">Défense & recours inclus</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.autoF2">Bris de glaces & vol</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.autoF3">Remorquage d'urgence</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('auto')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Auto')" class="w-full text-center bg-gray-100 hover:bg-brandPurple hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.autoBtn">
+                        Obtenir un Devis Auto
+                    </a>
+                </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/sante_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-purple-50 text-brandPurple rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-brandPurple group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.healthTitle">Santé & Mutuelle Famille</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.healthDesc">
+                            Prise en charge des consultations, pharmacie, hospitalisation et soins dentaires/optiques pour vous et vos ayants droit.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.healthF1">Tiers payant clinique</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.healthF2">Maternité & pédiatrie</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.healthF3">Remboursements rapides</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('sante')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Sante')" class="w-full text-center bg-gray-100 hover:bg-brandPurple hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.healthBtn">
+                        Protéger ma Famille
+                    </a>
+                </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/habitation_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-purple-50 text-brandPurple rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-brandPurple group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-house"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.homeTitle">Multirisque Habitation</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.homeDesc">
+                            Protection complète de votre domicile (propriétaire ou locataire) contre l'incendie, les dégâts des eaux, le vol et les catastrophes.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.homeF1">Incendie & explosion</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.homeF2">Vol & vandalisme</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.homeF3">RC Vie Privée</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('habitation')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Habitation', 'Habitation')" class="w-full text-center bg-gray-100 hover:bg-brandPurple hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.homeBtn">
+                        Assurer mon Logement
+                    </a>
+                </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/voyage_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-purple-50 text-brandPurple rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-brandPurple group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-plane-departure"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.travelTitle">Voyage & Évacuation</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.travelDesc">
+                            Attestation d'assurance pour visas Schengen/international, frais médicaux à l'étranger et rapatriement sanitaire d'urgence.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.travelF1">Conforme exigences ambassades</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.travelF2">Rapatriement 24h/24</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.travelF3">Bagages perdus</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('voyage')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Sante')" class="w-full text-center bg-gray-100 hover:bg-brandPurple hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.travelBtn">
+                        Obtenir l'Attestation
+                    </a>
+                </div>
+                </div>
+
+            </div>
+
+            <!-- OFFRES ENTREPRISES -->
+            <div id="tab-entreprises" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 hidden">
+                
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/flottes_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-blue-50 text-navy rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-navy group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-truck-front"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.fleetTitle">Flottes de Véhicules</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.fleetDesc">
+                            Gestion centralisée des parcs automobiles de PME et grandes entreprises. Tarification ajustée et gestion simplifiée.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.fleetF1">Gestion parc unique</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.fleetF2">Véhicules de remplacement</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.fleetF3">Optimisation des primes</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('flottes')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Auto')" class="w-full text-center bg-gray-100 hover:bg-navy hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.fleetBtn">
+                        Audit de Flotte
+                    </a>
+                </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/rc_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-blue-50 text-navy rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-navy group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-briefcase"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.rcTitle">Responsabilité Civile (RC)</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.rcDesc">
+                            Couverture des dommages corporels, matériels ou immatériels causés à des tiers dans le cadre de vos activités.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.rcF1">RC Exploitation</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.rcF2">RC Professionnelle / Conseil</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.rcF3">Protection juridique</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('rc')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Habitation', 'RC & Multirisque')" class="w-full text-center bg-gray-100 hover:bg-navy hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.rcBtn">
+                        Protéger mon Activité
+                    </a>
+                </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/santeGroupe_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-blue-50 text-navy rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-navy group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.groupHealthTitle">Santé & Prévoyance Groupe</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.groupHealthDesc">
+                            Fidélisez vos collaborateurs grâce à une couverture médicale collective compétitive avec réseau de soin étendu au Cameroun.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.groupHealthF1">Couverture employés & familles</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.groupHealthF2">Tiers payant national</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.groupHealthF3">Prévoyance décès / invalidité</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('santeGroupe')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Sante')" class="w-full text-center bg-gray-100 hover:bg-navy hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.groupHealthBtn">
+                        Devis Santé Groupe
+                    </a>
+                </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group overflow-hidden">
+                    <img src="images_produits/multirisquePro_carte.jpg" alt="" class="w-full aspect-[600/657] object-cover">
+                    <div class="p-6 flex flex-col justify-between flex-1">
+                    <div>
+                        <div class="w-12 h-12 bg-blue-50 text-navy rounded-xl flex items-center justify-center text-xl mb-4 group-hover:bg-navy group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-warehouse"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy mb-2" data-i18n="solutions.proMultiTitle">Multirisque Professionnelle</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4" data-i18n="solutions.proMultiDesc">
+                            Assurance de vos locaux professionnels, entrepôts, stocks, machines et pertes d'exploitation consécutives à un sinistre.
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.proMultiF1">Incendie & risques annexes</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.proMultiF2">Vol de marchandise & matériel</span></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span data-i18n="solutions.proMultiF3">Pertes d'exploitation</span></li>
+                        </ul>
+                    </div>
+                    <button type="button" onclick="openProduitModal('multirisquePro')" class="w-full text-center bg-white border border-gray-200 hover:border-brandPurple text-navy hover:text-brandPurple font-bold text-xs py-2 rounded-xl transition mb-1.5">
+                        <i class="fa-solid fa-book-open mr-1"></i> En savoir plus
+                    </button>
+                    <a href="#devis" onclick="selectDevisRisk('Autres', 'Multirisque Pro', 'MultirisquePro')" class="w-full text-center bg-gray-100 hover:bg-navy hover:text-white text-navy font-bold text-xs py-2.5 rounded-xl transition" data-i18n="solutions.proMultiBtn">
+                        Assurer mes Locaux
+                    </a>
+                </div>
+                </div>
+
+            </div>
+
+            <!-- Bandeau de bascule unique -- corrige le 16/08/2026 (les deux
+                 invites separees ne pouvaient jamais s'afficher ensemble,
+                 chacune cachee dans sa propre grille masquable). Les deux
+                 boutons sont desormais toujours cote a cote, et
+                 updateInviteBascule() (appelee depuis switchTab) met en
+                 surbrillance celui qui correspond a l'onglet PAS encore
+                 consulte -- l'action naturelle a proposer dans le contexte. -->
+            <div id="invite-bascule" class="mt-8 bg-white border-2 border-dashed border-gray-200 rounded-2xl p-5 flex flex-col sm:flex-row items-stretch justify-center gap-6 sm:gap-8">
+                <div class="flex-1 flex flex-col items-center text-center gap-2.5 max-w-xs mx-auto">
+                    <p class="text-sm text-gray-600" data-i18n="solutions.inviteToIndividuals">Besoin d'une couverture pour vous-même ou votre famille ?</p>
+                    <button id="invite-btn-particuliers" onclick="switchTab('particuliers'); document.getElementById('solutions').scrollIntoView({behavior:'smooth'});" class="inline-flex items-center gap-2 font-bold text-xs px-5 py-2.5 rounded-xl transition bg-gray-100 hover:bg-gray-200 text-navy">
+                        <i class="fa-solid fa-user"></i> <span data-i18n="solutions.inviteToIndividualsBtn">Voir les offres Particuliers</span>
+                    </button>
+                </div>
+                <div class="hidden sm:block w-px bg-gray-200"></div>
+                <div class="flex-1 flex flex-col items-center text-center gap-2.5 max-w-xs mx-auto">
+                    <p class="text-sm text-gray-600" data-i18n="solutions.inviteToBusiness">Vous dirigez une entreprise ? Découvrez aussi nos solutions dédiées.</p>
+                    <button id="invite-btn-entreprises" onclick="switchTab('entreprises'); document.getElementById('solutions').scrollIntoView({behavior:'smooth'});" class="inline-flex items-center gap-2 font-bold text-xs px-5 py-2.5 rounded-xl transition bg-navy hover:bg-purple-900 text-white shadow-md">
+                        <i class="fa-solid fa-building-user"></i> <span data-i18n="solutions.inviteToBusinessBtn">Voir les offres Entreprises</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- BLOC 4bis : MARCHE ASSURANCES CAMEROUNAIS
+         17 logos officiels fournis par Roger le 13/08/2026 (fichiers dans
+         /logos/). Texte de positionnement validé le 13/08/2026 : ne
+         présente plus ces compagnies comme des "partenaires" au sens
+         strict (convention formelle ou non), mais comme le marché dans
+         son ensemble, avec Mutuelle Pro comme interlocuteur unique. -->
+    <!-- Toute la section (en-tête + zone d'animation + bandeau) tient dans
+         UN SEUL écran (100dvh) -- correction du 13/08/2026 : la hauteur
+         plein écran s'applique à la SECTION entière, pas à la zone
+         d'animation seule comme dans la version précédente. Structure en
+         colonne flexible : en-tête compact (hauteur fixe) + zone centrale
+         qui absorbe tout l'espace restant + bandeau compact (hauteur fixe). -->
+    <section id="partenaires" style="height:100vh; height:100dvh;" class="max-h-[900px] min-h-[480px] flex flex-col bg-white border-y border-gray-100 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 text-center pt-3 pb-1.5 shrink-0">
+            <h2 class="text-[10px] font-extrabold text-brandPurple uppercase tracking-widest mb-1">
+                <i class="fa-solid fa-handshake mr-1"></i> <span data-i18n="partners.tag">Un Marché Entier, Un Seul Interlocuteur</span>
+            </h2>
+            <h3 class="text-base sm:text-xl font-extrabold text-navy leading-snug" data-i18n="partners.title">
+                Le Marché Camerounais de l'Assurance, à Votre Service
+            </h3>
+            <p class="text-gray-600 text-[11px] sm:text-xs mt-1 max-w-2xl mx-auto leading-snug" data-i18n="partners.subtitle">
+                Nous sommes votre meilleur partenaire et votre meilleur interlocuteur auprès de toutes les compagnies du marché. Grâce à nous, vous obtenez toujours le meilleur d'entre elles — sans avoir à démarcher vous-même chaque compagnie.
+            </p>
+        </div>
+
+        <!-- ZONE D'ANIMATION — occupe tout l'espace restant (flex-1),
+             remplie en JS (initPartnersAnimation). Purement décorative
+             (aria-hidden) : la bande défilante ci-dessous reste la version
+             indexable par Google et accessible aux lecteurs d'écran.
+             Positionnement en grille de cellules dédiées (pas de position
+             totalement libre) -- garantit qu'aucun logo ne peut jamais en
+             chevaucher un autre, par construction plutôt que par calcul. -->
+        <div id="partners-animation-zone" aria-hidden="true"
+             class="relative w-full flex-1 min-h-0 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
+        </div>
+
+        <!-- Bandeau défilant -- réduit (logos à 1/3 de la taille de la zone
+             centrale, hauteur de bande réduite) pour libérer un maximum
+             d'espace vertical à la zone principale. -->
+        <div class="relative shrink-0 py-2 border-t border-gray-100">
+            <div class="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-white to-transparent z-10"></div>
+            <div class="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-white to-transparent z-10"></div>
+
+            <div class="flex partners-track" style="width: max-content;">
+                <!-- Liste dupliquée deux fois, pour une boucle visuelle continue -->
+                <div class="flex gap-2 pr-2" id="partners-list-a"></div>
+                <div class="flex gap-2 pr-2" id="partners-list-b" aria-hidden="true"></div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- BLOC 5 : LE CABINET -->
+    <section id="cabinet" class="py-16 sm:py-24 bg-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
+                
+                <div class="lg:col-span-5">
+                    <div class="relative">
+                        <div class="bg-gradient-to-br from-navy to-purple-900 text-white rounded-3xl p-8 shadow-2xl relative z-10 overflow-hidden">
+                            <span class="inline-block bg-white/10 backdrop-blur-md text-purple-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-6 border border-white/10">
+                                <i class="fa-solid fa-certificate mr-1 text-brandPurple"></i> <span data-i18n="cabinet.badge">Courtier en Assurances Agréé</span>
+                            </span>
+
+                            <h3 class="text-2xl font-extrabold mb-4 leading-tight">Mutuelle Pro Assurances</h3>
+
+                            <p class="text-purple-100 text-xs sm:text-sm leading-relaxed mb-6" data-i18n="cabinet.cardDesc">
+                                Un cabinet indépendant fondé sur trois décennies d'expertise opérationnelle et technologique au service de la protection des biens et des personnes au Cameroun.
+                            </p>
+
+                            <div class="space-y-3 pt-4 border-t border-white/10 text-xs">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-purple-300">
+                                        <i class="fa-solid fa-location-dot"></i>
+                                    </div>
+                                    <span><span data-i18n="cabinet.headquarters">Siège Social</span> : <strong>Yaoundé, Cameroun</strong></span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-purple-300">
+                                        <i class="fa-solid fa-scale-balanced"></i>
+                                    </div>
+                                    <span><span data-i18n="cabinet.compliance">Conformité</span> : <strong>Agréé MINFI / Code CIMA</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="absolute -bottom-6 -right-4 bg-brandRed text-white px-5 py-3 rounded-2xl shadow-xl z-20 flex items-center gap-3 border-2 border-white">
+                            <i class="fa-solid fa-user-shield text-2xl"></i>
+                            <div>
+                                <div class="text-lg font-black leading-none" data-i18n="cabinet.badgeYears">30 Ans</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider" data-i18n="cabinet.badgeExp">d'Expertise Métier</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-6">
+                    <div>
+                        <h2 class="text-xs font-extrabold text-brandPurple uppercase tracking-widest mb-2">
+                            <i class="fa-solid fa-user-tie mr-1"></i> <span data-i18n="cabinet.tag">À propos de nous</span>
+                        </h2>
+                        <h3 class="text-3xl sm:text-4xl font-extrabold text-navy leading-tight" data-i18n="cabinet.title">
+                            Votre défenseur de confiance face aux aléas de la vie
+                        </h3>
+                    </div>
+
+                    <div class="bg-gray-50 border-l-4 border-brandPurple p-6 rounded-r-2xl italic text-gray-700 text-sm leading-relaxed relative">
+                        <i class="fa-solid fa-quote-left text-3xl text-purple-200 absolute top-2 right-4 pointer-events-none"></i>
+                        <p class="relative z-10 mb-3" data-i18n="cabinet.quote">
+                            « Souscrire une assurance ne devrait jamais être une formalité complexe. Notre rôle de courtier est d'être votre avocat conseil : nous analysons les contrats du marché et veillons à ce que vous soyez indemnisé au franc près, sans délai abusif. »
+                        </p>
+                        <div class="not-italic font-bold text-navy text-xs flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-brandPurple"></span> <span data-i18n="cabinet.quoteAuthor">La Direction — Mutuelle Pro Assurances</span>
+                        </div>
+                    </div>
+                    <!-- ++++++++++++++++++++++++++++++++++++ -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+
+                        <!-- RECTANGLE 1 : Violet / Lavande -->
+                        <div class="p-4 rounded-xl border border-purple-200 bg-purple-100 shadow-sm transition">
+                            <div class="grid grid-cols-3 gap-3 items-center h-full">
+                                <!-- Colonne 1 (1/3) -->
+                                <div class="col-span-1 flex flex-col items-start pr-1">
+                                    <div class="w-10 h-10 rounded-lg bg-purple-600 text-white flex items-center justify-center text-lg mb-1.5 shadow-xs">
+                                        <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900 text-xs leading-tight" data-i18n="cabinet.pillar1Title">
+                                        Négociation
+                                    </h4>
+                                </div>
+                                <!-- Colonne 2 (2/3) -->
+                                <div class="col-span-2 border-l border-purple-300 pl-3">
+                                    <p class="text-xs text-gray-700 font-medium leading-relaxed" data-i18n="cabinet.pillar1Desc">
+                                        Mise en concurrence des compagnies pour le meilleur tarif.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RECTANGLE 2 : Émeraude / Menthe -->
+                        <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-100 shadow-sm transition">
+                            <div class="grid grid-cols-3 gap-3 items-center h-full">
+                                <!-- Colonne 1 (1/3) -->
+                                <div class="col-span-1 flex flex-col items-start pr-1">
+                                    <div class="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-lg mb-1.5 shadow-xs">
+                                        <i class="fa-solid fa-hand-holding-hand"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900 text-xs leading-tight" data-i18n="cabinet.pillar2Title">
+                                        Gestion<br>Sinistres
+                                    </h4>
+                                </div>
+                                <!-- Colonne 2 (2/3) -->
+                                <div class="col-span-2 border-l border-emerald-300 pl-3">
+                                    <p class="text-xs text-gray-700 font-medium leading-relaxed" data-i18n="cabinet.pillar2Desc">
+                                        Prise en charge à 100% de vos démarches d'indemnisation.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RECTANGLE 3 : Bleu Sky -->
+                        <div class="p-4 rounded-xl border border-sky-200 bg-sky-100 shadow-sm transition">
+                            <div class="grid grid-cols-3 gap-3 items-center h-full">
+                                <!-- Colonne 1 (1/3) -->
+                                <div class="col-span-1 flex flex-col items-start pr-1">
+                                    <div class="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center text-lg mb-1.5 shadow-xs">
+                                        <i class="fa-solid fa-microchip"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900 text-xs leading-tight" data-i18n="cabinet.pillar3Title">
+                                        Efficacité<br>Digitale
+                                    </h4>
+                                </div>
+                                <!-- Colonne 2 (2/3) -->
+                                <div class="col-span-2 border-l border-sky-300 pl-3">
+                                    <p class="text-xs text-gray-700 font-medium leading-relaxed" data-i18n="cabinet.pillar3Desc">
+                                        Des outils numériques qui accélèrent chaque étape de votre demande.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- ++++++++++++++++++++++++++++++++++++ -->
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION HELPDESK -- ajoutee le 19/08/2026, a la demande de Roger.
+         Volet 1 (page visuelle) du chantier Helpdesk -- le systeme de
+         tickets + comptes (volet 2) est un chantier separe, pas encore
+         commence, qui necessitera un vrai systeme d'authentification
+         (actuellement inexistant sur ce site). -->
+    <!-- SECTION ASSISTANCE -- reconstruite le 20/08/2026 : trop de blancs
+         (presque une page a elle seule) avec l'ancienne structure (en-tete
+         externe + py-16/24 genereux). Reprend exactement le meme principe
+         de hauteur dynamique deja eprouve sur #partenaires
+         (ajusterHauteurSectionAssistance, cf JS) -- la section occupe
+         100dvh moins la hauteur de l'entete, jamais plus, jamais moins.
+         Le titre "Assistance" est desormais incruste sur la photo
+         elle-meme (memes classes de taille que cabinet.title), l'ancien
+         bloc d'en-tete externe a disparu -- c'est lui qui consommait le
+         plus de "blanc" inutile. -->
+    <section id="assistance" style="height:100vh; height:100dvh;" class="max-h-[900px] min-h-[480px] flex flex-col bg-gradient-to-br from-brandPurple via-purple-600 to-navy relative overflow-hidden py-3 sm:py-4">
+        <div class="absolute top-0 right-0 w-72 h-72 bg-brandRed/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" aria-hidden="true"></div>
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-amber-400/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" aria-hidden="true"></div>
+
+        <div class="max-w-7xl mx-auto px-4 relative flex-1 min-h-0 w-full flex flex-col">
+            <!-- Photo -- flex-1 : absorbe tout l'espace restant une fois le
+                 bloc conseils (hauteur fixe, shrink-0) deduit. Porte
+                 desormais DEUX superpositions : le titre en haut, le CTA
+                 compact en bas -- plus besoin d'en-tete externe. -->
+            <div class="relative rounded-2xl overflow-hidden shadow-2xl flex-1 min-h-0">
+                <img src="images_helpdesk/helpdesk_hero.jpg" alt="Une conseillère de notre centre d'assistance, casque à la main, prête à vous répondre" class="w-full h-full object-cover">
+
+                <!-- Titre incruste -- agrandi et intensifie le 20/08/2026
+                     (Roger : "ne frappe pas, n'accroche pas"). Majuscules +
+                     tracking large + degrade de fond plus marque et plus
+                     etendu pour un vrai contraste, pas juste une ombre
+                     portee -- l'objectif est l'impact, pas la discretion. -->
+                <div class="absolute top-0 inset-x-0 px-4 py-4 sm:px-6 sm:py-7 bg-gradient-to-b from-black/75 via-black/35 to-transparent">
+                    <h2 class="text-4xl sm:text-6xl font-extrabold text-white uppercase tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]" data-i18n="helpdesk.tag">Assistance</h2>
+                </div>
+
+                <!-- CTA -- refonte du 20/08/2026 (Roger : "trop discrets") :
+                     colonne verticale flottante, alignee a droite, ancree
+                     depuis le bas (bottom-X right-X + flex-col), boutons
+                     nettement agrandis, chacun avec son propre fond plein
+                     (plus besoin d'un bandeau de fond commun, chaque bouton
+                     se suffit a lui-meme en contraste). -->
+                <div class="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 flex flex-col items-end gap-2 sm:gap-3">
+                    <a href="tel:+237697717334" class="flex items-center gap-2 bg-navy hover:bg-purple-900 text-white font-bold text-xs sm:text-base px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl shadow-xl transition">
+                        <i class="fa-solid fa-phone"></i>
+                        <span data-i18n="helpdesk.callBtn">Appeler maintenant</span>
+                    </a>
+                    <a href="https://wa.me/237697717334?text=Bonjour%2C%20j%27ai%20besoin%20d%27assistance." target="_blank" rel="noopener" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs sm:text-base px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl shadow-xl transition">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        <span data-i18n="helpdesk.whatsappBtn">Discuter sur WhatsApp</span>
+                    </a>
+                    <button type="button" onclick="openSinistreModal()" class="flex items-center gap-2 bg-brandRed hover:bg-red-700 text-white font-bold text-xs sm:text-base px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl shadow-xl transition">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span data-i18n="helpdesk.sinistreBtn">Déclarer un sinistre</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Conseils -- hauteur fixe (shrink-0), volontairement
+                 resserres (texte plus petit, espacements reduits) pour
+                 laisser le maximum de place a la photo dans le budget de
+                 hauteur total disponible. -->
+            <div class="bg-white rounded-xl p-3 sm:p-4 shadow-2xl mt-2 sm:mt-3 shrink-0">
+                <h4 class="text-[10px] sm:text-xs font-extrabold text-brandPurple uppercase tracking-wider mb-1.5" data-i18n="helpdesk.tipsTitle">Avant d'appeler, ça peut aider</h4>
+                <ul class="space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs text-gray-700 leading-snug">
+                    <li class="flex items-start gap-1.5">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 text-[10px]"></i>
+                        <span data-i18n="helpdesk.tip1">Ayez votre numéro de police ou de devis sous la main, si vous en avez un — ça accélère tout.</span>
+                    </li>
+                    <li class="flex items-start gap-1.5">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 text-[10px]"></i>
+                        <span data-i18n="helpdesk.tip2">Pour un sinistre auto ou une urgence, utilisez plutôt la ligne prioritaire 24h/24 — plus rapide pour ces cas précis.</span>
+                    </li>
+                    <li class="flex items-start gap-1.5">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 text-[10px]"></i>
+                        <span data-i18n="helpdesk.tip3">WhatsApp est souvent plus rapide qu'un appel aux heures de pointe — n'hésitez pas à y joindre une photo ou un document.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION CONTACT & CARTES -->
+    <section id="contact" class="py-20 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-brandPurple font-bold text-xs uppercase tracking-wider bg-purple-100 px-3 py-1 rounded-full" data-i18n="contact.tag">
+                    Proximité & Réactivité
+                </span>
+                <h2 class="text-3xl lg:text-4xl font-black text-navy mt-3" data-i18n="contact.title">
+                    À votre écoute partout au Cameroun
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
+                        <h4 class="text-lg font-bold text-navy flex items-center gap-2">
+                            <i class="fa-solid fa-building text-brandPurple"></i> <span data-i18n="contact.agenciesTitle">Nos Agences</span>
+                        </h4>
+
+                        <div>
+                            <button onclick="trouverAgencePlusProche()" class="w-full bg-purple-100 hover:bg-purple-200 text-brandPurple font-bold text-xs py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 border border-purple-200">
+                                <i class="fa-solid fa-location-crosshairs"></i> <span data-i18n="contact.geoBtn">Trouver l'agence la plus proche de moi</span>
+                            </button>
+                            <span id="geo-status" class="hidden text-xs text-purple-700 mt-1 flex items-start gap-1.5"></span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5" data-i18n="contact.selectLabel">Choisir une agence :</label>
+                            <select id="select-agences" onchange="changerAgence(this.value)" class="w-full px-3 py-2 text-xs font-semibold border border-purple-200 rounded-xl focus:ring-2 focus:ring-brandPurple focus:outline-none bg-purple-50/50 text-navy cursor-pointer">
+                                <option value="yaounde_siege">Direction Générale & Agence Centrale</option>
+                                <option value="yaounde_essos">Yaoundé — Agence Essos</option>
+                                <option value="yaounde_omnisport">Yaoundé — Agence Omnisport</option>
+                                <option value="yaounde_mvogmbi">Yaoundé — Agence MvogMbi</option>
+                                <option value="yaounde_nsam">Yaoundé — Agence Nsam Colombia</option>
+                                <option value="yaounde_obili">Yaoundé — Agence Obili</option>
+                                <option value="yaounde_olezoa">Yaoundé — Agence Olézoa</option>
+                                <option value="douala">Douala — Agence de Akwa</option>
+                                <option value="bertoua">Bertoua — Agence le Montagnia</option>
+                                <option value="kribi">Kribi - Agence de Kribi</option>
+                            </select>
+                        </div>
+
+                        <hr class="border-gray-100">
+
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-purple-50 text-brandPurple flex items-center justify-center shrink-0 font-bold">
+                                <i class="fa-solid fa-location-dot"></i>
+                            </div>
+                            <div>
+                                <h5 id="agence-nom" class="text-xs font-bold text-navy uppercase">Direction générale et Agence centrale</h5>
+                                <p id="agence-adresse" class="text-xs text-gray-600 mt-0.5">B.P. 7136 Yaoundé, Cameroun</p>
+                                <p id="agence-adresse-detail" class="text-[8px] text-gray-400 mt-0.5 leading-tight"></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-purple-50 text-brandPurple flex items-center justify-center shrink-0 font-bold">
+                                <i class="fa-solid fa-phone"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-navy uppercase" data-i18n="contact.directPhone">Téléphone Direct</h5>
+                                <a id="agence-tel" href="tel:+237697717334" class="text-xs text-gray-700 hover:text-brandPurple transition font-semibold block mt-0.5">
+                                    +237 6 97 71 73 34
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-64 z-10">
+                        <div id="map" class="w-full h-full rounded-xl"></div>
+                    </div>
+                </div>
+
+                <!-- Formulaire de contact -->
+                <div class="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 class="text-xl font-bold text-navy mb-6" data-i18n="contact.formTitle">Envoyez-nous un message</h3>
+                    <form id="contact-form" class="space-y-4">
+                        
+                        <div>
+                            <label for="user_name" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.fullName">Nom complet *</label>
+                            <input type="text" id="user_name" name="user_name" required placeholder="Votre Nom et Prénom" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none">
+                        </div>
+
+                        <div>
+                            <label for="user_email" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.email">Adresse Email *</label>
+                            <input type="email" id="user_email" name="user_email" required placeholder="exemple@domaine.com" 
+                                   onblur="preCheckCompteExistant(this.value.trim())"
+                                   class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.phone">Téléphone *</label>
+                                <div class="flex">
+                                    <select onchange="handlePhonePrefixChange(this, 'contact-city-select')" class="devis-prefix-select w-24 px-2 py-2.5 text-xs font-bold bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-navy focus:outline-none">
+                                        <option value="+237" selected>🇨🇲 +237</option>
+                                        <option value="+33">🇫🇷 +33</option>
+                                        <option value="+241">🇬🇦 +241</option>
+                                        <option value="+242">🇨🇬 +242</option>
+                                        <option value="+235">🇹🇩 +235</option>
+                                        <option value="+236">🇨🇫 +236</option>
+                                        <option value="+240">🇬🇶 +240</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="other">Autre...</option>
+                                    </select>
+                                    <input type="tel" id="user_phone" name="user_phone" required placeholder="697 71 73 34" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="contact-city-select" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.city">Ville *</label>
+                                <select id="contact-city-select" name="user_city" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none">
+                                    <option value="Yaoundé" selected>Yaoundé</option>
+                                    <option value="Douala">Douala</option>
+                                    <option value="Bafoussam">Bafoussam</option>
+                                    <option value="Garoua">Garoua</option>
+                                    <option value="Bamenda">Bamenda</option>
+                                    <option value="Bertoua">Bertoua</option>
+                                    <option value="Buéa">Buéa</option>
+                                    <option value="Ebolowa">Ebolowa</option>
+                                    <option value="Maroua">Maroua</option>
+                                    <option value="Ngaoundéré">Ngaoundéré</option>
+                                    <option value="Kumba">Kumba</option>
+                                    <option value="Kousseri">Kousseri</option>
+                                    <option value="Limbe">Limbe</option>
+                                    <option value="Mokolo">Mokolo</option>
+                                    <option value="Guider">Guider</option>
+                                    <option value="Foumban">Foumban</option>
+                                    <option value="Nkongsamba">Nkongsamba</option>
+                                    <option value="Kribi">Kribi</option>
+                                    <option value="Kumbo">Kumbo</option>
+                                    <option value="Yagoua">Yagoua</option>
+                                    <option value="Kaélé">Kaélé</option>
+                                    <option value="Meiganga">Meiganga</option>
+                                    <option value="Mora">Mora</option>
+                                    <option value="Edéa">Edéa</option>
+                                    <option value="Sangmélima">Sangmélima</option>
+                                    <option value="Tiko">Tiko</option>
+                                    <option value="Mbalmayo">Mbalmayo</option>
+                                    <option value="Bafia">Bafia</option>
+                                    <option value="Banyo">Banyo</option>
+                                    <option value="Batouri">Batouri</option>
+                                    <option value="Autre">Autre...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="sujet_categorie" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.subjectCategory">Sujet *</label>
+                            <select id="sujet_categorie" name="sujet_categorie" required class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none bg-white">
+                                <option value="" data-i18n="contact.subjectChoose">-- Choisissez un sujet --</option>
+                                <optgroup label="Souscription">
+                                    <option value="1">Demande de devis / cotation</option>
+                                    <option value="2">Souscription d'un nouveau contrat</option>
+                                    <option value="3">Renseignement sur une garantie ou un produit</option>
+                                </optgroup>
+                                <optgroup label="Sinistre">
+                                    <option value="4">Déclaration de sinistre</option>
+                                    <option value="5">Suivi d'un dossier sinistre en cours</option>
+                                    <option value="6">Contestation d'une expertise ou d'une indemnisation</option>
+                                </optgroup>
+                                <optgroup label="Gestion de contrat">
+                                    <option value="7">Modification de contrat (véhicule, coordonnées, garanties)</option>
+                                    <option value="8">Avenant / ajout d'un véhicule à une flotte</option>
+                                    <option value="9">Renouvellement de contrat</option>
+                                    <option value="10">Résiliation de contrat</option>
+                                    <option value="11">Demande de duplicata (attestation, carte rose...)</option>
+                                </optgroup>
+                                <optgroup label="Facturation">
+                                    <option value="12">Question sur une facture ou une quittance</option>
+                                    <option value="13">Modalités de paiement / échéancier</option>
+                                </optgroup>
+                                <optgroup label="Réclamation">
+                                    <option value="14">Réclamation sur la qualité de service</option>
+                                    <option value="15">Réclamation sur un délai de traitement</option>
+                                </optgroup>
+                                <optgroup label="Partenaires professionnels">
+                                    <option value="16">Proposition de partenariat (apporteur d'affaires, courtier confrère)</option>
+                                    <option value="17">Demande de convention d'intermédiation</option>
+                                </optgroup>
+                                <optgroup label="Administration / Institutionnel">
+                                    <option value="18">Demande d'information réglementaire (CIMA, MINFI, ASAC)</option>
+                                    <option value="19">Demande d'audit ou de contrôle (autorité de tutelle)</option>
+                                </optgroup>
+                                <optgroup label="Autre">
+                                    <option value="20">Recrutement / candidature spontanée</option>
+                                    <option value="21">Presse / Média</option>
+                                    <option value="22">Autre demande</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="subject" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.object">Objet de votre demande *</label>
+                            <input type="text" id="subject" name="subject" required placeholder="Ex: Renseignement souscription, sinistre..." class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none">
+                        </div>
+
+
+                        <div>
+                            <label for="message" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="contact.message">Votre Message *</label>
+                            <textarea id="message" name="message" rows="4" required placeholder="Expliquez-nous votre besoin en détail..." class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none"></textarea>
+                        </div>
+
+                        <!-- Rempli par JS juste avant l'envoi (voir buildContactMemoText) —
+                             même principe que pour le formulaire de devis : contenu HTML
+                             complet, lu par notre serveur (Nodemailer), pas EmailJS. -->
+                        <textarea id="contact_memo_complet" name="memo_complet" class="hidden" aria-hidden="true"></textarea>
+
+                        <div class="pt-2 flex justify-end">
+                            <button type="submit" id="submit-btn" class="w-full md:w-auto bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-8 py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-paper-plane"></i> <span data-i18n="contact.sendBtn">Envoyer la demande</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER ENRICHI -->
+    <footer class="bg-navy text-white pt-16 pb-8 border-t border-purple-900/50">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+            
+            <!-- Col 1 : À propos & Logo -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <img src="Logo_MPRO.png" alt="Logo Mutuelle Pro" class="h-10 w-auto object-contain bg-white/10 p-1 rounded-lg">
+                    <div class="flex flex-col">
+                        <span class="font-extrabold text-base text-white leading-tight whitespace-nowrap">Mutuelle Pro</span>
+                        <span class="text-xs font-bold text-purple-300 tracking-wide whitespace-nowrap">Assurances</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-300 leading-relaxed" data-i18n="footer.about">
+                    Courtier en Assurances agréé par le Ministère des Finances (MINFI). Nous accompagnons particuliers et entreprises pour sécuriser leurs risques au Cameroun.
+                </p>
+                <div class="flex items-center gap-3 pt-2">
+                    <a href="#" class="w-8 h-8 rounded-full bg-white/10 hover:bg-brandPurple flex items-center justify-center text-white text-xs transition">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-white/10 hover:bg-brandPurple flex items-center justify-center text-white text-xs transition">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://wa.me/237697717334" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-emerald-600 flex items-center justify-center text-white text-xs transition">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Col 2 : Liens Rapides -->
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-purple-300 mb-4" data-i18n="footer.colNav">Navigation</h4>
+                <ul class="space-y-2.5 text-xs text-gray-300">
+                    <li><a href="#accueil" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-brandPurple"></i> <span data-i18n="nav.home">Accueil</span></a></li>
+                    <li><a href="#solutions" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-brandPurple"></i> <span data-i18n="nav.solutions">Nos Solutions</span></a></li>
+                    <li><a href="#cabinet" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-brandPurple"></i> <span data-i18n="nav.about">Le Cabinet</span></a></li>
+                    <li><a href="#contact" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-brandPurple"></i> <span data-i18n="nav.agencies">Agences & Contact</span></a></li>
+                    <li><a href="#devis" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-brandPurple"></i> <span data-i18n="nav.getQuote">Demander un Devis</span></a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 : Nos Produits Particuliers -->
+            <div>
+                <h5 class="text-xs font-extrabold text-purple-300 uppercase tracking-wider mb-4">Gamme Particuliers</h5>
+                <ul class="space-y-2.5 text-xs text-gray-300">
+                    <li><a href="#solutions" onclick="switchTab('particuliers')" class="hover:text-white transition" data-i18n="solutions.autoTitle">Assurance Automobile</a></li>
+                    <li><a href="#solutions" onclick="switchTab('particuliers')" class="hover:text-white transition" data-i18n="solutions.healthTitle">Santé & Mutuelle Famille</a></li>
+                    <li><a href="#solutions" onclick="switchTab('particuliers')" class="hover:text-white transition" data-i18n="solutions.homeTitle">Multirisque Habitation</a></li>
+                    <li><a href="#solutions" onclick="switchTab('particuliers')" class="hover:text-white transition" data-i18n="solutions.travelTitle">Voyage & Évacuation Sanitaire</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 bis : Nos Produits Entreprises -->
+            <div>
+                <h5 class="text-xs font-extrabold text-purple-300 uppercase tracking-wider mb-4">Gamme Entreprises</h5>
+                <ul class="space-y-2.5 text-xs text-gray-300">
+                    <li><a href="#solutions" onclick="switchTab('entreprises')" class="hover:text-white transition" data-i18n="solutions.fleetTitle">Assurance Flottes Auto</a></li>
+                    <li><a href="#solutions" onclick="switchTab('entreprises')" class="hover:text-white transition" data-i18n="solutions.groupHealthTitle">Santé Groupe</a></li>
+                    <li><a href="#solutions" onclick="switchTab('entreprises')" class="hover:text-white transition" data-i18n="solutions.rcTitle">Responsabilité Civile Pro</a></li>
+                    <li><a href="#solutions" onclick="switchTab('entreprises')" class="hover:text-white transition" data-i18n="solutions.proMultiTitle">Multirisques professionnelles</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 4 : Contact Direct -->
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-purple-300 mb-4" data-i18n="footer.colHQ">Siège Social</h4>
+                <ul class="space-y-3 text-xs text-gray-300">
+                    <li class="flex items-start gap-2.5">
+                        <i class="fa-solid fa-location-dot text-brandPurple mt-0.5"></i>
+                        <span>B.P. 7136 Yaoundé, Cameroun</span>
+                    </li>
+                    <li class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-phone text-brandPurple"></i>
+                        <a href="tel:+237697717334" class="hover:text-white font-semibold transition">+237 6 97 71 73 34</a>
+                    </li>
+                    <li class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-clock text-brandPurple"></i>
+                        <span data-i18n="footer.hours">Lun - Ven : 08h00 - 17h00</span>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-400">
+            <div>
+                © Alpha Access — B.P. 13642 Yaoundé, Cameroun. <span data-i18n="footer.rights">Tous droits réservés.</span>
+            </div>
+            <div class="flex items-center gap-6 text-[11px]">
+                <a href="mentions-legales.html" class="hover:text-white transition" data-i18n="footer.legal">Mentions Légales</a>
+                <a href="politique-confidentialite.html" class="hover:text-white transition" data-i18n="footer.privacy">Politique de Confidentialité</a>
+                <a href="https://cima-afrique.org/code-cima-2/" target="_blank" rel="noopener" class="hover:text-white transition" data-i18n="footer.cima">Code CIMA</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODALE STEPPER EN 2 BLOCS (DEVIS) -->
+    <div id="devisModal" class="fixed inset-0 z-50 hidden bg-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[90vh] my-8 transform transition-all flex flex-col overflow-hidden">
+            
+            <!-- En-tête avec indicateur d'étapes — fixe, ne défile jamais -->
+            <div class="bg-navy p-6 text-white shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-extrabold" id="stepTitle">Étape 1 : Identification</h3>
+                    <button type="button" onclick="closeDevisModal()" aria-label="Fermer la fenêtre de devis" class="text-gray-300 hover:text-white text-xl font-bold p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <!-- Stepper visuel -->
+                <div class="flex items-center justify-between gap-2 text-xs">
+                    <div id="badgeStep1" class="flex-1 text-center py-1.5 px-3 rounded-lg font-bold bg-brandRed text-white transition-all">
+                        1. Vos Infos
+                    </div>
+                    <div id="badgeStep2" class="flex-1 text-center py-1.5 px-3 rounded-lg font-bold bg-white/10 text-gray-300 transition-all">
+                        2. Détails Risque
+                    </div>
+                    <div id="badgeStep3" onclick="tryGoToStep3()" title="Se débloque après un premier passage par l'étape 2 pour cette branche" class="flex-1 text-center py-1.5 px-3 rounded-lg font-bold bg-white/5 text-gray-500 transition-all cursor-not-allowed opacity-60">
+                        3. Pièces & Envoi <i class="fa-solid fa-lock text-[11px]"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulaire principal — SEULE zone qui défile désormais -->
+            <form id="devisFormNormalized" class="p-6 space-y-5 overflow-y-auto flex-1">
+                
+                <!-- ================= BLOC 1 : IDENTIFICATION ================= -->
+                <div id="wizardStep1" class="space-y-4">
+                    <!-- Nom complet -->
+                    <div>
+                        <label for="modal_user_name" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">
+                            Nom complet <span class="text-brandRed">*</span>
+                        </label>
+                        <input type="text" id="modal_user_name" name="user_name" required placeholder="Ex: Jean Dupont" 
+                               class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                    </div>
+
+                    <!-- Date de Naissance -->
+                    <div>
+                        <label for="modal_user_dob" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">
+                            Date de Naissance <span class="text-brandRed">*</span>
+                        </label>
+                        <input type="date" id="modal_user_dob" name="user_dob" required min="1930-01-01"
+                               class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none text-gray-700">
+                    </div>
+
+                    <!-- Contact Mobile -->
+                    <div>
+                        <label for="modal_user_phone" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">
+                            Contact Mobile <span class="text-brandRed">*</span>
+                        </label>
+                        <div class="flex items-center">
+                            <input type="text" id="modal_phone_prefix" name="phone_prefix" readonly value="+237" 
+                                   class="w-20 px-3 py-2.5 text-xs font-bold bg-gray-100 border border-r-0 border-gray-300 rounded-l-xl text-center text-navy select-none">
+                            <input type="tel" id="modal_user_phone" name="user_phone" required placeholder="6 97 71 73 34" 
+                                   class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-r-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="modal_user_email" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="devis.emailLabel">
+                            Adresse Email <span class="text-brandRed">*</span>
+                        </label>
+                        <input type="email" id="modal_user_email" name="user_email" required placeholder="Ex: jean.dupont@exemple.com" 
+                               onblur="preCheckCompteExistant(this.value.trim())"
+                               class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                    </div>
+
+                    <!-- Branche Sélectionnée -->
+                    <div>
+                        <label for="insurance_type" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">
+                            Branche d'Assurance <span class="text-brandRed">*</span>
+                        </label>
+                        <select id="insurance_type" name="insurance_type" required 
+                                class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none bg-white font-bold text-navy">
+                            <option value="" disabled selected>-- Choisissez une branche --</option>
+                            <option value="Auto">1. Assurance Automobile</option>
+                            <option value="Sante">2. Santé & Mutuelle Famille</option>
+                            <option value="Voyage">3. Voyage & Évacuation Sanitaire</option>
+                            <option value="Habitation">4. Multirisque Habitation (MRH)</option>
+                            <option value="Rc">5. Responsabilité Civile (RC) Diverses</option>
+                            <option value="MultirisquePro">6. Multirisque Professionnelle</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-3">
+                        <button type="button" onclick="goToStep2()" class="w-full bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-xs">
+                            Suivant : Détails du Risque <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ================= BLOC 2 : PARTICULARITÉS DE LA BRANCHE ================= -->
+                <div id="wizardStep2" class="space-y-4 hidden">
+                    
+                    <!-- QUESTIONNAIRES DYNAMIQUES DU BLOC 2 -->
+                    <div id="dynamic-risk-container">
+                        
+                        <!-- AUTO -->
+                        <div id="fields-auto" class="risk-section hidden bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                            <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">
+                                Précisions Automobile
+                            </h4>
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy mb-1" data-i18n="field.auto.vin">N° de Châssis (VIN)</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="auto_vin" name="auto_vin" placeholder="Ex: KMHD3813..." maxlength="17" class="w-32 sm:w-40 px-3 py-2 text-xs border rounded-lg bg-white uppercase">
+                                    <button type="button" onclick="lookupVIN(event)" class="bg-navy text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-purple-900 transition shrink-0">Décoder</button>
+                                </div>
+                            </div>
+
+                            <!-- Panneau de résultats — recherche VIN approximative, masqué par
+                                 défaut, affiché quand un VIN saisi ne correspond à rien
+                                 d'exact mais que des véhicules proches existent au catalogue. -->
+                            <div id="vin-search-panel" class="hidden bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
+                                <p id="vin-search-summary" class="text-[11px] font-semibold text-navy"></p>
+                                <div id="vin-search-results" class="space-y-1.5"></div>
+                                <div class="flex items-center justify-between pt-1">
+                                    <button type="button" id="vin-search-prev" onclick="vinSearchChangePage(-1)" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border-2 border-navy text-navy hover:bg-navy hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-navy">◀ Précédents</button>
+                                    <span id="vin-search-page-indicator" class="text-[10px] text-gray-500"></span>
+                                    <button type="button" id="vin-search-next" onclick="vinSearchChangePage(1)" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border-2 border-navy text-navy hover:bg-navy hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-navy">Suivants ▶</button>
+                                </div>
+                                <button type="button" onclick="vinSearchRejectAll()" class="w-full text-xs font-bold text-white bg-gray-500 hover:bg-red-600 rounded-lg py-2.5 mt-1 transition">
+                                    <i class="fa-solid fa-xmark"></i> Aucun de ceux-ci — je saisis moi-même les caractéristiques
+                                </button>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy mb-1" data-i18n="field.auto.plate">N° d'Immatriculation</label>
+                                <input type="text" id="auto_immatriculation" name="auto_immatriculation" placeholder="Ex: CE1234AB" oninput="this.value = this.value.replace(/\s+/g, '')" class="w-full px-3 py-2 text-xs border rounded-lg bg-white uppercase">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.auto.make">Marque</label>
+                                    <input type="text" id="auto_marque" name="auto_marque" list="constructeurs-datalist" placeholder="Ex: Toyota" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                    <datalist id="constructeurs-datalist"></datalist>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.auto.model">Modèle</label>
+                                    <input type="text" id="auto_modele" name="auto_modele" placeholder="Ex: Corolla" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.auto.power">Puissance</label>
+                                    <div class="flex gap-1.5">
+                                        <input type="number" id="auto_power_value" name="auto_power_value" data-label="Puissance" data-combine-suffix="auto_power_unit" placeholder="Ex: 7" min="0" class="w-2/3 px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <select id="auto_power_unit" name="auto_power_unit" data-combine-with="auto_power_value" class="w-1/3 px-1 py-2 text-xs border rounded-lg bg-white"></select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.auto.fuel">Énergie</label>
+                                    <select id="auto_energy" name="auto_energy" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <option value="">-- Sélectionner --</option>
+                                        <option value="Essence">Essence</option>
+                                        <option value="Diesel (Gasoil)">Diesel (Gasoil)</option>
+                                        <option value="Hybride (Essence-Électrique)">Hybride (Essence-Électrique)</option>
+                                        <option value="Hybride Rechargeable (Plug-in)">Hybride Rechargeable (Plug-in)</option>
+                                        <option value="Électrique">Électrique</option>
+                                        <option value="GPL (Gaz de Pétrole Liquéfié)">GPL (Gaz de Pétrole Liquéfié)</option>
+                                        <option value="GNC (Gaz Naturel Comprimé)">GNC (Gaz Naturel Comprimé)</option>
+                                        <option value="Flex-fuel (Essence/Éthanol)">Flex-fuel (Essence/Éthanol)</option>
+                                        <option value="Éthanol (E85)">Éthanol (E85)</option>
+                                        <option value="Hydrogène">Hydrogène</option>
+                                        <option value="Bicarburation Essence/GPL">Bicarburation Essence/GPL</option>
+                                        <option value="Autre / Non précisé">Autre / Non précisé</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="border rounded-lg p-2.5 bg-white">
+                                <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.auto.genre">Genre du véhicule</label>
+                                <select id="auto_genre_alias" name="auto_genre_alias" data-skip-memo="1" onchange="handleGenreAliasChange()" class="w-full px-3 py-2 text-xs border rounded-lg bg-white"></select>
+
+                                <!-- Ordre volontaire par impact réel (confirmé le 10/08/2026) :
+                                     1. Double Commande -- influence la visibilité de TOUT le reste
+                                        ET l'Usage final ; 2. Matière inflammable -- influence
+                                        l'Usage ; 3. États purement descriptifs (Double Cabine,
+                                        Tonnage, Remorque) -- n'influencent jamais rien d'autre,
+                                        donc toujours en dernier. -->
+                                <div id="auto_double_commande_wrapper" class="hidden mt-2">
+                                    <label class="block text-[10px] font-semibold text-gray-500 mb-1" data-i18n="field.auto.dualControls">Double Commande</label>
+                                    <select id="auto_double_commande" onchange="handleCombinaisonChange()" class="w-full px-3 py-2 text-xs border rounded-lg bg-white"></select>
+                                </div>
+                                <div id="auto_matiere_inflammable_wrapper" class="hidden mt-2">
+                                    <label class="block text-[10px] font-semibold text-gray-500 mb-1" data-i18n="field.auto.flammable">Quantité de matière inflammable transportée</label>
+                                    <div class="flex gap-1.5">
+                                        <input type="number" id="auto_matiere_inflammable_quantite" min="0" step="0.1" placeholder="0" oninput="handleCombinaisonChange()" data-label="Quantité de matière inflammable" data-combine-suffix="auto_matiere_inflammable_unite" class="w-2/3 px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <select id="auto_matiere_inflammable_unite" data-combine-with="auto_matiere_inflammable_quantite" class="w-1/3 px-1 py-2 text-xs border rounded-lg bg-white">
+                                            <option value="Kg">Kg</option>
+                                            <option value="L">L</option>
+                                        </select>
+                                    </div>
+                                    <p class="text-[9px] text-gray-400 mt-1">Laissez à 0 si aucune matière inflammable transportée.</p>
+                                </div>
+
+                                <!-- Rempli dynamiquement : 0, 1 ou plusieurs blocs État
+                                     indépendants selon l'alias choisi (ex: un Camion peut
+                                     cumuler Double Cabine ET Remorque attachée). -->
+                                <div id="auto_genre_etats_container" class="space-y-2 mt-2"></div>
+                                <div id="auto_genre_autre_wrapper" class="hidden mt-2">
+                                    <label class="block text-[10px] font-semibold text-gray-500 mb-1" data-i18n="field.auto.specifyGenre">Précisez le genre</label>
+                                    <input type="text" id="auto_genre_autre" data-skip-memo="1" oninput="handleGenreAutreChange()" placeholder="Ex: Fourgon frigorifique" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                    <p class="text-[10px] text-amber-600 mt-1"><i class="fa-solid fa-triangle-exclamation"></i> Genre non répertorié — l'usage et la catégorie seront déterminés manuellement par l'agence.</p>
+                                </div>
+                                <p id="auto_genre_final_preview" class="hidden text-[10px] text-purple-700 font-bold mt-2 pt-2 border-t border-gray-100">
+                                    → <span id="auto_genre_final_text"></span>
+                                </p>
+                            </div>
+                            <input type="hidden" id="auto_genre_final" name="auto_genre_final" data-label="Genre" data-show-in-memo="1">
+                            <p id="auto_combinaison_exclue" class="hidden text-[10px] text-red-600 font-semibold bg-red-50 border border-red-200 rounded-lg p-2">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Cette combinaison n'est pas valide pour ce genre de véhicule — vérifiez vos réponses ci-dessus.
+                            </p>
+                            <div id="auto_usage_wrapper" class="hidden grid grid-cols-1 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.auto.usage">Usage précis</label>
+                                    <select id="auto_usage" name="auto_usage" onchange="handleUsageChange()" class="w-full px-3 py-2 text-xs border rounded-lg bg-white"></select>
+                                </div>
+                            </div>
+                            <!-- Catégorie CIMA résolue automatiquement — jamais saisie
+                                 directement, transmise en arrière-plan pour le routage. -->
+                            <input type="hidden" id="auto_categorie" name="auto_categorie">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.common.estimatedValue">Valeur estimée</label>
+                                    <input type="text" name="auto_value" placeholder="Ex: 8 500 000 FCFA" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SANTÉ -->
+                        <div id="fields-sante" class="risk-section hidden bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                            <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">Précisions Santé</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.sante.target">Cible</label>
+                                    <select name="health_target" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <option value="solo">Individuel</option>
+                                        <option value="couple">Couple</option>
+                                        <option value="famille">Famille</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.sante.ageRange">Tranche d'âge</label>
+                                    <select name="health_age" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <option value="a1">18 à 35 ans</option>
+                                        <option value="a2">36 à 50 ans</option>
+                                        <option value="a3">51 à 65 ans</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- VOYAGE -->
+                        <div id="fields-voyage" class="risk-section hidden bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                            <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">Précisions Voyage</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.voyage.destination">Destination</label>
+                                    <select name="travel_zone" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <option value="schengen">Espace Schengen</option>
+                                        <option value="cemac">Zone CEMAC</option>
+                                        <option value="monde">Monde entier</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.voyage.duration">Durée</label>
+                                    <select name="travel_duration" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <option value="d1">1 à 15 jours</option>
+                                        <option value="d2">16 à 30 jours</option>
+                                        <option value="d3">Plus de 30 jours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HABITATION -->
+                        <div id="fields-habitation" class="risk-section hidden bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                            <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">Précisions Habitation</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.habitation.status">Qualité</label>
+                                    <select name="home_status" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                        <option value="locataire">Locataire</option>
+                                        <option value="proprietaire">Propriétaire occupant</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.habitation.contentsValue">Valeur contenu</label>
+                                    <input type="text" name="home_val" placeholder="Ex: 5 000 000 FCFA" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RC -->
+                        <div id="fields-rc" class="risk-section hidden bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                            <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">Précisions Responsabilité Civile</h4>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.rc.type">Type de RC</label>
+                                <select name="rc_type" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                    <option value="famille">Chef de Famille / Vie Privée</option>
+                                    <option value="pro">Professionnelle & Exploitation</option>
+                                    <option value="decennale">Décennale Chantier</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Multirisque Pro -->
+                        <div id="fields-multirisquepro" class="risk-section hidden bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                            <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">Précisions Multirisque Professionnelle</h4>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.pro.premisesType">Nature du local</label>
+                                <select name="pro_local_type" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                    <option value="bureau">Bureau</option>
+                                    <option value="commerce">Commerce / Boutique</option>
+                                    <option value="entrepot">Entrepôt</option>
+                                    <option value="atelier">Atelier / Usine</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.pro.area">Surface (m²)</label>
+                                    <input type="text" name="pro_surface" placeholder="Ex: 150" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1" data-i18n="field.pro.assetsValue">Valeur des biens à assurer</label>
+                                    <input type="text" name="pro_val" placeholder="Ex: 15 000 000 FCFA" class="w-full px-3 py-2 text-xs border rounded-lg bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="flex gap-3 pt-3">
+                        <button type="button" onclick="goToStep1()" class="w-1/2 bg-gray-200 hover:bg-gray-300 text-navy font-bold py-3 rounded-xl transition text-xs">
+                            <i class="fa-solid fa-arrow-left"></i> Retour
+                        </button>
+                        <button type="button" onclick="goToStep3()" class="w-1/2 bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-xs">
+                            Suivant : Pièces & Envoi <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ================= BLOC 3 : PIÈCES & ENVOI ================= -->
+                <div id="wizardStep3" class="space-y-4 hidden">
+
+                    <!-- ================= PIÈCES JUSTIFICATIVES ================= -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                        <h4 class="text-xs font-extrabold text-navy uppercase tracking-wider border-b pb-2 border-purple-200">
+                            <i class="fa-solid fa-paperclip"></i> Pièces justificatives
+                        </h4>
+                        <p class="text-[10px] text-gray-500">Photo ou scan net, un fichier par case (JPG, PNG ou PDF).</p>
+
+                        <div class="space-y-2.5">
+                            <!-- Groupe Carte Nationale d'Identité (CNI) -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-2.5">
+                                <div class="text-[10px] font-bold text-navy uppercase tracking-wide mb-1"><i class="fa-solid fa-id-card text-brandPurple"></i> Carte Nationale d'Identité (CNI)</div>
+                                <p class="text-[9px] text-gray-400 mb-1.5"><i class="fa-solid fa-lightbulb text-amber-500"></i> Astuce : sélectionnez le recto ET le verso en une seule fois depuis "Recto" (le 2ᵉ fichier ira automatiquement au verso).</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-gray-500 mb-1">Recto</label>
+                                        <input type="file" name="doc_cni_recto" data-doc-key="cni_recto" data-doc-label="CNI (recto)" data-pair-verso="cni_verso" accept="image/*,.pdf" multiple class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-gray-500 mb-1">Verso</label>
+                                        <input type="file" name="doc_cni_verso" data-doc-key="cni_verso" data-doc-label="CNI (verso)" accept="image/*,.pdf" class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pièces spécifiques Auto — affichées seulement si la branche Auto
+                             est choisie. Règle du 11/08/2026 : en attendant l'analyse complète
+                             des pièces requises par branche, toutes les autres (Santé, Voyage,
+                             Habitation, RC, Multirisque Pro) se limitent à la CNI ci-dessus. -->
+                        <div id="doc-auto-section" class="hidden space-y-2.5 pt-3 border-t border-purple-100">
+                            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider"><i class="fa-solid fa-car"></i> Documents véhicule</div>
+
+                            <!-- Groupe Permis de conduire -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-2.5">
+                                <div class="text-[10px] font-bold text-navy uppercase tracking-wide mb-1"><i class="fa-solid fa-id-badge text-brandPurple"></i> Permis de Conduire</div>
+                                <p class="text-[9px] text-gray-400 mb-1.5"><i class="fa-solid fa-lightbulb text-amber-500"></i> Astuce : sélectionnez le recto ET le verso en une seule fois depuis "Recto".</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-gray-500 mb-1">Recto</label>
+                                        <input type="file" name="doc_permis_recto" data-doc-key="permis_recto" data-doc-label="Permis de conduire (recto)" data-pair-verso="permis_verso" accept="image/*,.pdf" multiple class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-gray-500 mb-1">Verso</label>
+                                        <input type="file" name="doc_permis_verso" data-doc-key="permis_verso" data-doc-label="Permis de conduire (verso)" accept="image/*,.pdf" class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Groupe Carte Grise / Certificat d'immatriculation -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-2.5">
+                                <div class="text-[10px] font-bold text-navy uppercase tracking-wide mb-1"><i class="fa-solid fa-car-side text-brandPurple"></i> Carte Grise (Certificat d'Immatriculation)</div>
+                                <p class="text-[9px] text-gray-400 mb-1.5"><i class="fa-solid fa-lightbulb text-amber-500"></i> Astuce : sélectionnez le recto ET le verso en une seule fois depuis "Recto".</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-gray-500 mb-1">Recto</label>
+                                        <input type="file" name="doc_carte_grise_recto" data-doc-key="carte_grise_recto" data-doc-label="Carte grise (recto)" data-pair-verso="carte_grise_verso" accept="image/*,.pdf" multiple class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-gray-500 mb-1">Verso</label>
+                                        <input type="file" name="doc_carte_grise_verso" data-doc-key="carte_grise_verso" data-doc-label="Carte grise (verso)" accept="image/*,.pdf" class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Groupe Certificat de vente (recto uniquement) -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-2.5">
+                                <div class="text-[10px] font-bold text-navy uppercase tracking-wide mb-1.5"><i class="fa-solid fa-file-lines"></i> Certificat de Vente</div>
+                                <label class="block text-[9px] font-semibold text-gray-500 mb-1">Recto</label>
+                                <input type="file" name="doc_certificat_vente" data-doc-key="certificat_vente" data-doc-label="Certificat de vente" accept="image/*,.pdf" class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                            </div>
+
+                            <!-- Groupe Attestation de dépôt (recto uniquement) -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-2.5">
+                                <div class="text-[10px] font-bold text-navy uppercase tracking-wide mb-1.5"><i class="fa-solid fa-file-lines"></i> Attestation de Dépôt</div>
+                                <label class="block text-[9px] font-semibold text-gray-500 mb-1">Recto</label>
+                                <input type="file" name="doc_attestation_depot" data-doc-key="attestation_depot" data-doc-label="Attestation de dépôt" accept="image/*,.pdf" class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                            </div>
+
+                            <!-- Groupe Attestation d'immatriculation (recto uniquement) -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-2.5">
+                                <div class="text-[10px] font-bold text-navy uppercase tracking-wide mb-1.5"><i class="fa-solid fa-file-signature text-brandPurple"></i> Attestation d'Immatriculation (NIU)</div>
+                                <label class="block text-[9px] font-semibold text-gray-500 mb-1">Recto</label>
+                                <input type="file" name="doc_attestation_immat" data-doc-key="attestation_immat" data-doc-label="Attestation d'immatriculation (NIU)" accept="image/*,.pdf" class="doc-upload w-full text-[10px] file:mr-2 file:py-1.5 file:px-2 file:rounded-lg file:border-0 file:bg-brandPurple file:text-white file:text-[10px] file:font-bold file:cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div id="doc-summary" class="text-[10px] text-emerald-700 font-semibold hidden"></div>
+                        <textarea id="memo_complet_field" name="memo_complet" class="hidden" aria-hidden="true"></textarea>
+                    </div>
+
+                    <!-- Message complémentaire -->
+                    <div>
+                        <label for="modal_message" class="block text-xs font-bold text-navy uppercase tracking-wider mb-1" data-i18n="field.common.notes">
+                            Notes / Précisions complémentaires
+                        </label>
+                        <textarea id="modal_message" name="user_message" rows="3" placeholder="Informations additionnelles..." 
+                                  class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-3">
+                        <button type="button" onclick="goToStep2()" class="w-1/4 bg-gray-200 hover:bg-gray-300 text-navy font-bold py-3 rounded-xl transition text-xs">
+                            <i class="fa-solid fa-arrow-left"></i> Retour
+                        </button>
+                        <button type="button" onclick="archiverMemo()" title="Télécharger une copie archivable (PDF) de ce mémo" class="w-1/4 bg-navy hover:bg-purple-900 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-1 text-xs">
+                            <i class="fa-solid fa-box-archive"></i> <span class="hidden sm:inline">Archiver</span>
+                        </button>
+                        <button type="submit" id="normalizedSubmitBtn" class="w-1/2 bg-brandRed hover:bg-red-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-xs">
+                            <i class="fa-solid fa-paper-plane"></i> Soumettre la demande
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DÉCLARATION DE SINISTRE -- fiche simplifiée, ajoutée le
+         19/08/2026. Volontairement séparée du grand formulaire de devis
+         (pas de cascade Genre/Carrosserie ici) -- juste les champs
+         essentiels pour ouvrir un dossier rapidement. Utilise le même
+         mécanisme de référence + envoi WhatsApp/email déjà éprouvé sur le
+         devis, en attendant le vrai système de comptes/tickets (Volet 2,
+         voir CAHIER_CHARGES_HELPDESK_VOLET2_19082026.md). -->
+    <div id="sinistreModal" class="fixed inset-0 z-50 hidden bg-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-50 text-brandRed rounded-xl flex items-center justify-center text-lg shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 class="text-base font-extrabold text-navy" data-i18n="sinistre.title">Déclarer un sinistre</h3>
+                </div>
+                <button onclick="closeSinistreModal()" aria-label="Fermer" class="text-gray-400 hover:text-gray-700 text-xl leading-none p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto p-5 space-y-4">
+                <p class="text-xs text-gray-500 -mt-1" data-i18n="sinistre.subtitle">Quelques informations essentielles suffisent pour ouvrir votre dossier — nous vous recontactons rapidement pour la suite.</p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <i class="fa-solid fa-circle-info mt-0.5 shrink-0"></i>
+                    <span data-i18n="sinistre.urgenceNote">Situation d'urgence (accident en cours, danger immédiat) ? Appelez directement plutôt que de remplir ce formulaire.</span>
+                </div>
+
+                <form id="sinistre-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="sinistre.brancheLabel">Branche concernée</label>
+                        <select id="sinistre-branche" required class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                            <option value="Auto" data-i18n="devis.auto">Automobile</option>
+                            <option value="Sante" data-i18n="devis.health">Santé</option>
+                            <option value="Habitation" data-i18n="devis.home">Habitation</option>
+                            <option value="Voyage" data-i18n="solutions.travelTitle">Voyage</option>
+                            <option value="Flottes" data-i18n="solutions.fleetTitle">Flottes</option>
+                            <option value="RC Pro" data-i18n="solutions.rcTitle">RC Professionnelle</option>
+                            <option value="Sante Groupe" data-i18n="solutions.groupHealthTitle">Santé Groupe</option>
+                            <option value="Multirisque Pro" data-i18n="solutions.proMultiTitle">Multirisque Pro</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="sinistre.policeLabel">N° de police <span class="font-normal text-gray-400" data-i18n="sinistre.optionnel">(si vous le connaissez)</span></label>
+                        <input type="text" id="sinistre-police" placeholder="—" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="sinistre.dateLabel">Date du sinistre</label>
+                        <input type="date" id="sinistre-date" required class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="sinistre.descLabel">Que s'est-il passé ?</label>
+                        <textarea id="sinistre-description" required rows="3" placeholder="Décrivez brièvement les circonstances..." class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="sinistre.nomLabel">Nom complet</label>
+                        <input type="text" id="sinistre-nom" required class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="devis.phoneLabel">Téléphone portable</label>
+                        <div class="flex">
+                            <select id="sinistre-phone-prefix" class="w-24 px-2 py-2.5 text-xs font-bold bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-navy focus:outline-none">
+                                <option value="+237" selected>🇨🇲 +237</option>
+                                <option value="+33">🇫🇷 +33</option>
+                                <option value="+241">🇬🇦 +241</option>
+                                <option value="+242">🇨🇬 +242</option>
+                                <option value="+235">🇹🇩 +235</option>
+                                <option value="+236">🇨🇫 +236</option>
+                                <option value="+240">🇬🇶 +240</option>
+                                <option value="+1">🇺🇸 +1</option>
+                            </select>
+                            <input type="tel" id="sinistre-phone" required placeholder="697 71 73 34" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="sinistre.emailLabel">Adresse email</label>
+                        <input type="email" id="sinistre-email" required placeholder="jean.dupont@exemple.com" 
+                               onblur="preCheckCompteExistant(this.value.trim())"
+                               class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                    </div>
+
+                    <button type="button" onclick="submitSinistre()" class="w-full bg-brandRed hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-paper-plane"></i> <span data-i18n="sinistre.submitBtn">Envoyer ma déclaration</span>
+                    </button>
+                    <p class="text-[11px] text-gray-400 text-center" data-i18n="sinistre.envoiNote">Votre déclaration sera transmise par WhatsApp et par e-mail, avec un numéro de référence à conserver.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL "ESPACE CLIENT" — Helpdesk Volet 2 (19/08/2026). Deux onglets
+         (Connexion / Créer un compte) + vue "Mes demandes" affichée une fois
+         connecté. Session gérée côté serveur (cookie httpOnly, voir
+         auth.routes.js) — ce JS ne stocke jamais le mot de passe ni de
+         jeton, seulement l'état "connecté" en mémoire pour l'UI. -->
+    <div id="espaceClientModal" class="fixed inset-0 z-50 hidden bg-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-purple-50 text-brandPurple rounded-xl flex items-center justify-center text-lg shrink-0">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3 class="text-base font-extrabold text-navy" data-i18n="espace.title">Espace Client</h3>
+                </div>
+                <button onclick="closeEspaceClientModal()" aria-label="Fermer" class="text-gray-400 hover:text-gray-700 text-xl leading-none p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto p-5 space-y-4">
+
+                <!-- ===== VUE : NON CONNECTÉ — onglets Connexion / Inscription ===== -->
+                <div id="espace-vue-anonyme">
+                    <div class="flex gap-2 mb-4 bg-gray-100 rounded-xl p-1">
+                        <button type="button" id="espace-tab-login" onclick="espaceSwitchTab('login')"
+                                class="flex-1 text-xs font-bold py-2 rounded-lg transition bg-white text-navy shadow-sm" data-i18n="espace.loginTab">Connexion</button>
+                        <button type="button" id="espace-tab-register" onclick="espaceSwitchTab('register')"
+                                class="flex-1 text-xs font-bold py-2 rounded-lg transition text-gray-500" data-i18n="espace.registerTab">Créer un compte</button>
+                    </div>
+
+                    <!-- Formulaire de connexion -->
+                    <form id="espace-login-form" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="espace.identifiantLabel">Email ou téléphone</label>
+                            <input type="text" id="espace-login-identifiant" required class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="espace.passwordLabel">Mot de passe</label>
+                            <input type="password" id="espace-login-password" required class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                        </div>
+                        <button type="submit" id="espace-login-submit" class="w-full bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition text-sm" data-i18n="espace.loginBtn">Se connecter</button>
+                        <p style="text-align:center; margin-top:10px;">
+                            <a href="#" onclick="event.preventDefault(); demanderReinitialisationMdp();" style="font-size:11px; color:#7c3aed; text-decoration:underline;" data-i18n="espace.motDePasseOublie">Mot de passe oublié ?</a>
+                        </p>
+                    </form>
+
+                    <!-- Formulaire d'inscription -->
+                    <form id="espace-register-form" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="espace.registerEmailLabel">Adresse email</label>
+                            <input type="email" id="espace-register-email" required class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="espace.registerPhoneLabel">Téléphone portable</label>
+                            <div class="flex">
+                                <select id="espace-register-phone-prefix" class="w-24 px-2 py-2.5 text-xs font-bold bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-navy focus:outline-none">
+                                    <option value="+237" selected>🇨🇲 +237</option>
+                                    <option value="+33">🇫🇷 +33</option>
+                                    <option value="+241">🇬🇦 +241</option>
+                                    <option value="+242">🇨🇬 +242</option>
+                                    <option value="+235">🇹🇩 +235</option>
+                                    <option value="+236">🇨🇫 +236</option>
+                                    <option value="+240">🇬🇶 +240</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                </select>
+                                <input type="tel" id="espace-register-phone" required placeholder="697 71 73 34" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="espace.registerPasswordLabel">Mot de passe (10 caractères min., 1 lettre, 1 chiffre, 1 caractère spécial)</label>
+                            <input type="password" id="espace-register-password" required minlength="10" oninput="evaluerForcePassword()" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                            <div style="height:4px; width:100%; background-color:#e5e7eb; border-radius:9999px; margin-top:6px; overflow:hidden;">
+                                <div id="espace-password-strength-bar" style="height:100%; width:0%; background-color:#f87171; transition:width 0.2s, background-color 0.2s;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="espace.confirmPasswordLabel">Confirmer le mot de passe</label>
+                            <input type="password" id="espace-register-password-confirm" required oninput="evaluerCorrespondancePassword()" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandPurple focus:outline-none">
+                            <div style="height:4px; width:100%; background-color:#e5e7eb; border-radius:9999px; margin-top:6px; overflow:hidden;">
+                                <div id="espace-password-match-bar" style="height:100%; width:0%; background-color:#d1d5db; transition:width 0.2s, background-color 0.2s;"></div>
+                            </div>
+                        </div>
+                        <button type="submit" id="espace-register-submit" class="w-full bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition text-sm" data-i18n="espace.registerBtn">Créer mon compte</button>
+                    </form>
+                </div>
+
+                <!-- ===== VUE : CONNECTÉ — liste des tickets ===== -->
+                <div id="espace-vue-connecte" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-extrabold text-navy">Gestion de mon compte</h4>
+                        <button type="button" onclick="espaceLogout()" class="text-xs font-bold text-gray-500 hover:text-brandRed transition flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="espace.logoutBtn">Se déconnecter</span>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-1 mb-2 bg-gray-100 rounded-xl p-1" style="flex-wrap:wrap;">
+                        <button type="button" id="compte-tab-profil" onclick="compteSwitchTab('profil')" class="flex-1 text-xs font-bold py-2 rounded-lg transition bg-white text-navy shadow-sm">Mon Profil</button>
+                        <button type="button" id="compte-tab-securite" onclick="compteSwitchTab('securite')" class="flex-1 text-xs font-bold py-2 rounded-lg transition text-gray-500">Sécurité</button>
+                        <button type="button" id="compte-tab-demandes" onclick="compteSwitchTab('demandes')" class="flex-1 text-xs font-bold py-2 rounded-lg transition text-gray-500">Mes demandes</button>
+                        <button type="button" id="compte-tab-communications" onclick="compteSwitchTab('communications')" class="flex-1 text-xs font-bold py-2 rounded-lg transition text-gray-500">Communications</button>
+                    </div>
+
+                    <!-- ===== PANNEAU : MON PROFIL ===== -->
+                    <div id="compte-panel-profil">
+                        <form id="form-mon-profil" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Nom</label>
+                                <input type="text" id="profil-nom" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Prénom</label>
+                                <input type="text" id="profil-prenom" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Date de naissance</label>
+                                <input type="date" id="profil-date-naissance" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Adresse</label>
+                                <input type="text" id="profil-adresse" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition text-sm">Enregistrer mes informations</button>
+                        </form>
+                        <div style="opacity:0.5; pointer-events:none; margin-top:20px; border-top:1px dashed #e5e7eb; padding-top:16px; display:flex; flex-direction:column; gap:8px;">
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Téléverser mes documents (CNI, acte de naissance, photo) — Bientôt disponible</p>
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Photo de profil / Avatar — Bientôt disponible</p>
+                        </div>
+                    </div>
+
+                    <!-- ===== PANNEAU : SÉCURITÉ ===== -->
+                    <div id="compte-panel-securite" class="hidden">
+                        <form id="form-changer-mdp-client" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Mot de passe actuel</label>
+                                <input type="password" id="mdp-client-actuel" required class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Nouveau mot de passe</label>
+                                <input type="password" id="mdp-client-nouveau" required minlength="10" class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                                <div style="height:4px; width:100%; background-color:#e5e7eb; border-radius:9999px; margin-top:6px; overflow:hidden;">
+                                    <div id="barre-force-client" style="height:100%; width:0%; background-color:#f87171; transition:width 0.2s, background-color 0.2s;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-navy uppercase tracking-wider mb-1">Confirmer le nouveau mot de passe</label>
+                                <input type="password" id="mdp-client-confirm" required class="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandPurple outline-none">
+                                <div style="height:4px; width:100%; background-color:#e5e7eb; border-radius:9999px; margin-top:6px; overflow:hidden;">
+                                    <div id="barre-correspondance-client" style="height:100%; width:0%; background-color:#d1d5db; transition:width 0.2s, background-color 0.2s;"></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition text-sm">Changer mon mot de passe</button>
+                        </form>
+                        <div style="opacity:0.5; pointer-events:none; margin-top:20px; border-top:1px dashed #e5e7eb; padding-top:16px; display:flex; flex-direction:column; gap:8px;">
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Double authentification (2FA) par SMS/WhatsApp — Bientôt disponible</p>
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Historique de connexion — Bientôt disponible</p>
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Gérer mes sessions actives — Bientôt disponible</p>
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Code PIN pour actions sensibles — Bientôt disponible</p>
+                        </div>
+                    </div>
+
+                    <!-- ===== PANNEAU : MES DEMANDES ===== -->
+                    <div id="compte-panel-demandes" class="hidden">
+                        <div id="espace-tickets-list" class="space-y-3"></div>
+                    </div>
+
+                    <!-- ===== PANNEAU : COMMUNICATIONS ===== -->
+                    <div id="compte-panel-communications" class="hidden">
+                        <div style="opacity:0.5; pointer-events:none; display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Préférences de notification (Email/SMS/WhatsApp) — Bientôt disponible</p>
+                            <p style="font-size:11px; font-weight:700; color:#94a3b8;">🔒 Langue du site liée au compte — Bientôt disponible (déjà réglable globalement)</p>
+                        </div>
+                        <button type="button" onclick="exporterMesDonnees()" class="w-full bg-brandPurple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition text-sm">📥 Télécharger mes données (RGPD)</button>
+                        <div style="margin-top:20px; border-top:1px dashed #fecaca; padding-top:16px;">
+                            <button type="button" onclick="ouvrirFermetureCompte()" style="width:100%; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;">⚠️ Fermer/suspendre mon compte</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL "EN SAVOIR PLUS" — méthode 5E (Exemple, Explication, Enjeu,
+         Éléments clés, Étape suivante), contenu partagé pour les 8 produits,
+         rempli dynamiquement par openProduitDetails(). -->
+    <div id="produitModal" class="fixed inset-0 z-50 hidden bg-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div id="produit-icone-titre" class="w-10 h-10 bg-purple-50 text-brandPurple rounded-xl flex items-center justify-center text-lg shrink-0">
+                        <i class="fa-solid fa-shield-heart"></i>
+                    </div>
+                    <h3 id="produit-titre" class="text-xl font-extrabold text-navy">Produit</h3>
+                </div>
+                <button type="button" onclick="closeProduitModal()" aria-label="Fermer" class="text-gray-400 hover:text-navy text-xl font-bold p-1 shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto p-5 space-y-6">
+                <!-- Image de scène de vie -- réintègre le visuel humain manquant,
+                     signalé par un confrère le 15/08/2026. Agrandie ici (fiche
+                     détaillée), miniature équivalente sur la carte produit. -->
+                <img id="produit-image" src="" alt="" class="w-full aspect-[6/5] object-cover rounded-xl -mt-1">
+
+                <!-- 1. Exemple concret -->
+                <div class="bg-purple-50/60 rounded-xl p-4 border-l-4 border-brandPurple">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i class="fa-solid fa-comment-dots text-brandPurple"></i>
+                        <span class="text-[10px] font-extrabold text-brandPurple uppercase tracking-wider">Ça pourrait vous arriver</span>
+                    </div>
+                    <p id="produit-exemple" class="text-sm text-gray-700 italic leading-relaxed"></p>
+                </div>
+
+                <!-- 2. Explication simple -->
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                        <span class="text-[10px] font-extrabold text-navy uppercase tracking-wider">C'est quoi, concrètement ?</span>
+                    </div>
+                    <p id="produit-explication" class="text-sm text-gray-600 leading-relaxed"></p>
+                </div>
+
+                <!-- 3. Enjeu -->
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i class="fa-solid fa-scale-balanced text-navy"></i>
+                        <span class="text-[10px] font-extrabold text-navy uppercase tracking-wider">Pourquoi c'est important pour vous</span>
+                    </div>
+                    <p id="produit-enjeu-intro" class="text-sm text-gray-600 leading-relaxed mb-3"></p>
+                    <div class="grid sm:grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1.5"><i class="fa-solid fa-circle-check mr-1"></i> Couvert</div>
+                            <ul id="produit-couverts" class="text-xs text-gray-600 space-y-1"></ul>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-1.5"><i class="fa-solid fa-circle-xmark mr-1"></i> Non couvert</div>
+                            <ul id="produit-non-couverts" class="text-xs text-gray-600 space-y-1"></ul>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5">
+                        <div class="text-[10px] font-extrabold text-amber-700 uppercase tracking-wider mb-2"><i class="fa-solid fa-circle-question mr-1"></i> Les 3 questions que tout le monde se pose</div>
+                        <div id="produit-questions" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- 4. Éléments clés -->
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i class="fa-solid fa-tags text-navy"></i>
+                        <span class="text-[10px] font-extrabold text-navy uppercase tracking-wider">Ce que ça contient, ce que ça coûte</span>
+                    </div>
+                    <div id="produit-formules" class="grid grid-cols-1 sm:[grid-template-columns:repeat(auto-fit,minmax(140px,1fr))] gap-2.5 mb-2"></div>
+                    <p class="text-[10px] text-gray-400 italic">Tarifs indicatifs de départ, ajustés selon votre profil réel — Mutuelle Pro Assurances négocie toujours les meilleures conditions du marché CIMA pour vous.</p>
+                </div>
+
+                <!-- 5. Étape suivante -->
+                <div class="bg-navy rounded-xl p-4 text-white">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i class="fa-solid fa-flag-checkered text-white"></i>
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Comment souscrire</span>
+                    </div>
+                    <p id="produit-etape" class="text-sm leading-relaxed mb-3"></p>
+                    <button type="button" id="produit-cta-btn" class="w-full bg-white text-navy font-bold text-xs py-2.5 rounded-xl hover:bg-purple-50 transition">
+                        Obtenir mon devis en 5 minutes
+                    </button>
+                    <p class="text-center text-[9px] text-white/50 italic mt-3">« Parce que l'imprévu n'a pas sa place dans vos plans »</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NNR - 24/08/2026 - GEMINI : vider le index.html de tout ce qui est javascript : C'est ici que le bloc script était logé -->
+
+    <!-- BANDEAU DE CONSENTEMENT COOKIES -->
+    <div id="cookie-banner" class="hidden fixed bottom-0 inset-x-0 z-[100] bg-navy text-white p-4 sm:p-5 shadow-2xl border-t border-white/10">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-4">
+            <p class="text-xs sm:text-sm text-gray-200 flex-1">
+                <span data-i18n="cookies.text">Nous utilisons des cookies pour mesurer l'audience de ce site (Google Analytics). Vos données ne sont utilisées qu'à cette fin. Consultez notre</span>
+                <a href="politique-confidentialite.html" class="underline text-purple-300 hover:text-purple-200" data-i18n="cookies.link">politique de confidentialité</a>.
+            </p>
+            <div class="flex gap-3 shrink-0">
+                <button onclick="handleCookieChoice(false)" class="text-xs sm:text-sm px-4 py-2 rounded-lg border border-white/20 hover:bg-white/10 transition" data-i18n="cookies.refuse">Refuser</button>
+                <button onclick="handleCookieChoice(true)" class="text-xs sm:text-sm px-5 py-2 rounded-lg bg-brandPurple hover:bg-purple-700 font-bold transition" data-i18n="cookies.accept">Accepter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteneur des notifications toast — empile plusieurs messages,
+         remplace les alert() natifs disgracieux. -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[200] flex flex-col gap-2 max-w-xs sm:max-w-sm w-[calc(100%-2rem)] sm:w-auto"></div>
+
+    <!-- Boîte de dialogue de confirmation personnalisée — remplace les
+         confirm() natifs, avec le même habillage que le reste du site. -->
+    <div id="confirm-dialog-overlay" class="hidden fixed inset-0 bg-black/50 z-[210] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5">
+            <p id="confirm-dialog-message" class="text-sm text-gray-700 leading-relaxed whitespace-pre-line mb-5"></p>
+            <div class="flex gap-3">
+                <button type="button" id="confirm-dialog-cancel" class="flex-1 text-xs font-bold text-gray-500 border-2 border-gray-200 rounded-lg py-2.5 hover:bg-gray-50 transition">Annuler</button>
+                <button type="button" id="confirm-dialog-ok" class="flex-1 text-xs font-bold text-white bg-navy rounded-lg py-2.5 hover:bg-purple-900 transition">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BULLE WHATSAPP FLOTTANTE -->
+    <div id="whatsapp-bubble" class="fixed bottom-5 right-5 z-30">
+        <span class="absolute inline-flex h-14 w-14 rounded-full bg-emerald-400 opacity-60 animate-ping"></span>
+        <a href="https://wa.me/237697717334" target="_blank" rel="noopener"
+           class="relative bg-emerald-500 hover:bg-emerald-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition-transform hover:scale-110"
+           aria-label="Discuter sur WhatsApp">
+            <i class="fa-brands fa-whatsapp"></i>
+        </a>
+    </div>
+
+    <!-- BOUTON D'INSTALLATION PWA (masqué par défaut, révélé si le navigateur le permet) -->
+    <button id="pwa-install-btn" onclick="installPWA()" style="display:none;"
+            class="fixed bottom-5 left-5 z-30 bg-navy hover:bg-purple-900 text-white text-xs font-bold px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 transition-transform hover:scale-105">
+        <i class="fa-solid fa-mobile-screen-button"></i> Installer l'application
+    </button>
+
+    <!-- FLÈCHES DE DÉFILEMENT ENTRE SECTIONS -->
+    <div id="scroll-arrows" class="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-6">
+        <button id="scroll-arrow-up" onclick="scrollToAdjacentSection(-1)" aria-label="Section précédente"
+                style="display:none;" class="text-navy text-2xl transition-opacity duration-700">
+            <i class="fa-solid fa-chevron-up"></i>
+        </button>
+        <button id="scroll-arrow-down" onclick="scrollToAdjacentSection(1)" aria-label="Section suivante"
+                style="display:none;" class="text-navy text-2xl transition-opacity duration-700">
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+    </div>
+
+    <!-- NNR - 24/08/2026 : ajout appels des MODULES JAVASCRIPT -->
+    <script src="public/js/i18n-translations.js"></script>
+    <script src="public/js/config.js"></script>
+    <script src="public/js/api.js"></script>
+    <script src="public/js/calculs.js"></script>
+    <script src="public/js/auth.js"></script>
+    <script src="public/js/ui.js"></script>
+    <script src="public/js/main.js"></script>
+</body>
+</html>

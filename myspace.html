@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Espace — Mutuelle Pro Assurances</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+    :root { --navy:#0f172a; --purple:#7c3aed; --border:#e5e7eb; --gray:#94a3b8; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; background:#f8fafc; color:var(--navy); }
+    header { background:var(--navy); color:white; padding:10px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    header h1 { font-size:15px; margin:0; font-weight:800; display:flex; align-items:center; gap:10px; }
+    header img.logo { height:32px; width:auto; background:white; border-radius:6px; padding:2px 6px; }
+    #identite { font-size:12px; color:#cbd5e1; }
+    .btn-header { background:transparent; border:1px solid #475569; color:#cbd5e1; padding:6px 12px; border-radius:8px; font-size:11px; cursor:pointer; margin-left:8px; }
+    .btn-header:hover { background:#1e293b; }
+
+    #vue-login { max-width:820px; margin:60px auto; padding:0 16px; }
+    .zones-login { display:flex; gap:20px; flex-wrap:wrap; align-items:stretch; }
+    .carte-login { flex:1; min-width:300px; background:white; padding:32px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
+    .carte-suivi { border:2px solid var(--purple); background:#faf5ff; justify-content:space-between; }
+    .texte-mobile { display:none; }
+    #vue-login h2 { font-size:16px; margin:0 0 8px; }
+    #vue-login p.sous-titre { font-size:12px; color:var(--gray); margin:0 0 20px; }
+    .toggle-type { display:flex; gap:8px; margin-bottom:20px; background:#f1f5f9; border-radius:10px; padding:4px; }
+    .toggle-type button { flex:1; border:none; background:transparent; padding:8px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; color:var(--gray); }
+    .toggle-type button.actif { background:white; color:var(--navy); box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+    label { display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:#475569; }
+    input, textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; font-size:14px; box-sizing:border-box; }
+    button.principal { width:100%; background:var(--purple); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; }
+    button.principal:hover { background:#6d28d9; }
+    #login-erreur { color:#dc2626; font-size:12px; margin-top:10px; display:none; }
+
+    #vue-appli { display:none; }
+    .layout { display:flex; min-height:calc(100vh - 60px); }
+    nav.menu { width:240px; background:white; border-right:1px solid var(--border); padding:16px 0; flex-shrink:0; }
+    .menu-groupe-titre { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--gray); padding:14px 20px 6px; letter-spacing:0.05em; }
+    .menu-item { display:block; width:100%; text-align:left; background:none; border:none; padding:10px 20px; font-size:13px; font-weight:600; color:#475569; cursor:pointer; border-left:3px solid transparent; }
+    .menu-item:hover { background:#f8fafc; }
+    .menu-item.actif { background:#f5f3ff; color:var(--purple); border-left-color:var(--purple); font-weight:700; }
+    .menu-item-grise { color:var(--gray) !important; cursor:not-allowed !important; font-size:11px; }
+    .menu-item-grise:hover { background:none !important; }
+    main.contenu { flex:1; padding:28px; }
+    .page-etroite { max-width:600px; }
+    .page { display:none; }
+    .page.visible { display:block; }
+    .page h2 { font-size:17px; margin:0 0 20px; color:var(--navy); }
+    .barre-conteneur { height:4px; width:100%; background:#e5e7eb; border-radius:9999px; margin:6px 0 14px; overflow:hidden; }
+    .barre { height:100%; width:0%; transition:width .2s, background-color .2s; }
+    .grise { opacity:0.5; pointer-events:none; }
+    .item-grise { font-size:12px; font-weight:700; color:var(--gray); margin-bottom:8px; }
+    .separateur-grise { border-top:1px dashed var(--border); margin-top:20px; padding-top:16px; }
+
+    table { width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+    th, td { text-align:left; padding:10px 14px; font-size:13px; border-bottom:1px solid var(--border); }
+    th { background:#f1f5f9; font-weight:700; color:#475569; font-size:11px; text-transform:uppercase; }
+    th.th-triable { cursor:pointer; user-select:none; }
+    th.th-triable:hover { background:#e2e8f0; }
+    .fleche-tri { font-size:9px; color:var(--gray); margin-left:4px; }
+    tr.ligne-groupe td { background:#f5f3ff; font-weight:700; font-size:11px; color:var(--purple); text-transform:uppercase; padding:8px 14px; border-bottom:1px solid #e9d5ff; }
+    tr:last-child td { border-bottom:none; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; border:1px solid; }
+    .badge-recu, .badge-nouveau { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .badge-en_cours, .badge-qualifie, .badge-propose { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+    .badge-resolu, .badge-gagne { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .badge-perdu { background:#fef2f2; color:#dc2626; border-color:#fecaca; }
+    select.filtre, select.action { padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px; }
+    .filtres { display:flex; gap:10px; margin-bottom:14px; }
+    .vide { text-align:center; padding:40px; color:var(--gray); font-size:13px; }
+    .danger { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; width:100%; }
+
+    /* ===== Version mobile (21/08/2026) ===== */
+    #cp-liste-conteneur, #tickets-staff-conteneur, #prospects-conteneur, #messagerie-liste-conteneur, #mes-demandes-liste, #dossiers-partenaire-conteneur {
+        overflow-x: auto;
+    }
+    @media (orientation: portrait) {
+        .zones-login { flex-direction: column; }
+    }
+    @media (max-width: 768px) {
+        header { padding: 10px 14px; }
+        header h1 { font-size: 13px; }
+        header img.logo { height: 26px; }
+        #btn-hamburger { display: inline-block !important; }
+        .menu-item-deconnexion-mobile { display: block !important; }
+        #identite { display: none; } /* déjà visible dans "Mon Profil" — évite le débordement d'en-tête */
+        .btn-header { padding: 6px 8px; font-size: 0; } /* icône seule sur mobile, texte masqué */
+        .btn-header::before { content: '⏻'; font-size: 14px; }
+        #vue-login { margin: 16px 10px; padding: 0; }
+        .zones-login { gap: 12px; }
+        .carte-login { padding: 18px 16px; min-width: 0; width: 100%; } /* min-width:300px (desktop) provoquait le débordement sur petits écrans */
+        .carte-login h2 { font-size: 15px; margin-bottom: 4px; }
+        .carte-login p.sous-titre { font-size: 11px; margin-bottom: 10px; }
+        .texte-desktop { display: none; }
+        .texte-mobile { display: block; }
+        .carte-login input { padding: 8px 10px; margin-bottom: 10px; }
+        .carte-login button.principal { padding: 10px; }
+        .toggle-type { gap: 4px; }
+        .toggle-type button { font-size: 10px; padding: 8px 4px; }
+        .layout { position: relative; }
+        nav.menu {
+            position: fixed; top: 0; left: -260px; height: 100vh; width: 240px;
+            z-index: 50; transition: left 0.25s ease; overflow-y: auto;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+        }
+        nav.menu.ouvert { left: 0; }
+        main.contenu { padding: 16px 12px; width: 100%; }
+        .page h2 { font-size: 15px; }
+        table { font-size: 12px; }
+        th, td { padding: 8px 8px; white-space: nowrap; } /* force le defilement horizontal plutot qu'un texte ecrase */
+        .filtres { flex-wrap: wrap; }
+        input, textarea { font-size: 16px; } /* évite le zoom automatique iOS au focus */
+        /* Cibles tactiles agrandies pour les barres d'actions (boutons trop petits pour le doigt en V1) */
+        button { min-height: 36px; }
+        #cp-liste-conteneur button, #prospects-conteneur button,
+        #tickets-staff-conteneur select, #cp-contacts-liste button {
+            padding: 8px 12px !important; font-size: 12px !important;
+        }
+        /* Contenu HTML d'un email tiers : jamais le laisser casser la mise en page mobile */
+        #messagerie-detail-conteneur { max-width: 100%; overflow-x: auto; }
+        #messagerie-detail-conteneur img { max-width: 100% !important; height: auto !important; }
+        #messagerie-detail-conteneur table { max-width: 100% !important; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1><img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="logo"> Mon Espace</h1>
+    <div style="display:flex; align-items:center;">
+        <button id="btn-hamburger" onclick="toggleMenuMobile()" style="display:none; background:none; border:1px solid #475569; color:white; width:34px; height:34px; border-radius:8px; font-size:16px; cursor:pointer; margin-right:8px;">☰</button>
+        <span id="identite"></span>
+        <button class="btn-header" id="btn-deconnexion-tout" onclick="deconnexionTout()" style="display:none;">Se déconnecter</button>
+    </div>
+</header>
+<div id="overlay-mobile" onclick="toggleMenuMobile()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:40;"></div>
+
+<!-- ===== VUE CONNEXION ===== -->
+<div id="vue-login">
+    <div class="zones-login">
+        <div class="carte-login">
+            <h2>Connexion</h2>
+            <p class="sous-titre">Vous pouvez vous connecter en tant que Client, Personnel ou Partenaire — successivement, si vous avez plusieurs comptes.</p>
+            <div class="toggle-type">
+                <button type="button" id="toggle-client" class="actif" onclick="basculerTypeConnexion('client')">Je suis Client</button>
+                <button type="button" id="toggle-staff" onclick="basculerTypeConnexion('staff')">Je suis Personnel</button>
+                <button type="button" id="toggle-partenaire" onclick="basculerTypeConnexion('partenaire')">Je suis Partenaire</button>
+            </div>
+
+            <form id="form-login-client">
+                <label for="client-identifiant">Email ou téléphone</label>
+                <input type="text" id="client-identifiant" required>
+                <label for="client-password">Mot de passe</label>
+                <input type="password" id="client-password" required>
+                <button type="submit" class="principal">Se connecter</button>
+            </form>
+
+            <form id="form-login-staff" style="display:none;">
+                <label for="staff-email">Email</label>
+                <input type="email" id="staff-email" required>
+                <label for="staff-password">Mot de passe</label>
+                <input type="password" id="staff-password" required>
+                <button type="submit" class="principal">Se connecter</button>
+            </form>
+
+            <form id="form-login-partenaire" style="display:none;">
+                <label for="partenaire-email">Email</label>
+                <input type="email" id="partenaire-email" required>
+                <label for="partenaire-password">Mot de passe</label>
+                <input type="password" id="partenaire-password" required>
+                <button type="submit" class="principal">Se connecter</button>
+            </form>
+
+            <p id="login-erreur"></p>
+            <p id="deja-connecte-autre" style="font-size:12px; color:#047857; margin-top:14px; display:none;"></p>
+        </div>
+
+        <div class="carte-login carte-suivi">
+            <h2>Suivre ma demande</h2>
+            <div>
+                <p class="sous-titre texte-desktop">Vous avez soumis un devis, un sinistre ou une question — et vous voulez juste connaître son statut, sans vous connecter ? C'est possible, même si vous avez déjà un compte.</p>
+                <p class="sous-titre texte-desktop">Il vous suffit de l'email ou du numéro de téléphone renseigné au moment de votre demande. Nous vous envoyons un code à usage unique pour confirmer que c'est bien vous — pas de mot de passe à retenir, pas d'espace personnel à ouvrir.</p>
+                <p class="sous-titre texte-mobile">Sans vous connecter, avec l'email ou le téléphone de votre demande.</p>
+            </div>
+            <a href="/suivi-ticket.html" target="_blank" rel="noopener" style="text-decoration:none;">
+                <button type="button" class="principal">Suivre ma demande →</button>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ===== VUE APPLICATION ===== -->
+<div id="vue-appli">
+    <div class="layout">
+        <nav class="menu" id="menu-lateral"></nav>
+        <main class="contenu">
+
+            <section id="page-profil" class="page page-etroite">
+                <h2>Mon Profil</h2>
+                <div id="profil-client-bloc" style="display:none;">
+                    <form id="form-mon-profil">
+                        <label>Nom</label><input type="text" id="profil-nom">
+                        <label>Prénom</label><input type="text" id="profil-prenom">
+                        <label>Date de naissance</label><input type="date" id="profil-date-naissance">
+                        <label>Adresse</label><input type="text" id="profil-adresse">
+                        <button type="submit" class="principal">Enregistrer mes informations</button>
+                    </form>
+                    <div class="separateur-grise">
+                        <p class="item-grise">🔒 Téléverser mes documents (CNI, acte de naissance, photo) — Bientôt disponible</p>
+                        <p class="item-grise">🔒 Photo de profil / Avatar — Bientôt disponible</p>
+                    </div>
+                </div>
+                <div id="profil-staff-bloc" style="display:none;">
+                    <p style="font-size:12px; color:var(--gray); margin-bottom:12px;"><strong>Rôle :</strong> <span id="staff-role-libelle"></span> — <strong>Email (identifiant) :</strong> <span id="staff-email-affiche"></span></p>
+                    <form id="form-mon-profil-staff">
+                        <label>Nom complet</label>
+                        <input type="text" id="staff-profil-nom-complet">
+                        <label>Téléphone</label>
+                        <input type="tel" id="staff-profil-telephone">
+                        <label>Date de naissance</label>
+                        <input type="date" id="staff-profil-date-naissance">
+                        <label>Adresse</label>
+                        <input type="text" id="staff-profil-adresse">
+                        <button type="submit" class="principal">Enregistrer mes informations</button>
+                    </form>
+                    <div class="separateur-grise">
+                        <p style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:8px;">Boîte mail (messagerie intégrée)</p>
+                        <label>Mot de passe de votre boîte mail <span style="font-weight:400; color:var(--gray);">(laisser vide pour ne pas modifier)</span></label>
+                        <input type="password" id="staff-boitemail-mdp" oninput="evaluerBarresStaffBoiteMail()" style="margin-bottom:6px;">
+                        <div class="barre-conteneur"><div id="barre-force-staffboitemail" class="barre" style="background-color:#f87171;"></div></div>
+                        <label>Confirmer</label>
+                        <input type="password" id="staff-boitemail-confirm" oninput="evaluerBarresStaffBoiteMail()" style="margin-bottom:6px;">
+                        <div class="barre-conteneur"><div id="barre-correspondance-staffboitemail" class="barre" style="background-color:#d1d5db;"></div></div>
+                        <button type="button" onclick="mettreAJourBoiteMailStaff()" class="principal">Mettre à jour ma boîte mail</button>
+                        <p id="staff-boitemail-message" style="font-size:12px; margin-top:8px; display:none;"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-securite" class="page page-etroite">
+                <h2>Sécurité</h2>
+                <div id="securite-client-bloc" style="display:none; margin-bottom:24px;">
+                    <p style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:8px;">Mot de passe — Compte Client</p>
+                    <form id="form-changer-mdp-client">
+                        <label>Mot de passe actuel</label><input type="password" id="mdp-client-actuel" required>
+                        <label>Nouveau mot de passe</label><input type="password" id="mdp-client-nouveau" required minlength="10">
+                        <div class="barre-conteneur"><div id="barre-force-client" class="barre" style="background-color:#f87171;"></div></div>
+                        <label>Confirmer</label><input type="password" id="mdp-client-confirm" required>
+                        <div class="barre-conteneur"><div id="barre-correspondance-client" class="barre" style="background-color:#d1d5db;"></div></div>
+                        <button type="submit" class="principal">Changer mon mot de passe (Client)</button>
+                    </form>
+                </div>
+                <div id="securite-staff-bloc" style="display:none; margin-bottom:24px;">
+                    <p style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:8px;">Mot de passe — Compte Personnel</p>
+                    <form id="form-changer-mdp-staff">
+                        <label>Mot de passe actuel</label><input type="password" id="mdp-staff-actuel" required>
+                        <label>Nouveau mot de passe</label><input type="password" id="mdp-staff-nouveau" required minlength="10">
+                        <div class="barre-conteneur"><div id="barre-force-staff" class="barre" style="background-color:#f87171;"></div></div>
+                        <label>Confirmer</label><input type="password" id="mdp-staff-confirm" required>
+                        <div class="barre-conteneur"><div id="barre-correspondance-staff" class="barre" style="background-color:#d1d5db;"></div></div>
+                        <button type="submit" class="principal">Changer mon mot de passe (Personnel)</button>
+                    </form>
+                </div>
+                <div id="sessions-actives-bloc" style="margin-bottom:24px;">
+                    <p style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:8px;">Sessions actives</p>
+                    <p style="font-size:11px; color:var(--gray); margin-bottom:10px;">Limite honnête : pas de détail navigateur/appareil pour l'instant, seulement la date d'expiration et si c'est la session en cours.</p>
+                    <div id="sessions-actives-liste"></div>
+                </div>
+                <div class="separateur-grise">
+                    <p class="item-grise">🔒 Double authentification (2FA) par SMS/WhatsApp — Bientôt disponible</p>
+                    <p class="item-grise">🔒 Historique de connexion complet — Bientôt disponible</p>
+                    <p class="item-grise">🔒 Code PIN pour actions sensibles — Bientôt disponible</p>
+                </div>
+            </section>
+
+            <section id="page-communications" class="page page-etroite">
+                <h2>Communications</h2>
+                <div class="item-grise">🔒 Préférences de notification (Email/SMS/WhatsApp) — Bientôt disponible</div>
+                <div class="item-grise" style="margin-bottom:16px;">🔒 Langue du site liée au compte — Bientôt disponible</div>
+                <div id="communications-client-bloc" style="display:none;">
+                    <button type="button" class="principal" onclick="exporterMesDonnees()">📥 Télécharger mes données (RGPD)</button>
+                    <div class="separateur-grise">
+                        <button type="button" class="danger" onclick="ouvrirFermetureCompte()">⚠️ Fermer/suspendre mon compte Client</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-mes-demandes" class="page page-etroite">
+                <h2>Mes demandes</h2>
+                <div id="mes-demandes-liste"></div>
+            </section>
+
+            <section id="page-tickets" class="page">
+                <h2>Tickets</h2>
+                <div class="filtres">
+                    <select class="filtre" id="filtre-statut" onchange="chargerTicketsStaff()">
+                        <option value="">Tous les statuts</option>
+                        <option value="recu">Reçu</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="resolu">Résolu</option>
+                    </select>
+                    <select class="filtre" id="filtre-type" onchange="chargerTicketsStaff()">
+                        <option value="">Tous les types</option>
+                        <option value="info">Information</option>
+                        <option value="devis">Devis</option>
+                        <option value="sinistre">Sinistre</option>
+                    </select>
+                    <input type="text" id="recherche-tickets" placeholder="Rechercher (référence, email, téléphone…)" oninput="afficherTableauTickets()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
+                </div>
+                <div id="tickets-staff-conteneur"></div>
+            </section>
+
+            <section id="page-prospects" class="page">
+                <h2>Prospects</h2>
+                <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">Interface minimale — création détaillée et relances à construire dans une session dédiée.</p>
+                <div id="prospects-conteneur"></div>
+            </section>
+
+            <section id="page-mes-dossiers-partenaire" class="page page-etroite">
+                <h2>Mes dossiers</h2>
+                <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">Vous ne voyez que les dossiers qui vous ont été assignés.</p>
+                <div id="dossiers-partenaire-conteneur"></div>
+            </section>
+
+            <section id="page-messagerie" class="page">
+                <h2>Messagerie</h2>
+                <div id="messagerie-liste-vue">
+                    <div id="messagerie-liste-conteneur"></div>
+                </div>
+                <div id="messagerie-detail-vue" style="display:none;">
+                    <button onclick="fermerDetailMessage()" style="font-size:12px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; margin-bottom:14px;">← Retour à la liste</button>
+                    <div id="messagerie-detail-conteneur" style="background:white; border:1px solid var(--border); border-radius:12px; padding:20px;"></div>
+                </div>
+            </section>
+
+            <section id="page-creer-partenaire" class="page">
+                <h2>Gérer les Partenaires</h2>
+
+                <div id="cp-liste-conteneur" style="margin-bottom:24px;"></div>
+
+                <div style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:24px; background:#fafafa;">
+                    <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 8px;">Importer une liste (CSV)</p>
+                    <p style="font-size:11px; color:var(--gray); margin:0 0 10px;">
+                        En-tête obligatoire, dans cet ordre : <code>nom_complet,email,email_notification,telephone,codes_types,contacts</code><br>
+                        « codes_types » : codes séparés par virgule et/ou plage avec tiret (ex : <code>E03-E04,E08,E09</code>).<br>
+                        « contacts » : blocs <code>{nom;prenom;fonction;telephone}</code> séparés par point-virgule, <code>*</code> après l'accolade pour désigner le contact par défaut (obligatoire).
+                    </p>
+                    <button type="button" onclick="telechargerModeleCsv()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; margin-bottom:10px;">📄 Télécharger un modèle</button>
+                    <input type="file" id="cp-import-fichier" accept=".csv" style="display:block; margin-bottom:10px; font-size:12px;">
+                    <button type="button" class="principal" onclick="importerPartenairesCsv()">Importer</button>
+                    <div id="cp-import-resultat" style="display:none; margin-top:12px; font-size:12px;"></div>
+                </div>
+
+                <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 14px;" id="cp-form-titre">Créer un nouveau partenaire</p>
+                <form id="form-creer-partenaire">
+                    <input type="hidden" id="cp-id-edition" value="">
+                    <label>Nom complet / Raison sociale</label>
+                    <input type="text" id="cp-nom-complet" required>
+                    <label>Email</label>
+                    <input type="email" id="cp-email" required onblur="verifierEmailPartenaire()">
+                    <p id="cp-email-verif" style="font-size:11px; margin:2px 0 12px; display:none;"></p>
+                    <label>Email de notification <span style="font-weight:400; color:var(--gray);">(adresse personnelle du partenaire — reçoit le lien d'activation et les notifications)</span></label>
+                    <input type="email" id="cp-email-notification" required onblur="verifierVraisemblanceChamp('cp-email-notification', 'cp-email-notification-msg')">
+                    <p id="cp-email-notification-msg" style="display:none;"></p>
+                    <label>Téléphone</label>
+                    <input type="tel" id="cp-telephone">
+
+                    <label style="margin-top:10px;">Mot de passe de la boîte mail <span style="font-weight:400; color:var(--gray);">(déjà créée dans ISPConfig, même adresse que l'email ci-dessus)</span></label>
+                    <input type="text" id="cp-boite-mail-mdp" placeholder="Laisser vide pour ne pas modifier">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin:10px 0 14px;">
+                        <input type="checkbox" id="cp-creer-boite-mail" style="width:auto; margin:0;">
+                        Créer automatiquement la boîte mail professionnelle si elle n'existe pas encore
+                    </label>
+
+                    <label style="margin-top:10px;">Types de partenaire (un ou plusieurs)</label>
+                    <div id="cp-types-conteneur" style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:14px; max-height:220px; overflow-y:auto; font-size:12px;"></div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 8px;">
+                        <p style="font-size:12px; font-weight:700; color:var(--navy); margin:0;">Contacts</p>
+                    </div>
+                    <p id="cp-contact-avertissement" style="display:none; font-size:11px; font-weight:700; color:#dc2626; margin:0 0 8px;">⚠️ Vous devez désigner un contact par défaut avant d'enregistrer.</p>
+                    <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="ajouterContact()" title="Ajouter un nouveau contact à ce partenaire" style="font-size:11px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">➕ Ajouter</button>
+                        <button type="button" onclick="modifierContactSelectionne()" title="Modifier le contact coché" style="font-size:11px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">✏️ Modifier</button>
+                        <button type="button" onclick="dupliquerContactSelectionne()" title="Créer un nouveau contact en reprenant les informations de celui coché" style="font-size:11px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">📋 Dupliquer</button>
+                        <button type="button" onclick="retirerContactsSelectionnes()" title="Retire le(s) contact(s) coché(s) de ce partenaire" style="font-size:11px; padding:4px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Retirer</button>
+                    </div>
+                    <div id="cp-contacts-liste" style="margin-bottom:12px;"></div>
+
+                    <div id="cp-contact-edit-zone" style="display:none; border:1px solid var(--purple); border-radius:8px; padding:12px; margin-bottom:14px; background:#faf5ff;">
+                        <input type="text" placeholder="Nom" id="cp-contact-edit-nom" style="margin-bottom:6px;">
+                        <input type="text" placeholder="Prénom" id="cp-contact-edit-prenom" style="margin-bottom:6px;">
+                        <input type="text" placeholder="Fonction" id="cp-contact-edit-fonction" style="margin-bottom:6px;">
+                        <input type="tel" placeholder="Téléphone" id="cp-contact-edit-telephone" style="margin-bottom:6px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:400; cursor:pointer; margin-bottom:10px;">
+                            <input type="checkbox" id="cp-contact-edit-defaut" style="width:auto; margin:0;"> Contact par défaut
+                        </label>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" onclick="annulerEditionContact()" style="flex:1; background:#f1f5f9; color:#475569; border:none; padding:8px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">Annuler</button>
+                            <button type="button" onclick="enregistrerContactEdition()" style="flex:1; background:var(--purple); color:white; border:none; padding:8px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">Valider ce contact</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="principal" style="margin-top:14px;">Créer le compte</button>
+                    <button type="button" onclick="annulerEditionPartenaire()" id="cp-annuler-btn" style="display:none; width:100%; margin-top:8px; background:#f1f5f9; color:#475569; border:none; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;">Annuler la modification</button>
+                </form>
+                <div id="cp-resultat" style="display:none; margin-top:16px; padding:14px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0;">
+                    <p id="cp-resultat-texte" style="font-size:12px; font-weight:700; color:#047857; margin:0;"></p>
+                </div>
+            </section>
+
+            <section id="page-pilotage" class="page">
+                <h2>Pilotage & KPIs</h2>
+                <p style="font-size:11px; color:var(--gray); margin-bottom:16px;">Version basique — chiffres réels déjà en base, pas de tableau de bord Production/Sinistres tant que ces modules n'existent pas.</p>
+                <div id="pilotage-conteneur" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;"></div>
+            </section>
+
+            <section id="page-clients" class="page">
+                <h2>Clients</h2>
+                <div id="clients-liste-conteneur"></div>
+            </section>
+
+            <section id="page-personnel" class="page">
+                <h2>Personnel</h2>
+                <div id="personnel-liste-conteneur" style="margin-bottom:24px;"></div>
+
+                <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 14px;" id="pers-form-titre">Créer un nouveau compte Personnel</p>
+                <form id="form-personnel">
+                    <input type="hidden" id="pers-id-edition" value="">
+                    <label>Nom complet</label>
+                    <input type="text" id="pers-nom-complet" required>
+                    <label>Email (identifiant de connexion)</label>
+                    <input type="email" id="pers-email" required onblur="verifierEmailPersonnel()">
+                    <p id="pers-email-verif" style="font-size:11px; margin:2px 0 12px; display:none;"></p>
+                    <label>Téléphone</label>
+                    <input type="tel" id="pers-telephone">
+                    <div id="pers-email-validation-bloc">
+                        <label style="margin-top:10px;">Adresse de validation <span style="font-weight:400; color:var(--gray);">(adresse personnelle — reçoit le lien d'activation)</span></label>
+                        <input type="email" id="pers-email-validation" onblur="verifierVraisemblanceChamp('pers-email-validation', 'pers-email-validation-msg')">
+                        <p id="pers-email-validation-msg" style="display:none;"></p>
+                    </div>
+                    <label style="margin-top:10px;">Rôle</label>
+                    <select id="pers-role" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; font-size:14px;"></select>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:14px;">
+                        <input type="checkbox" id="pers-creer-boite-mail" style="width:auto; margin:0;">
+                        Créer automatiquement la boîte mail professionnelle si elle n'existe pas encore
+                    </label>
+                    <button type="submit" class="principal">Créer le compte</button>
+                    <button type="button" onclick="annulerEditionPersonnel()" id="pers-annuler-btn" style="display:none; width:100%; margin-top:8px; background:#f1f5f9; color:#475569; border:none; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;">Annuler la modification</button>
+                </form>
+                <div id="pers-resultat" style="display:none; margin-top:16px; padding:14px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0;">
+                    <p id="pers-resultat-texte" style="font-size:12px; font-weight:700; color:#047857; margin:0;"></p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script>
+    // =====================================================================
+    // Mon Espace — page unifiée Client/Collaborateur (21/08/2026).
+    // Les deux systèmes d'authentification restent TOTALEMENT séparés en
+    // coulisses (cookies "connect.sid" et "connect.sid.staff" distincts,
+    // tables site.utilisateurs / site.staff distinctes) — cette page se
+    // contente de vérifier les deux sessions en parallèle et d'adapter
+    // l'affichage. Une personne qui a les deux comptes doit se connecter
+    // aux deux séparément (aucune fusion d'identité) pour voir les deux
+    // jeux de contenu réunis ici.
+    // =====================================================================
+
+    let sessionClient = null;
+    let sessionStaff = null;
+    let sessionPartenaire = null;
+    let listeAgents = [];
+
+    // Les fonctions demanderCodeSuivi()/verifierCodeSuivi() ont été
+    // déplacées vers suivi-ticket.html (page dédiée, 27/08/2026) — la
+    // carte "Suivre ma demande" ci-dessus n'est plus qu'un lien.
+
+    function basculerTypeConnexion(type) {
+        document.getElementById('toggle-client').classList.toggle('actif', type === 'client');
+        document.getElementById('toggle-staff').classList.toggle('actif', type === 'staff');
+        document.getElementById('toggle-partenaire').classList.toggle('actif', type === 'partenaire');
+        document.getElementById('form-login-client').style.display = type === 'client' ? 'block' : 'none';
+        document.getElementById('form-login-staff').style.display = type === 'staff' ? 'block' : 'none';
+        document.getElementById('form-login-partenaire').style.display = type === 'partenaire' ? 'block' : 'none';
+    }
+
+    async function verifierSessions() {
+        try {
+            const respClient = await fetch('/api/session', { credentials: 'include' });
+            sessionClient = respClient.status === 200 ? await respClient.json() : null;
+        } catch (e) { sessionClient = null; }
+
+        try {
+            const respStaff = await fetch('/api/staff/session', { credentials: 'include' });
+            sessionStaff = respStaff.status === 200 ? await respStaff.json() : null;
+        } catch (e) { sessionStaff = null; }
+
+        try {
+            const respPartenaire = await fetch('/api/partenaire/session', { credentials: 'include' });
+            sessionPartenaire = respPartenaire.status === 200 ? await respPartenaire.json() : null;
+        } catch (e) { sessionPartenaire = null; }
+
+        if (!sessionClient && !sessionStaff && !sessionPartenaire) {
+            afficherLogin();
+        } else {
+            afficherAppli();
+        }
+    }
+
+    function afficherLogin() {
+        document.getElementById('vue-login').style.display = 'block';
+        document.getElementById('vue-appli').style.display = 'none';
+        document.getElementById('btn-deconnexion-tout').style.display = 'none';
+        document.getElementById('identite').textContent = '';
+
+        const msg = document.getElementById('deja-connecte-autre');
+        if (sessionClient || sessionStaff) {
+            msg.style.display = 'block';
+            msg.textContent = sessionClient
+                ? 'Vous êtes toujours connecté en tant que Client.'
+                : 'Vous êtes toujours connecté en tant que Personnel.';
+            basculerTypeConnexion(sessionClient ? 'staff' : 'client');
+        } else {
+            msg.style.display = 'none';
+        }
+    }
+
+    function viderTousLesChampsMotDePasse() {
+        document.querySelectorAll('input[type="password"]').forEach((champ) => { champ.value = ''; });
+    }
+
+    // Échappement HTML — indispensable pour tout contenu venant d'un
+    // expéditeur EXTERNE (nom, objet d'email) avant insertion via
+    // innerHTML. Sans ça, un nom d'expéditeur contenant des chevrons
+    // (ex: "<root@serveur>") est interprété comme une balise HTML —
+    // au mieux le texte disparaît (bug relevé par Roger le 27/08/2026),
+    // au pire c'est une porte ouverte à l'injection de script par un
+    // expéditeur malveillant.
+    function echapperHtml(texte) {
+        const div = document.createElement('div');
+        div.textContent = texte == null ? '' : String(texte);
+        return div.innerHTML;
+    }
+
+    function afficherAppli() {
+        document.getElementById('vue-login').style.display = 'none';
+        document.getElementById('vue-appli').style.display = 'block';
+        document.getElementById('btn-deconnexion-tout').style.display = 'inline-block';
+        // Garantie de fond (Roger, 27/08/2026) : tout champ mot de passe
+        // doit être vide à l'ouverture d'une session, quel que soit l'état
+        // laissé par une session précédente dans ce même onglet.
+        viderTousLesChampsMotDePasse();
+
+        const morceaux = [];
+        if (sessionClient) morceaux.push(`Client : ${sessionClient.compte ? sessionClient.compte.email : ''}`);
+        if (sessionStaff) morceaux.push(`Personnel (${sessionStaff.code_role})`);
+        if (sessionPartenaire) morceaux.push(`Partenaire`);
+        document.getElementById('identite').textContent = morceaux.join(' · ');
+
+        construireMenu();
+
+        document.getElementById('profil-client-bloc').style.display = sessionClient ? 'block' : 'none';
+        document.getElementById('profil-staff-bloc').style.display = sessionStaff ? 'block' : 'none';
+        document.getElementById('securite-client-bloc').style.display = sessionClient ? 'block' : 'none';
+        document.getElementById('securite-staff-bloc').style.display = sessionStaff ? 'block' : 'none';
+        document.getElementById('communications-client-bloc').style.display = sessionClient ? 'block' : 'none';
+
+        if (sessionClient) { chargerMonProfil(); chargerMesDemandes(); }
+        if (sessionStaff) {
+            chargerMonProfilStaff();
+            chargerAgents();
+            chargerTicketsStaff();
+            if (sessionStaff.code_role === 'administrateur') { chargerTypesPartenaireFormulaire(); chargerListePartenaires(); chargerContactsEnCours([]); chargerProspects(); }
+        }
+        if (sessionPartenaire) { chargerMesDossiersPartenaire(); }
+
+        afficherPage('profil');
+    }
+
+    function construireMenu() {
+        const menu = document.getElementById('menu-lateral');
+        const morceauxIdentite = [];
+        if (sessionClient) morceauxIdentite.push(`Client : ${sessionClient.compte ? sessionClient.compte.email : ''}`);
+        if (sessionStaff) morceauxIdentite.push(`Personnel (${sessionStaff.code_role})`);
+        if (sessionPartenaire) morceauxIdentite.push(`Partenaire`);
+        let html = `<div style="padding:12px 20px; font-size:11px; color:var(--gray); border-bottom:1px solid var(--border); margin-bottom:8px; word-break:break-all;">${morceauxIdentite.join('<br>')}</div>`;
+        html += `<button class="menu-item menu-item-deconnexion-mobile" onclick="deconnexionTout()" style="display:none; color:#dc2626; font-weight:700;">⏻ Se déconnecter</button>`;
+        html += '<div class="menu-groupe-titre">Gestion du profil</div>';
+        html += `<button class="menu-item" data-page="profil" onclick="afficherPage('profil')">Mon Profil</button>`;
+        html += `<button class="menu-item" data-page="securite" onclick="afficherPage('securite')">Sécurité</button>`;
+        html += `<button class="menu-item" data-page="communications" onclick="afficherPage('communications')">Communications</button>`;
+
+        if (sessionClient) {
+            html += '<div class="menu-groupe-titre">Espace Client</div>';
+            html += `<button class="menu-item" data-page="mes-demandes" onclick="afficherPage('mes-demandes')">Mes demandes</button>`;
+        }
+        if (sessionStaff) {
+            html += '<div class="menu-groupe-titre">Espace Personnel</div>';
+            html += `<button class="menu-item" data-page="tickets" onclick="afficherPage('tickets')">Tickets</button>`;
+            html += `<button class="menu-item" data-page="messagerie" onclick="afficherPage('messagerie'); chargerMessagerie('staff');">Messagerie</button>`;
+            if (sessionStaff.code_role === 'administrateur') {
+                html += '<div class="menu-groupe-titre">Administration</div>';
+                html += `<button class="menu-item" data-page="prospects" onclick="afficherPage('prospects')">Prospects</button>`;
+                html += `<button class="menu-item" data-page="clients" onclick="afficherPage('clients'); chargerListeClients();">Clients</button>`;
+                html += `<button class="menu-item" data-page="personnel" onclick="afficherPage('personnel'); chargerListePersonnel();">Personnel</button>`;
+                html += `<button class="menu-item" data-page="creer-partenaire" onclick="afficherPage('creer-partenaire')">Partenaires</button>`;
+                html += `<button class="menu-item" data-page="pilotage" onclick="afficherPage('pilotage'); chargerKpis();">Pilotage & KPIs</button>`;
+            }
+        }
+        if (sessionPartenaire) {
+            html += '<div class="menu-groupe-titre">Espace Partenaire</div>';
+            html += `<button class="menu-item" data-page="mes-dossiers-partenaire" onclick="afficherPage('mes-dossiers-partenaire')">Mes dossiers</button>`;
+            html += `<button class="menu-item" data-page="messagerie" onclick="afficherPage('messagerie'); chargerMessagerie('partenaire');">Messagerie</button>`;
+        }
+
+        html += '<div class="menu-groupe-titre">Prochainement</div>';
+        const prochainement = [
+            'Historique de connexion', 'Gérer mes sessions actives', 'Téléverser mes documents',
+            'Production & Souscription', 'Sinistres (dont Bon de prise en charge)', 'Stocks',
+            'Double authentification (2FA)',
+            'Groupes de permissions (partenaires)',
+        ];
+        prochainement.forEach((libelle) => {
+            html += `<button class="menu-item menu-item-grise" disabled title="Bientôt disponible">🔒 ${libelle}</button>`;
+        });
+
+        menu.innerHTML = html;
+    }
+
+    function toggleMenuMobile() {
+        document.getElementById('menu-lateral').classList.toggle('ouvert');
+        const overlay = document.getElementById('overlay-mobile');
+        overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function afficherPage(nomPage) {
+        document.querySelectorAll('.page').forEach((p) => p.classList.remove('visible'));
+        document.querySelectorAll('.menu-item').forEach((b) => b.classList.remove('actif'));
+        const page = document.getElementById('page-' + nomPage);
+        const bouton = document.querySelector(`.menu-item[data-page="${nomPage}"]`);
+        if (page) page.classList.add('visible');
+        if (bouton) bouton.classList.add('actif');
+        if (nomPage === 'securite' || nomPage === 'profil') viderTousLesChampsMotDePasse();
+        if (nomPage === 'securite') chargerSessionsActives();
+        // Sur mobile, on referme le menu après sélection d'une page.
+        if (window.innerWidth <= 768) {
+            document.getElementById('menu-lateral').classList.remove('ouvert');
+            document.getElementById('overlay-mobile').style.display = 'none';
+        }
+    }
+
+    document.getElementById('form-login-client').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const erreurEl = document.getElementById('login-erreur');
+        erreurEl.style.display = 'none';
+        try {
+            const resp = await fetch('/api/connexion', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({
+                    identifiant: document.getElementById('client-identifiant').value.trim(),
+                    mot_de_passe: document.getElementById('client-password').value,
+                }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { erreurEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur de connexion.'; erreurEl.style.display = 'block'; return; }
+            verifierSessions();
+        } catch (err) { console.error(err); erreurEl.textContent = 'Erreur réseau.'; erreurEl.style.display = 'block'; }
+    });
+
+    document.getElementById('form-login-staff').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const erreurEl = document.getElementById('login-erreur');
+        erreurEl.style.display = 'none';
+        try {
+            const resp = await fetch('/api/staff/connexion', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({
+                    email: document.getElementById('staff-email').value.trim(),
+                    mot_de_passe: document.getElementById('staff-password').value,
+                }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { erreurEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur de connexion.'; erreurEl.style.display = 'block'; return; }
+            verifierSessions();
+        } catch (err) { console.error(err); erreurEl.textContent = 'Erreur réseau.'; erreurEl.style.display = 'block'; }
+    });
+
+    document.getElementById('form-login-partenaire').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const erreurEl = document.getElementById('login-erreur');
+        erreurEl.style.display = 'none';
+        try {
+            const resp = await fetch('/api/partenaire/connexion', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({
+                    email: document.getElementById('partenaire-email').value.trim(),
+                    mot_de_passe: document.getElementById('partenaire-password').value,
+                }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { erreurEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur de connexion.'; erreurEl.style.display = 'block'; return; }
+            verifierSessions();
+        } catch (err) { console.error(err); erreurEl.textContent = 'Erreur réseau.'; erreurEl.style.display = 'block'; }
+    });
+
+    async function deconnexionTout() {
+        try {
+            if (sessionClient) await fetch('/api/deconnexion', { method: 'POST', credentials: 'include' });
+            if (sessionStaff) await fetch('/api/staff/deconnexion', { method: 'POST', credentials: 'include' });
+            if (sessionPartenaire) await fetch('/api/partenaire/deconnexion', { method: 'POST', credentials: 'include' });
+        } catch (err) { console.error(err); }
+        sessionClient = null; sessionStaff = null; sessionPartenaire = null;
+        afficherLogin();
+    }
+
+    function evaluerBarresStaffBoiteMail() {
+        const val = document.getElementById('staff-boitemail-mdp').value;
+        const confirm = document.getElementById('staff-boitemail-confirm').value;
+        const barreForce = document.getElementById('barre-force-staffboitemail');
+        const barreCorresp = document.getElementById('barre-correspondance-staffboitemail');
+
+        let score = 0;
+        if (val.length >= 10) score++;
+        if (/[a-zA-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^a-zA-Z0-9]/.test(val)) score++;
+        barreForce.style.width = (val.length ? (score / 4) * 100 : 0) + '%';
+        barreForce.style.backgroundColor = score <= 1 ? '#f87171' : score === 2 ? '#fb923c' : score === 3 ? '#facc15' : '#10b981';
+
+        if (!confirm) { barreCorresp.style.width = '0%'; barreCorresp.style.backgroundColor = '#d1d5db'; return; }
+        let divergence = false;
+        for (let i = 0; i < confirm.length; i++) { if (confirm[i] !== val[i]) { divergence = true; break; } }
+        if (divergence) { barreCorresp.style.width = '100%'; barreCorresp.style.backgroundColor = '#ef4444'; return; }
+        const pct = val.length ? Math.min(100, (confirm.length / val.length) * 100) : 0;
+        barreCorresp.style.width = pct + '%';
+        barreCorresp.style.backgroundColor = pct >= 100 ? '#10b981' : '#60a5fa';
+    }
+
+    async function mettreAJourBoiteMailStaff() {
+        const motDePasse = document.getElementById('staff-boitemail-mdp').value;
+        const confirmation = document.getElementById('staff-boitemail-confirm').value;
+        const messageEl = document.getElementById('staff-boitemail-message');
+        if (!motDePasse) return;
+        if (motDePasse !== confirmation) {
+            messageEl.style.display = 'block'; messageEl.style.color = '#dc2626';
+            messageEl.textContent = 'La confirmation ne correspond pas.';
+            document.getElementById('staff-boitemail-mdp').value = '';
+            document.getElementById('staff-boitemail-confirm').value = '';
+            return;
+        }
+        messageEl.style.display = 'block'; messageEl.style.color = 'var(--gray)';
+        messageEl.textContent = 'Vérification…';
+        try {
+            const resp = await fetch('/api/staff/boite-mail', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ mot_de_passe: motDePasse }),
+            });
+            const data = await resp.json();
+            // Les champs se vident TOUJOURS après une tentative, échec ou
+            // succès — jamais laisser un mot de passe saisi rester affiché
+            // (bug relevé par Roger le 27/08/2026).
+            document.getElementById('staff-boitemail-mdp').value = '';
+            document.getElementById('staff-boitemail-confirm').value = '';
+            if (!data.succes) {
+                messageEl.style.color = '#dc2626';
+                messageEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                return;
+            }
+            messageEl.style.color = '#047857';
+            messageEl.textContent = 'Boîte mail configurée avec succès.';
+        } catch (err) {
+            console.error(err);
+            messageEl.style.color = '#dc2626';
+            messageEl.textContent = 'Erreur réseau.';
+            document.getElementById('staff-boitemail-mdp').value = '';
+            document.getElementById('staff-boitemail-confirm').value = '';
+        }
+    }
+
+    async function chargerSessionsActives() {
+        const conteneur = document.getElementById('sessions-actives-liste');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+
+        const requetes = [];
+        if (sessionClient) requetes.push({ type: 'client', url: '/api/mon-compte/sessions', del: (sid) => `/api/mon-compte/sessions/${sid}` });
+        if (sessionStaff) requetes.push({ type: 'staff', url: '/api/staff/mes-sessions', del: (sid) => `/api/staff/mes-sessions/${sid}` });
+        if (sessionPartenaire) requetes.push({ type: 'partenaire', url: '/api/partenaire/mes-sessions', del: (sid) => `/api/partenaire/mes-sessions/${sid}` });
+
+        if (requetes.length === 0) { conteneur.innerHTML = '<p class="vide">Aucune session active.</p>'; return; }
+
+        let html = '';
+        for (const req of requetes) {
+            try {
+                const resp = await fetch(req.url, { credentials: 'include' });
+                const data = await resp.json();
+                if (!data.succes || !data.sessions.length) continue;
+
+                const libelleType = req.type === 'client' ? 'Client' : req.type === 'staff' ? 'Personnel' : 'Partenaire';
+                html += `<p style="font-size:11px; font-weight:700; color:var(--purple); margin:10px 0 4px;">${libelleType}</p>`;
+                data.sessions.forEach((s) => {
+                    const expireStr = new Date(s.expire).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+                    html += `<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:11px;">
+                        <span>${s.est_courante ? '🟢 Session actuelle' : '⚪ Autre session'} — expire le ${expireStr}</span>
+                        ${s.est_courante ? '' : `<button onclick="revoquerSession('${req.type}', '${s.sid}', '${req.del(s.sid)}')" style="font-size:10px; padding:4px 8px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">Révoquer</button>`}
+                    </div>`;
+                });
+            } catch (err) { console.error(err); }
+        }
+        conteneur.innerHTML = html || '<p class="vide">Aucune session active.</p>';
+    }
+
+    async function revoquerSession(type, sid, urlSuppression) {
+        if (!window.confirm('Révoquer cette session ? Elle sera immédiatement déconnectée.')) return;
+        try {
+            await fetch(urlSuppression, { method: 'DELETE', credentials: 'include' });
+            chargerSessionsActives();
+        } catch (err) { console.error(err); }
+    }
+
+    async function chargerMonProfil() {
+        try {
+            const resp = await fetch('/api/mon-compte/profil', { credentials: 'include' });
+            if (resp.status !== 200) return;
+            const data = await resp.json();
+            if (!data.succes) return;
+            const p = data.profil;
+            document.getElementById('profil-nom').value = p.nom || '';
+            document.getElementById('profil-prenom').value = p.prenom || '';
+            document.getElementById('profil-date-naissance').value = p.date_naissance ? p.date_naissance.split('T')[0] : '';
+            document.getElementById('profil-adresse').value = p.adresse || '';
+        } catch (err) { console.error(err); }
+    }
+
+    async function chargerMonProfilStaff() {
+        try {
+            const resp = await fetch('/api/staff/mon-profil', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) return;
+            const p = data.profil;
+            document.getElementById('staff-role-libelle').textContent = sessionStaff.code_role || '';
+            document.getElementById('staff-email-affiche').textContent = p.email;
+            document.getElementById('staff-profil-nom-complet').value = p.nom_complet || '';
+            document.getElementById('staff-profil-telephone').value = p.telephone || '';
+            document.getElementById('staff-profil-date-naissance').value = p.date_naissance ? p.date_naissance.split('T')[0] : '';
+            document.getElementById('staff-profil-adresse').value = p.adresse || '';
+        } catch (err) { console.error(err); }
+    }
+
+    document.getElementById('form-mon-profil-staff').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+            const resp = await fetch('/api/staff/mon-profil', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({
+                    nom_complet: document.getElementById('staff-profil-nom-complet').value.trim(),
+                    telephone: document.getElementById('staff-profil-telephone').value.trim(),
+                    date_naissance: document.getElementById('staff-profil-date-naissance').value || null,
+                    adresse: document.getElementById('staff-profil-adresse').value.trim(),
+                }),
+            });
+            const data = await resp.json();
+            alert(data.succes ? 'Informations enregistrées.' : ((data.erreurs && data.erreurs[0]) || 'Erreur.'));
+        } catch (err) { console.error(err); }
+    });
+
+    document.getElementById('form-mon-profil').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+            const resp = await fetch('/api/mon-compte/profil', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({
+                    nom: document.getElementById('profil-nom').value.trim(),
+                    prenom: document.getElementById('profil-prenom').value.trim(),
+                    date_naissance: document.getElementById('profil-date-naissance').value || null,
+                    adresse: document.getElementById('profil-adresse').value.trim(),
+                }),
+            });
+            const data = await resp.json();
+            alert(data.succes ? 'Informations enregistrées.' : ((data.erreurs && data.erreurs[0]) || 'Erreur.'));
+        } catch (err) { console.error(err); }
+    });
+
+    function barreMdp(idInput, idBarre) {
+        const val = document.getElementById(idInput).value;
+        const barre = document.getElementById(idBarre);
+        let score = 0;
+        if (val.length >= 10) score++;
+        if (/[a-zA-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^a-zA-Z0-9]/.test(val)) score++;
+        const pct = val.length ? (score / 4) * 100 : 0;
+        barre.style.width = pct + '%';
+        barre.style.backgroundColor = score <= 1 ? '#f87171' : score === 2 ? '#fb923c' : score === 3 ? '#facc15' : '#10b981';
+    }
+    function barreCorrespondance(idNouveau, idConfirm, idBarre) {
+        const val = document.getElementById(idNouveau).value;
+        const confirm = document.getElementById(idConfirm).value;
+        const barre = document.getElementById(idBarre);
+        if (!confirm) { barre.style.width = '0%'; barre.style.backgroundColor = '#d1d5db'; return; }
+        let divergence = false;
+        for (let i = 0; i < confirm.length; i++) { if (confirm[i] !== val[i]) { divergence = true; break; } }
+        if (divergence) { barre.style.width = '100%'; barre.style.backgroundColor = '#ef4444'; return; }
+        const pct = val.length ? Math.min(100, (confirm.length / val.length) * 100) : 0;
+        barre.style.width = pct + '%';
+        barre.style.backgroundColor = pct >= 100 ? '#10b981' : '#60a5fa';
+    }
+
+    document.getElementById('mdp-client-nouveau').addEventListener('input', () => { barreMdp('mdp-client-nouveau', 'barre-force-client'); barreCorrespondance('mdp-client-nouveau', 'mdp-client-confirm', 'barre-correspondance-client'); });
+    document.getElementById('mdp-client-confirm').addEventListener('input', () => barreCorrespondance('mdp-client-nouveau', 'mdp-client-confirm', 'barre-correspondance-client'));
+    document.getElementById('mdp-staff-nouveau').addEventListener('input', () => { barreMdp('mdp-staff-nouveau', 'barre-force-staff'); barreCorrespondance('mdp-staff-nouveau', 'mdp-staff-confirm', 'barre-correspondance-staff'); });
+    document.getElementById('mdp-staff-confirm').addEventListener('input', () => barreCorrespondance('mdp-staff-nouveau', 'mdp-staff-confirm', 'barre-correspondance-staff'));
+
+    document.getElementById('form-changer-mdp-client').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const actuel = document.getElementById('mdp-client-actuel').value;
+        const nouveau = document.getElementById('mdp-client-nouveau').value;
+        const confirmation = document.getElementById('mdp-client-confirm').value;
+        if (nouveau !== confirmation) { alert('La confirmation ne correspond pas.'); this.reset(); return; }
+        try {
+            const resp = await fetch('/api/mon-compte/mot-de-passe', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ mot_de_passe_actuel: actuel, nouveau_mot_de_passe: nouveau, nouveau_mot_de_passe_confirmation: confirmation }),
+            });
+            const data = await resp.json();
+            alert(data.succes ? 'Mot de passe changé.' : ((data.erreurs && data.erreurs[0]) || 'Erreur.'));
+            // Toujours vidé, échec ou succès — jamais un mot de passe saisi
+            // ne doit rester affiché (bug relevé par Roger le 27/08/2026).
+            this.reset();
+        } catch (err) { console.error(err); this.reset(); }
+    });
+
+    document.getElementById('form-changer-mdp-staff').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const actuel = document.getElementById('mdp-staff-actuel').value;
+        const nouveau = document.getElementById('mdp-staff-nouveau').value;
+        const confirmation = document.getElementById('mdp-staff-confirm').value;
+        if (nouveau !== confirmation) { alert('La confirmation ne correspond pas.'); this.reset(); return; }
+        try {
+            const resp = await fetch('/api/staff/changer-mot-de-passe', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ mot_de_passe_actuel: actuel, nouveau_mot_de_passe: nouveau, nouveau_mot_de_passe_confirmation: confirmation }),
+            });
+            const data = await resp.json();
+            alert(data.succes ? 'Mot de passe changé.' : ((data.erreurs && data.erreurs[0]) || 'Erreur.'));
+            this.reset();
+        } catch (err) { console.error(err); this.reset(); }
+    });
+
+    async function exporterMesDonnees() {
+        try {
+            const resp = await fetch('/api/mon-compte/export', { credentials: 'include' });
+            const data = await resp.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'mes-donnees-mutuelleproassurances.json';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) { console.error(err); }
+    }
+
+    async function ouvrirFermetureCompte() {
+        if (!window.confirm("Fermer/suspendre définitivement votre compte Client ?\nVos données ne sont pas supprimées, seulement suspendues.")) return;
+        const mot_de_passe = window.prompt('Confirmez votre mot de passe :');
+        if (!mot_de_passe) return;
+        try {
+            const resp = await fetch('/api/mon-compte/fermer', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ mot_de_passe }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+            alert('Compte fermé.');
+            verifierSessions();
+        } catch (err) { console.error(err); }
+    }
+
+    async function chargerMesDemandes() {
+        const conteneur = document.getElementById('mes-demandes-liste');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/mes-tickets', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes || !data.tickets.length) { conteneur.innerHTML = '<p class="vide">Vous n\'avez encore aucune demande.</p>'; return; }
+            conteneur.innerHTML = data.tickets.map((t) => `
+                <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; background:white;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong style="font-size:13px;">${t.type_libelle_fr}</strong>
+                        <span class="badge badge-${t.code_statut_ticket}">${t.statut_libelle_fr}</span>
+                    </div>
+                    <p style="font-size:11px; color:var(--gray); margin:4px 0 0;">${t.code_ticket} — ${new Date(t.date_creation).toLocaleDateString('fr-FR')}</p>
+                </div>
+            `).join('');
+        } catch (err) { console.error(err); }
+    }
+
+    let typeMessagerieActuel = null;
+
+    async function chargerMessagerie(type) {
+        typeMessagerieActuel = type;
+        const conteneur = document.getElementById('messagerie-liste-conteneur');
+        document.getElementById('messagerie-liste-vue').style.display = 'block';
+        document.getElementById('messagerie-detail-vue').style.display = 'none';
+        conteneur.innerHTML = '<p class="vide">Chargement de la boîte mail…</p>';
+
+        const url = type === 'staff' ? '/api/staff/messagerie' : '/api/partenaire/messagerie';
+        try {
+            const resp = await fetch(url, { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                if (data.code === 'AUTH_ECHEC' && type === 'partenaire') {
+                    conteneur.innerHTML = `
+                        <div style="border:1px solid #fde68a; background:#fffbeb; border-radius:10px; padding:16px;">
+                            <p style="font-size:13px; font-weight:700; color:#b45309; margin:0 0 10px;">⚠️ Le mot de passe enregistré pour votre boîte mail ne fonctionne plus.</p>
+                            <p style="font-size:12px; color:#92400e; margin:0 0 12px;">Si vous l'avez changé récemment (via Outlook ou un autre client mail), mettez-le à jour ici :</p>
+                            <input type="password" id="boite-mail-nouveau-mdp" placeholder="Mot de passe actuel de votre boîte mail" oninput="evaluerBarresBoiteMail()" style="margin-bottom:6px;">
+                            <div style="height:4px; width:100%; background:#e5e7eb; border-radius:9999px; margin-bottom:8px; overflow:hidden;"><div id="barre-force-boitemail" style="height:100%; width:0%; background-color:#f87171; transition:width .2s, background-color .2s;"></div></div>
+                            <input type="password" id="boite-mail-confirm-mdp" placeholder="Confirmer le mot de passe" oninput="evaluerBarresBoiteMail()" style="margin-bottom:6px;">
+                            <div style="height:4px; width:100%; background:#e5e7eb; border-radius:9999px; margin-bottom:12px; overflow:hidden;"><div id="barre-correspondance-boitemail" style="height:100%; width:0%; background-color:#d1d5db; transition:width .2s, background-color .2s;"></div></div>
+                            <button onclick="mettreAJourMotDePasseBoiteMail()" class="principal" style="width:auto; padding:8px 16px;">Mettre à jour et réessayer</button>
+                            <p id="boite-mail-message" style="font-size:12px; margin-top:8px; display:none;"></p>
+                        </div>
+                    `;
+                    return;
+                }
+                conteneur.innerHTML = `<p class="vide">${(data.erreurs && data.erreurs[0]) || 'Erreur de chargement.'}</p>`;
+                return;
+            }
+            if (!data.messages.length) {
+                conteneur.innerHTML = '<p class="vide">Aucun message.</p>';
+                return;
+            }
+            let html = '<table><thead><tr><th style="width:24px;"></th><th>De</th><th>Objet</th><th>Date</th></tr></thead><tbody>';
+            data.messages.forEach((m) => {
+                const dateStr = m.date ? new Date(m.date).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                html += `<tr onclick="ouvrirMessage(${m.uid})" style="cursor:pointer; ${m.lu ? '' : 'font-weight:800;'}">
+                    <td>${m.lu ? '' : '🔵'}</td>
+                    <td>${echapperHtml(m.de)}</td>
+                    <td>${echapperHtml(m.sujet)}</td>
+                    <td style="white-space:nowrap; font-size:11px;">${dateStr}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            conteneur.innerHTML = html;
+        } catch (err) {
+            console.error(err);
+            conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>';
+        }
+    }
+
+    function evaluerBarresBoiteMail() {
+        const val = document.getElementById('boite-mail-nouveau-mdp').value;
+        const confirm = document.getElementById('boite-mail-confirm-mdp').value;
+        const barreForce = document.getElementById('barre-force-boitemail');
+        const barreCorresp = document.getElementById('barre-correspondance-boitemail');
+
+        let score = 0;
+        if (val.length >= 10) score++;
+        if (/[a-zA-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^a-zA-Z0-9]/.test(val)) score++;
+        const pctForce = val.length ? (score / 4) * 100 : 0;
+        barreForce.style.width = pctForce + '%';
+        barreForce.style.backgroundColor = score <= 1 ? '#f87171' : score === 2 ? '#fb923c' : score === 3 ? '#facc15' : '#10b981';
+
+        if (!confirm) { barreCorresp.style.width = '0%'; barreCorresp.style.backgroundColor = '#d1d5db'; return; }
+        let divergence = false;
+        for (let i = 0; i < confirm.length; i++) { if (confirm[i] !== val[i]) { divergence = true; break; } }
+        if (divergence) { barreCorresp.style.width = '100%'; barreCorresp.style.backgroundColor = '#ef4444'; return; }
+        const pctCorresp = val.length ? Math.min(100, (confirm.length / val.length) * 100) : 0;
+        barreCorresp.style.width = pctCorresp + '%';
+        barreCorresp.style.backgroundColor = pctCorresp >= 100 ? '#10b981' : '#60a5fa';
+    }
+
+    async function mettreAJourMotDePasseBoiteMail() {
+        const motDePasse = document.getElementById('boite-mail-nouveau-mdp').value;
+        const confirmation = document.getElementById('boite-mail-confirm-mdp').value;
+        const messageEl = document.getElementById('boite-mail-message');
+        if (!motDePasse) return;
+        if (motDePasse !== confirmation) {
+            messageEl.style.display = 'block';
+            messageEl.style.color = '#dc2626';
+            messageEl.textContent = 'La confirmation ne correspond pas.';
+            document.getElementById('boite-mail-nouveau-mdp').value = '';
+            document.getElementById('boite-mail-confirm-mdp').value = '';
+            return;
+        }
+
+        messageEl.style.display = 'block';
+        messageEl.style.color = 'var(--gray)';
+        messageEl.textContent = 'Vérification…';
+
+        try {
+            const resp = await fetch('/api/partenaire/boite-mail', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ mot_de_passe: motDePasse }),
+            });
+            const data = await resp.json();
+            document.getElementById('boite-mail-nouveau-mdp').value = '';
+            document.getElementById('boite-mail-confirm-mdp').value = '';
+            if (!data.succes) {
+                messageEl.style.color = '#dc2626';
+                messageEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                return;
+            }
+            messageEl.style.color = '#047857';
+            messageEl.textContent = 'Mot de passe mis à jour — chargement de vos messages…';
+            setTimeout(() => chargerMessagerie('partenaire'), 800);
+        } catch (err) {
+            console.error(err);
+            messageEl.style.color = '#dc2626';
+            messageEl.textContent = 'Erreur réseau.';
+        }
+    }
+
+    async function ouvrirMessage(uid) {
+        const conteneur = document.getElementById('messagerie-detail-conteneur');
+        document.getElementById('messagerie-liste-vue').style.display = 'none';
+        document.getElementById('messagerie-detail-vue').style.display = 'block';
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+
+        const url = typeMessagerieActuel === 'staff' ? `/api/staff/messagerie/${uid}` : `/api/partenaire/messagerie/${uid}`;
+        try {
+            const resp = await fetch(url, { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                conteneur.innerHTML = `<p class="vide">${(data.erreurs && data.erreurs[0]) || 'Erreur de chargement.'}</p>`;
+                return;
+            }
+            const m = data.message;
+            const dateStr = m.date ? new Date(m.date).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }) : '';
+            conteneur.innerHTML = `
+                <h3 style="margin:0 0 10px; font-size:15px; color:var(--navy);">${echapperHtml(m.sujet)}</h3>
+                <p style="font-size:12px; color:var(--gray); margin:0 0 4px;"><strong>De :</strong> ${echapperHtml(m.de)}</p>
+                <p style="font-size:12px; color:var(--gray); margin:0 0 16px;"><strong>Date :</strong> ${dateStr}</p>
+                <div style="border-top:1px solid var(--border); padding-top:16px; font-size:13px; line-height:1.6;">
+                    ${m.html ? m.html : `<pre style="white-space:pre-wrap; font-family:inherit;">${m.texte}</pre>`}
+                </div>
+            `;
+        } catch (err) {
+            console.error(err);
+            conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>';
+        }
+    }
+
+    function fermerDetailMessage() {
+        document.getElementById('messagerie-liste-vue').style.display = 'block';
+        document.getElementById('messagerie-detail-vue').style.display = 'none';
+    }
+
+    async function chargerAgents() {
+        try {
+            const resp = await fetch('/api/staff/agents', { credentials: 'include' });
+            const data = await resp.json();
+            if (data.succes) listeAgents = data.agents;
+        } catch (err) { console.error(err); }
+    }
+
+    const ROLES_ECRITURE = ['gestionnaire', 'administrateur'];
+
+    let ticketsStaffCourants = [];
+    let triColonneTickets = 'date_creation';
+    let triDescendantTickets = true;
+
+    async function chargerTicketsStaff() {
+        const conteneur = document.getElementById('tickets-staff-conteneur');
+        const statut = document.getElementById('filtre-statut').value;
+        const type = document.getElementById('filtre-type').value;
+        const params = new URLSearchParams();
+        if (statut) params.set('statut', statut);
+        if (type) params.set('type', type);
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch(`/api/staff/tickets?${params.toString()}`, { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { conteneur.innerHTML = '<p class="vide">Erreur de chargement.</p>'; return; }
+            ticketsStaffCourants = data.tickets;
+            afficherTableauTickets();
+        } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
+    }
+
+    function trierColonneTickets(colonne) {
+        if (triColonneTickets === colonne) { triDescendantTickets = !triDescendantTickets; }
+        else { triColonneTickets = colonne; triDescendantTickets = true; }
+        afficherTableauTickets();
+    }
+
+    function libelleGroupeDateTicket(dateStr) {
+        const date = new Date(dateStr);
+        const joursEcoules = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
+        if (joursEcoules < 7) return 'Cette semaine';
+        if (joursEcoules < 30) return 'Ce mois-ci';
+        return 'Plus ancien';
+    }
+
+    function afficherTableauTickets() {
+        const conteneur = document.getElementById('tickets-staff-conteneur');
+        if (!ticketsStaffCourants.length) { conteneur.innerHTML = '<p class="vide">Aucun ticket.</p>'; return; }
+
+        const recherche = (document.getElementById('recherche-tickets').value || '').toLowerCase();
+        let tickets = ticketsStaffCourants.filter((t) =>
+            !recherche ||
+            t.code_ticket.toLowerCase().includes(recherche) ||
+            t.email_contact.toLowerCase().includes(recherche) ||
+            t.telephone_contact.toLowerCase().includes(recherche) ||
+            t.type_libelle_fr.toLowerCase().includes(recherche) ||
+            (t.staff_assigne_nom || '').toLowerCase().includes(recherche)
+        );
+
+        if (!tickets.length) { conteneur.innerHTML = '<p class="vide">Aucun résultat pour cette recherche.</p>'; return; }
+
+        tickets = [...tickets].sort((a, b) => {
+            const valA = a[triColonneTickets], valB = b[triColonneTickets];
+            const comparaison = valA < valB ? -1 : valA > valB ? 1 : 0;
+            return triDescendantTickets ? -comparaison : comparaison;
+        });
+
+        const peutEcrire = sessionStaff && ROLES_ECRITURE.includes(sessionStaff.code_role);
+        const optionsStatut = [{ code: 'recu', libelle: 'Reçu' }, { code: 'en_cours', libelle: 'En cours' }, { code: 'resolu', libelle: 'Résolu' }];
+        const fleche = (colonne) => triColonneTickets === colonne ? `<span class="fleche-tri">${triDescendantTickets ? '▼' : '▲'}</span>` : '';
+
+        let html = `<table><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr>
+            <th class="th-triable" onclick="trierColonneTickets('code_ticket')">Référence${fleche('code_ticket')}</th>
+            <th class="th-triable" onclick="trierColonneTickets('type_libelle_fr')">Type${fleche('type_libelle_fr')}</th>
+            <th>Statut</th>
+            <th class="th-triable" onclick="trierColonneTickets('email_contact')">Email${fleche('email_contact')}</th>
+            <th class="th-triable" onclick="trierColonneTickets('telephone_contact')">Téléphone${fleche('telephone_contact')}</th>
+            <th>Assigné à</th>
+            <th class="th-triable" onclick="trierColonneTickets('date_creation')">Créé le${fleche('date_creation')}</th>
+        </tr></thead><tbody>`;
+
+        let dernierGroupe = null;
+        tickets.forEach((t) => {
+            if (triColonneTickets === 'date_creation') {
+                const groupe = libelleGroupeDateTicket(t.date_creation);
+                if (groupe !== dernierGroupe) {
+                    html += `<tr class="ligne-groupe"><td colspan="7">${groupe}</td></tr>`;
+                    dernierGroupe = groupe;
+                }
+            }
+            const dateStr = new Date(t.date_creation).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const celluleStatut = peutEcrire
+                ? `<select class="action" onchange="changerStatutTicket(${t.id_ticket}, this.value)">${optionsStatut.map(o => `<option value="${o.code}" ${o.code === t.code_statut_ticket ? 'selected' : ''}>${o.libelle}</option>`).join('')}</select>`
+                : `<span class="badge badge-${t.code_statut_ticket}">${t.statut_libelle_fr}</span>`;
+            const celluleAssignation = peutEcrire
+                ? `<select class="action" onchange="changerAssignationTicket(${t.id_ticket}, this.value)"><option value="">Non assigné</option>${listeAgents.map(a => `<option value="${a.id_staff}" ${a.id_staff === t.id_staff_assigne ? 'selected' : ''}>${a.nom_complet}</option>`).join('')}</select>`
+                : (t.staff_assigne_nom || '—');
+            html += `<tr><td><strong>${t.code_ticket}</strong></td><td>${t.type_libelle_fr}</td><td>${celluleStatut}</td><td>${t.email_contact}</td><td>${t.telephone_contact}</td><td>${celluleAssignation}</td><td>${dateStr}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        conteneur.innerHTML = html;
+    }
+
+    async function changerStatutTicket(idTicket, codeStatut) {
+        try {
+            const resp = await fetch(`/api/staff/tickets/${idTicket}/statut`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ code_statut_ticket: codeStatut }),
+            });
+            const data = await resp.json();
+            if (!data.succes) alert((data.erreurs && data.erreurs[0]) || 'Erreur.');
+            chargerTicketsStaff();
+        } catch (err) { console.error(err); }
+    }
+
+    async function changerAssignationTicket(idTicket, idStaffStr) {
+        const id_staff = idStaffStr === '' ? null : parseInt(idStaffStr, 10);
+        try {
+            const resp = await fetch(`/api/staff/tickets/${idTicket}/assignation`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ id_staff }),
+            });
+            const data = await resp.json();
+            if (!data.succes) alert((data.erreurs && data.erreurs[0]) || 'Erreur.');
+            chargerTicketsStaff();
+        } catch (err) { console.error(err); }
+    }
+
+    async function promouvoirProspectEnClient(idProspect, nom) {
+        if (!window.confirm(`Créer un compte Client pour « ${nom} » ? Un email d'activation sera envoyé à son adresse.`)) return;
+        try {
+            const resp = await fetch(`/api/staff/prospects/${idProspect}/promouvoir-client`, { method: 'POST', credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+            if (data.compte_reutilise) {
+                alert('Un compte Client existait déjà sur cette adresse — le prospect y a été lié (aucun email envoyé).');
+            } else {
+                alert('Compte Client créé — email d\'activation envoyé.');
+            }
+            chargerProspects();
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+        }
+    }
+
+    async function chargerProspects() {
+        const conteneur = document.getElementById('prospects-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/prospects', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes || !data.prospects.length) { conteneur.innerHTML = '<p class="vide">Aucun prospect pour le moment.</p>'; return; }
+
+            const optionsStatut = [{ code: 'nouveau', libelle: 'Nouveau' }, { code: 'qualifie', libelle: 'Qualifié' }, { code: 'propose', libelle: 'Proposé' }, { code: 'gagne', libelle: 'Gagné' }, { code: 'perdu', libelle: 'Perdu' }];
+
+            let html = '<table><thead><tr><th>Nom</th><th>Type</th><th>Branche</th><th>Statut</th><th>Assigné à</th><th>Mis à jour</th><th>Action</th></tr></thead><tbody>';
+            data.prospects.forEach((p) => {
+                const dateStr = new Date(p.date_maj).toLocaleDateString('fr-FR');
+                html += `<tr><td><strong>${p.nom_complet || p.email || '—'}</strong></td>
+                    <td style="font-size:11px; color:var(--gray);">H01 — Prospect</td>
+                    <td>${p.branche_interet || '—'}</td>
+                    <td><select class="action" onchange="changerStatutProspect(${p.id_prospect}, this.value)">${optionsStatut.map(o => `<option value="${o.code}" ${o.code === p.statut_opportunite ? 'selected' : ''}>${o.libelle}</option>`).join('')}</select></td>
+                    <td>${p.staff_assigne_nom || '—'}</td><td>${dateStr}</td>
+                    <td><button onclick="promouvoirProspectEnClient(${p.id_prospect}, ${JSON.stringify(p.nom_complet || p.email || '')})" title="Créer le compte Client à partir de ce prospect" style="font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; white-space:nowrap;">→ Promouvoir en Client</button></td>
+                    </tr>`;
+            });
+            html += '</tbody></table>';
+            conteneur.innerHTML = html;
+        } catch (err) { console.error(err); }
+    }
+
+    async function changerStatutProspect(idProspect, statut) {
+        try {
+            await fetch(`/api/staff/prospects/${idProspect}/statut`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ statut_opportunite: statut }),
+            });
+            chargerProspects();
+        } catch (err) { console.error(err); }
+    }
+
+    function telechargerModeleCsv() {
+        const contenu = [
+            'nom_complet,email,email_notification,telephone,codes_types,contacts',
+            'ALPHA ACCESS SARL,contact@alphaaccess.cm,roger.perso@gmail.com,+237697717334,E03-E04,{Nkamegni Noupeu;Roger;CEO;+237697717334}*',
+        ].join('\r\n');
+        const blob = new Blob([contenu], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'modele_import_partenaires.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    async function importerPartenairesCsv() {
+        const fichierInput = document.getElementById('cp-import-fichier');
+        const resultatEl = document.getElementById('cp-import-resultat');
+        if (!fichierInput.files || fichierInput.files.length === 0) {
+            alert('Sélectionnez un fichier CSV.');
+            return;
+        }
+
+        const contenu_csv = await fichierInput.files[0].text();
+
+        try {
+            const resp = await fetch('/api/staff/partenaires/import', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ contenu_csv }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                resultatEl.innerHTML = `<p style="color:#dc2626;">${(data.erreurs && data.erreurs[0]) || 'Erreur.'}</p>`;
+                resultatEl.style.display = 'block';
+                return;
+            }
+
+            let html = `<p style="color:#047857; font-weight:700;">${data.crees.length} compte(s) créé(s) — email d'activation envoyé à chacun.</p>`;
+            if (data.erreurs.length > 0) {
+                html += `<p style="color:#dc2626; font-weight:700; margin-top:10px;">${data.erreurs.length} ligne(s) en erreur :</p>`;
+                html += '<ul style="color:#dc2626; margin:4px 0; padding-left:18px;">';
+                data.erreurs.forEach((e) => { html += `<li>${e}</li>`; });
+                html += '</ul>';
+            }
+            resultatEl.innerHTML = html;
+            resultatEl.style.display = 'block';
+            fichierInput.value = '';
+            chargerListePartenaires();
+        } catch (err) {
+            console.error(err);
+            resultatEl.innerHTML = '<p style="color:#dc2626;">Erreur réseau.</p>';
+            resultatEl.style.display = 'block';
+        }
+    }
+
+    // ---------------- Clients (Administration) ----------------
+
+    async function verifierEmailPersonnel() {
+        const zone = document.getElementById('pers-email-verif');
+        const idEdition = document.getElementById('pers-id-edition').value;
+        if (idEdition) { zone.style.display = 'none'; return; }
+
+        const email = document.getElementById('pers-email').value.trim();
+        if (!email) { zone.style.display = 'none'; return; }
+
+        zone.textContent = 'Vérification…';
+        zone.style.cssText = 'font-size:11px; margin:2px 0 12px; display:block; color:var(--gray);';
+
+        try {
+            const resp = await fetch(`/api/staff/personnel/verifier-email?email=${encodeURIComponent(email)}`, { credentials: 'include' });
+            if (resp.status === 401) {
+                zone.textContent = '⚠️ Session expirée — reconnectez-vous avant de continuer.';
+                zone.style.color = '#dc2626';
+                return;
+            }
+            if (!resp.ok) {
+                zone.textContent = `⚠️ Vérification indisponible (erreur ${resp.status}).`;
+                zone.style.color = '#dc2626';
+                return;
+            }
+            const data = await resp.json();
+            if (!data.succes) {
+                zone.textContent = `⚠️ ${(data.erreurs && data.erreurs[0]) || 'Vérification indisponible.'}`;
+                zone.style.color = '#dc2626';
+                return;
+            }
+            if (data.comptes.length === 0) {
+                zone.textContent = '✅ Aucun compte existant sur cette adresse.';
+                zone.style.color = '#047857';
+                return;
+            }
+            // site.staff.email est unique sans exception (pas de règle
+            // "plusieurs suspendus" comme pour les partenaires) — donc
+            // toute correspondance ici est bloquante.
+            zone.textContent = `⚠️ Un compte existe déjà sur cette adresse : ${data.comptes[0].nom_complet} (${data.comptes[0].statut_compte}).`;
+            zone.style.color = '#dc2626';
+        } catch (err) {
+            console.error(err);
+            zone.textContent = '⚠️ Erreur réseau lors de la vérification.';
+            zone.style.color = '#dc2626';
+        }
+    }
+
+    function carteKpi(titre, valeur, couleur) {
+        return `<div style="background:white; border:1px solid var(--border); border-left:4px solid ${couleur}; border-radius:10px; padding:16px;">
+            <p style="font-size:11px; color:var(--gray); text-transform:uppercase; font-weight:700; margin:0 0 6px;">${titre}</p>
+            <p style="font-size:28px; font-weight:800; color:var(--navy); margin:0;">${valeur}</p>
+        </div>`;
+    }
+
+    async function chargerKpis() {
+        const conteneur = document.getElementById('pilotage-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/kpis', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { conteneur.innerHTML = '<p class="vide">Erreur de chargement.</p>'; return; }
+
+            let html = '';
+            html += carteKpi('Clients actifs', data.clients_actifs, '#7c3aed');
+            html += carteKpi('Partenaires actifs', data.partenaires_actifs, '#7c3aed');
+            html += carteKpi('Tickets non assignés', data.tickets_non_assignes, data.tickets_non_assignes > 0 ? '#dc2626' : '#047857');
+            data.tickets_par_statut.forEach((s) => {
+                html += carteKpi(`Tickets — ${s.libelle_fr}`, s.total, '#0f172a');
+            });
+            data.tickets_par_type.forEach((t) => {
+                html += carteKpi(`Type — ${t.libelle_fr}`, t.total, '#94a3b8');
+            });
+            conteneur.innerHTML = html;
+        } catch (err) {
+            console.error(err);
+            conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>';
+        }
+    }
+
+    async function chargerListeClients() {
+        const conteneur = document.getElementById('clients-liste-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/clients', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes || !data.clients.length) { conteneur.innerHTML = '<p class="vide">Aucun client enregistré.</p>'; return; }
+
+            let html = `
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                    <button onclick="actionGroupeeClients('suspendu')" title="Bloque l'accès du/des client(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⏸️ Suspendre</button>
+                    <button onclick="actionGroupeeClients('actif')" title="Rétablit l'accès du/des client(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">▶️ Réactiver</button>
+                </div>
+                <table><thead><tr><th style="width:24px;"><input type="checkbox" onchange="document.querySelectorAll('.client-select').forEach(c=>c.checked=this.checked)"></th><th>Nom</th><th>Email</th><th>Téléphone</th><th>Type</th><th>Statut</th><th>Inscrit le</th></tr></thead><tbody>`;
+            data.clients.forEach((c) => {
+                const nomAffiche = [c.prenom, c.nom].filter(Boolean).join(' ') || '—';
+                const statutBadge = c.statut_compte === 'actif' ? '<span class="badge badge-resolu">Actif</span>' : '<span class="badge badge-perdu">Suspendu</span>';
+                const dateStr = new Date(c.date_creation).toLocaleDateString('fr-FR');
+                html += `<tr>
+                    <td><input type="checkbox" class="client-select" value="${c.id_utilisateur}"></td>
+                    <td>${nomAffiche}</td>
+                    <td>${c.email}</td>
+                    <td>${c.telephone || '—'}</td>
+                    <td style="font-size:11px; color:var(--gray);">H02 — Client</td>
+                    <td>${statutBadge}</td>
+                    <td style="font-size:11px;">${dateStr}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            conteneur.innerHTML = html;
+        } catch (err) { console.error(err); }
+    }
+
+    async function actionGroupeeClients(nouveauStatut) {
+        const coches = Array.from(document.querySelectorAll('.client-select:checked'));
+        if (coches.length === 0) { alert('Sélectionnez au moins un client.'); return; }
+        for (const c of coches) {
+            await fetch(`/api/staff/clients/${c.value}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ statut_compte: nouveauStatut }),
+            });
+        }
+        chargerListeClients();
+    }
+
+    // ---------------- Personnel (Administration) ----------------
+
+    let rolesPersonnelCache = [];
+
+    async function chargerRolesPersonnel() {
+        try {
+            const resp = await fetch('/api/staff/roles', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) return;
+            rolesPersonnelCache = data.roles;
+            const select = document.getElementById('pers-role');
+            select.innerHTML = data.roles.map((r) => `<option value="${r.id_role}">${r.libelle_fr}</option>`).join('');
+        } catch (err) { console.error(err); }
+    }
+
+    async function chargerListePersonnel() {
+        await chargerRolesPersonnel();
+        const conteneur = document.getElementById('personnel-liste-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/personnel', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes || !data.personnel.length) { conteneur.innerHTML = '<p class="vide">Aucun compte Personnel.</p>'; return; }
+
+            let html = `
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                    <button onclick="annulerEditionPersonnel(); document.getElementById('pers-form-titre').scrollIntoView({behavior:'smooth'});" title="Créer un nouveau compte Personnel" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">➕ Nouveau</button>
+                    <button onclick="dupliquerPersonnelSelectionne()" title="Créer un nouveau compte en reprenant les informations de celui sélectionné" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">📋 Dupliquer</button>
+                    <button onclick="actionGroupeePersonnel('suspendu')" title="Bloque l'accès du/des compte(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⏸️ Suspendre</button>
+                    <button onclick="actionGroupeePersonnel('actif')" title="Rétablit l'accès du/des compte(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">▶️ Réactiver</button>
+                    <button onclick="actionGroupeePersonnel('supprimer')" title="Supprime le(s) compte(s) sélectionné(s) — les comptes protégés sont automatiquement ignorés" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
+                </div>
+                <table><thead><tr><th style="width:24px;"><input type="checkbox" onchange="document.querySelectorAll('.pers-select').forEach(c=>c.checked=this.checked)"></th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th style="width:50px;">Modifier</th></tr></thead><tbody>`;
+            data.personnel.forEach((p) => {
+                let statutBadge;
+                if (p.statut_compte !== 'actif') statutBadge = '<span class="badge badge-perdu">Suspendu</span>';
+                else if (!p.mot_de_passe_defini) statutBadge = '<span class="badge badge-qualifie">En attente d\'activation</span>';
+                else statutBadge = '<span class="badge badge-resolu">Actif</span>';
+
+                const protectionBadge = p.est_compte_racine ? ' 🔒' : (p.suppression_reservee_racine ? ' 🔐' : '');
+
+                html += `<tr>
+                    <td><input type="checkbox" class="pers-select" value="${p.id_staff}"
+                        data-nom="${(p.nom_complet || '').replace(/"/g, '&quot;')}" data-telephone="${(p.telephone || '').replace(/"/g, '&quot;')}"
+                        data-racine="${p.est_compte_racine ? '1' : '0'}" data-protege="${p.suppression_reservee_racine ? '1' : '0'}"></td>
+                    <td><strong>${p.nom_complet}</strong>${protectionBadge}</td>
+                    <td>${p.email}</td>
+                    <td>${p.role_libelle_fr}</td>
+                    <td>${statutBadge}</td>
+                    <td style="text-align:center;">
+                        <button onclick='ouvrirEditionPersonnel(${p.id_staff}, ${JSON.stringify(p.nom_complet)}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            conteneur.innerHTML = html + '<p style="font-size:10px; color:var(--gray); margin-top:8px;">🔒 Compte racine (jamais supprimable) — 🔐 Suppression réservée au compte racine</p>';
+        } catch (err) { console.error(err); }
+    }
+
+    async function actionGroupeePersonnel(action) {
+        const coches = Array.from(document.querySelectorAll('.pers-select:checked'));
+        if (coches.length === 0) { alert('Sélectionnez au moins un compte.'); return; }
+
+        if (action === 'supprimer') {
+            const proteges = coches.filter((c) => c.dataset.racine === '1');
+            const aTraiter = coches.filter((c) => c.dataset.racine !== '1');
+            if (aTraiter.length === 0) { alert('Le(s) compte(s) sélectionné(s) sont protégés — suppression impossible.'); return; }
+            if (!window.confirm(`Supprimer ${aTraiter.length} compte(s) ?` + (proteges.length ? ` (${proteges.length} compte(s) protégé(s) seront ignorés)` : ''))) return;
+            for (const c of aTraiter) {
+                await fetch(`/api/staff/personnel/${c.value}`, { method: 'DELETE', credentials: 'include' });
+            }
+        } else {
+            for (const c of coches) {
+                await fetch(`/api/staff/personnel/${c.value}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ statut_compte: action }),
+                });
+            }
+        }
+        chargerListePersonnel();
+    }
+
+    function dupliquerPersonnelSelectionne() {
+        const coches = document.querySelectorAll('.pers-select:checked');
+        if (coches.length !== 1) { alert('Cochez exactement un compte à dupliquer.'); return; }
+        const el = coches[0];
+        annulerEditionPersonnel();
+        document.getElementById('pers-nom-complet').value = el.dataset.nom + ' (copie)';
+        document.getElementById('pers-telephone').value = el.dataset.telephone;
+        document.getElementById('pers-form-titre').textContent = 'Créer un nouveau compte Personnel (dupliqué)';
+        document.getElementById('pers-form-titre').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function ouvrirEditionPersonnel(id, nomComplet, email, telephone) {
+        document.getElementById('pers-id-edition').value = id;
+        document.getElementById('pers-form-titre').textContent = `Modifier : ${nomComplet}`;
+        document.getElementById('pers-nom-complet').value = nomComplet;
+        document.getElementById('pers-email').value = email;
+        document.getElementById('pers-email').disabled = true;
+        document.getElementById('pers-telephone').value = telephone;
+        document.getElementById('pers-email-validation-bloc').style.display = 'none';
+        document.querySelector('#form-personnel button[type="submit"]').textContent = 'Enregistrer les modifications';
+        document.getElementById('pers-annuler-btn').style.display = 'block';
+        document.getElementById('pers-resultat').style.display = 'none';
+        window.scrollTo({ top: document.getElementById('form-personnel').offsetTop, behavior: 'smooth' });
+    }
+
+    function annulerEditionPersonnel() {
+        document.getElementById('pers-id-edition').value = '';
+        document.getElementById('pers-form-titre').textContent = 'Créer un nouveau compte Personnel';
+        document.getElementById('pers-email').disabled = false;
+        document.getElementById('pers-email-validation-bloc').style.display = 'block';
+        document.querySelector('#form-personnel button[type="submit"]').textContent = 'Créer le compte';
+        document.getElementById('pers-annuler-btn').style.display = 'none';
+        document.getElementById('form-personnel').reset();
+    }
+
+    async function supprimerPersonnel(id, nomComplet) {
+        if (!window.confirm(`Supprimer définitivement le compte « ${nomComplet} » ?`)) return;
+        try {
+            const resp = await fetch(`/api/staff/personnel/${id}`, { method: 'DELETE', credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+            chargerListePersonnel();
+        } catch (err) { console.error(err); }
+    }
+
+    document.getElementById('form-personnel').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const idEdition = document.getElementById('pers-id-edition').value;
+        const emailValidation = document.getElementById('pers-email-validation').value.trim();
+
+        if (!idEdition && emailValidation && !emailEstVraisemblable(emailValidation)) {
+            alert('L\'adresse de validation ne semble pas valide.');
+            return;
+        }
+
+        const corps = {
+            nom_complet: document.getElementById('pers-nom-complet').value.trim(),
+            telephone: document.getElementById('pers-telephone').value.trim(),
+            id_role: parseInt(document.getElementById('pers-role').value, 10),
+        };
+
+        try {
+            let resp;
+            if (idEdition) {
+                resp = await fetch(`/api/staff/personnel/${idEdition}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify(corps),
+                });
+            } else {
+                corps.email = document.getElementById('pers-email').value.trim();
+                corps.email_validation = emailValidation;
+                corps.creer_boite_mail = document.getElementById('pers-creer-boite-mail').checked;
+                resp = await fetch('/api/staff/personnel', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify(corps),
+                });
+            }
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+
+            if (idEdition) {
+                alert('Compte modifié avec succès.');
+                annulerEditionPersonnel();
+            } else {
+                let texte = emailValidation
+                    ? `Compte créé — email d'activation envoyé à : ${emailValidation}`
+                    : `Compte créé — ⚠️ aucune adresse de validation renseignée, le lien d'activation n'a pas pu être envoyé.`;
+                if (data.boite_mail) {
+                    texte += data.boite_mail.succes
+                        ? ' — boîte mail professionnelle créée avec succès.'
+                        : ` — ⚠️ échec de la création de la boîte mail (${data.boite_mail.erreur}).`;
+                }
+                document.getElementById('pers-resultat-texte').textContent = texte;
+                document.getElementById('pers-resultat').style.display = 'block';
+                this.reset();
+            }
+            chargerListePersonnel();
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+        }
+    });
+
+    async function chargerListePartenaires() {
+        const conteneur = document.getElementById('cp-liste-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/partenaires', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes || !data.partenaires.length) { conteneur.innerHTML = '<p class="vide">Aucun partenaire enregistré.</p>'; return; }
+
+            let html = `
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                    <button onclick="annulerEditionPartenaire(); document.getElementById('cp-form-titre').scrollIntoView({behavior:'smooth'});" title="Créer un nouveau partenaire" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">➕ Nouveau</button>
+                    <button onclick="dupliquerPartenaireSelectionne()" title="Créer un nouveau partenaire en reprenant les informations de celui sélectionné" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">📋 Dupliquer</button>
+                    <button onclick="actionGroupeePartenaires('suspendu')" title="Bloque l'accès du/des partenaire(s) sélectionné(s) — ils ne pourront plus se connecter tant qu'ils ne sont pas réactivés" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⏸️ Suspendre</button>
+                    <button onclick="actionGroupeePartenaires('actif')" title="Rétablit l'accès du/des partenaire(s) sélectionné(s), leur permettant à nouveau de se connecter" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">▶️ Réactiver</button>
+                    <button onclick="actionGroupeePartenaires('supprimer')" title="Supprime définitivement le(s) partenaire(s) sélectionné(s) — action irréversible" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
+                    <button id="btn-renvoyer-activation" onclick="renvoyerActivationGroupee()" disabled title="Sélectionnez uniquement des comptes « En attente d'activation »" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;">✉️ Renvoyer le lien d'activation</button>
+                </div>
+                <table><colgroup>
+                    <col style="width:24px;"><col><col><col style="width:35%;"><col><col style="width:50px;">
+                </colgroup>
+                <thead><tr><th><input type="checkbox" onchange="document.querySelectorAll('.cp-select-partenaire').forEach(c=>c.checked=this.checked); mettreAJourBoutonRenvoi();"></th><th>Nom</th><th>Email</th><th>Type Partenariat</th><th>Statut</th><th>Modifier</th></tr></thead><tbody>`;
+
+            data.partenaires.forEach((p) => {
+                let statutBadge;
+                if (p.statut_compte !== 'actif') statutBadge = '<span class="badge badge-perdu">Suspendu</span>';
+                else if (!p.mot_de_passe_defini) statutBadge = '<span class="badge badge-qualifie">En attente d\'activation</span>';
+                else statutBadge = '<span class="badge badge-resolu">Actif</span>';
+
+                const idsTypesJson = JSON.stringify(p.id_types_partenaire).replace(/"/g, '&quot;');
+                const contactsJson = JSON.stringify(p.contacts).replace(/"/g, '&quot;');
+                html += `<tr>
+                    <td><input type="checkbox" class="cp-select-partenaire" value="${p.id_partenaire}"
+                        data-en-attente="${!p.mot_de_passe_defini && p.statut_compte === 'actif' ? '1' : '0'}"
+                        onchange="mettreAJourBoutonRenvoi()"
+                        data-nom="${(p.nom_complet || '').replace(/"/g, '&quot;')}" data-email="${(p.email || '').replace(/"/g, '&quot;')}"
+                        data-email-notification="${(p.email_notification || '').replace(/"/g, '&quot;')}"
+                        data-telephone="${(p.telephone || '').replace(/"/g, '&quot;')}" data-types="${idsTypesJson}" data-contacts="${contactsJson}"></td>
+                    <td><strong>${p.nom_complet}</strong></td>
+                    <td>${p.email}</td>
+                    <td style="font-size:11px;">${p.types_libelles || '—'}</td>
+                    <td>${statutBadge}</td>
+                    <td style="text-align:center;">
+                        <button onclick='ouvrirEditionPartenaire(${p.id_partenaire}, ${JSON.stringify(p.nom_complet)}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")}, ${idsTypesJson}, ${contactsJson}, ${JSON.stringify(p.email_notification || "")})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            conteneur.innerHTML = html;
+        } catch (err) { console.error(err); }
+    }
+
+    function mettreAJourBoutonRenvoi() {
+        const bouton = document.getElementById('btn-renvoyer-activation');
+        const coches = Array.from(document.querySelectorAll('.cp-select-partenaire:checked'));
+
+        if (coches.length === 0) {
+            bouton.disabled = true;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;';
+            bouton.title = "Sélectionnez uniquement des comptes « En attente d'activation »";
+            return;
+        }
+
+        const tousEnAttente = coches.every((c) => c.dataset.enAttente === '1');
+        const auMoinsUnEnAttente = coches.some((c) => c.dataset.enAttente === '1');
+
+        if (tousEnAttente) {
+            bouton.disabled = false;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid #fde68a; border-radius:6px; background:#fffbeb; color:#b45309; cursor:pointer; font-weight:700;';
+            bouton.title = "Renvoyer le lien d'activation aux comptes sélectionnés";
+        } else if (auMoinsUnEnAttente) {
+            // Sélection mixte — mis en évidence mais volontairement NON
+            // cliquable, comme demandé (surbrillance sans activation).
+            bouton.disabled = true;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid #fde68a; border-radius:6px; background:#fffbeb; color:#b45309; cursor:not-allowed;';
+            bouton.title = "Certains comptes sélectionnés ne sont pas « En attente d'activation » — affinez la sélection";
+        } else {
+            bouton.disabled = true;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;';
+            bouton.title = "Aucun compte sélectionné n'est en attente d'activation";
+        }
+    }
+
+    async function renvoyerActivationGroupee() {
+        const coches = Array.from(document.querySelectorAll('.cp-select-partenaire:checked'));
+        if (coches.length === 0) return;
+
+        const lignesConfirmation = coches.map((c) => {
+            const adresse = c.dataset.emailNotification;
+            return adresse ? `• ${c.dataset.nom} → ${adresse}` : `• ${c.dataset.nom} → ⚠️ AUCUNE ADRESSE DE NOTIFICATION RENSEIGNÉE`;
+        });
+        const auMoinsUneAdresseManquante = coches.some((c) => !c.dataset.emailNotification);
+
+        const confirmation = window.confirm(
+            `Renvoyer le lien d'activation aux adresses suivantes ?\n\n${lignesConfirmation.join('\n')}` +
+            (auMoinsUneAdresseManquante ? '\n\n⚠️ Au moins un compte n\'a pas d\'adresse de notification — il sera ignoré.' : '')
+        );
+        if (!confirmation) return;
+
+        let envoyes = 0, ignores = 0;
+        for (const c of coches) {
+            if (!c.dataset.emailNotification) { ignores++; continue; }
+            await fetch(`/api/staff/partenaires/${c.value}/renvoyer-activation`, { method: 'POST', credentials: 'include' });
+            envoyes++;
+        }
+        alert(`Lien d'activation renvoyé à ${envoyes} compte(s).` + (ignores > 0 ? ` ${ignores} ignoré(s) faute d'adresse.` : ''));
+        chargerListePartenaires();
+    }
+
+    function dupliquerPartenaireSelectionne() {
+        const coches = document.querySelectorAll('.cp-select-partenaire:checked');
+        if (coches.length !== 1) { alert('Cochez exactement un partenaire à dupliquer.'); return; }
+        const el = coches[0];
+        annulerEditionPartenaire();
+        document.getElementById('cp-nom-complet').value = el.dataset.nom + ' (copie)';
+        document.getElementById('cp-telephone').value = el.dataset.telephone;
+        const idTypes = JSON.parse(el.dataset.types);
+        document.querySelectorAll('.cp-type-checkbox').forEach((cb) => { cb.checked = idTypes.includes(parseInt(cb.value, 10)); });
+        const contacts = JSON.parse(el.dataset.contacts);
+        chargerContactsEnCours(contacts);
+        document.getElementById('cp-form-titre').textContent = 'Créer un nouveau partenaire (dupliqué)';
+        document.getElementById('cp-form-titre').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function actionGroupeePartenaires(action) {
+        const ids = Array.from(document.querySelectorAll('.cp-select-partenaire:checked')).map((el) => el.value);
+        if (ids.length === 0) { alert('Sélectionnez au moins un partenaire.'); return; }
+
+        if (action === 'supprimer') {
+            if (!window.confirm(`Supprimer définitivement ${ids.length} partenaire(s) ? Cette action est irréversible.`)) return;
+            for (const id of ids) {
+                await fetch(`/api/staff/partenaires/${id}`, { method: 'DELETE', credentials: 'include' });
+            }
+        } else {
+            for (const id of ids) {
+                await fetch(`/api/staff/partenaires/${id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ statut_compte: action }),
+                });
+            }
+        }
+        chargerListePartenaires();
+    }
+
+    function ouvrirEditionPartenaire(id, nomComplet, email, telephone, idTypes, contacts, emailNotification) {
+        document.getElementById('cp-id-edition').value = id;
+        document.getElementById('cp-form-titre').textContent = `Modifier : ${nomComplet}`;
+        document.getElementById('cp-nom-complet').value = nomComplet;
+        document.getElementById('cp-email').value = email;
+        document.getElementById('cp-email').disabled = true;
+        document.getElementById('cp-telephone').value = telephone;
+        document.getElementById('cp-email-notification').value = emailNotification || '';
+        document.querySelectorAll('.cp-type-checkbox').forEach((el) => {
+            el.checked = idTypes.includes(parseInt(el.value, 10));
+        });
+        chargerContactsEnCours(contacts);
+        document.getElementById('cp-contact-avertissement').style.display = 'none';
+        document.getElementById('cp-email-verif').style.display = 'none';
+        document.querySelector('#form-creer-partenaire button[type="submit"]').textContent = 'Enregistrer les modifications';
+        document.getElementById('cp-annuler-btn').style.display = 'block';
+        document.getElementById('cp-resultat').style.display = 'none';
+        window.scrollTo({ top: document.getElementById('form-creer-partenaire').offsetTop, behavior: 'smooth' });
+    }
+
+    function annulerEditionPartenaire() {
+        document.getElementById('cp-id-edition').value = '';
+        document.getElementById('cp-form-titre').textContent = 'Créer un nouveau partenaire';
+        document.getElementById('cp-email').disabled = false;
+        document.getElementById('cp-email-verif').style.display = 'none';
+        document.querySelector('#form-creer-partenaire button[type="submit"]').textContent = 'Créer le compte';
+        document.getElementById('cp-annuler-btn').style.display = 'none';
+        document.getElementById('form-creer-partenaire').reset();
+        document.querySelectorAll('.cp-type-checkbox').forEach((el) => { el.checked = false; });
+        chargerContactsEnCours([]);
+    }
+
+    async function basculerStatutPartenaire(id, nouveauStatut) {
+        try {
+            const resp = await fetch(`/api/staff/partenaires/${id}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ statut_compte: nouveauStatut }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+            chargerListePartenaires();
+        } catch (err) { console.error(err); }
+    }
+
+    async function supprimerPartenaire(id, nomComplet) {
+        if (!window.confirm(`Supprimer définitivement le partenaire « ${nomComplet} » ?\nCette action est irréversible. Les tickets liés seront désassignés, pas supprimés.`)) return;
+        try {
+            const resp = await fetch(`/api/staff/partenaires/${id}`, { method: 'DELETE', credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+            chargerListePartenaires();
+        } catch (err) { console.error(err); }
+    }
+
+    let contactsEnCours = [];
+    let indexContactEnEdition = null;
+
+    function rendreListeContacts() {
+        const conteneur = document.getElementById('cp-contacts-liste');
+        if (contactsEnCours.length === 0) {
+            conteneur.innerHTML = '<p class="vide" style="padding:12px;">Aucun contact.</p>';
+            return;
+        }
+        let html = '<table><thead><tr><th style="width:24px;"><input type="checkbox" onchange="document.querySelectorAll(\'.cp-select-contact\').forEach(c=>c.checked=this.checked)"></th><th>Nom</th><th>Fonction</th><th>Par défaut</th></tr></thead><tbody>';
+        contactsEnCours.forEach((c, i) => {
+            html += `<tr>
+                <td><input type="checkbox" class="cp-select-contact" value="${i}"></td>
+                <td>${[c.prenom, c.nom].filter(Boolean).join(' ') || '—'}</td>
+                <td>${c.fonction || '—'}</td>
+                <td>${c.est_defaut ? '<span class="badge badge-resolu">Oui</span>' : ''}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        conteneur.innerHTML = html;
+    }
+
+    function chargerContactsEnCours(liste) {
+        contactsEnCours = (liste && liste.length ? liste : []).map((c) => ({ ...c }));
+        rendreListeContacts();
+    }
+
+    function ajouterContact() {
+        indexContactEnEdition = null;
+        ouvrirZoneEditionContact({});
+    }
+
+    function modifierContactSelectionne() {
+        const coches = document.querySelectorAll('.cp-select-contact:checked');
+        if (coches.length !== 1) { alert('Cochez exactement un contact à modifier.'); return; }
+        indexContactEnEdition = parseInt(coches[0].value, 10);
+        ouvrirZoneEditionContact(contactsEnCours[indexContactEnEdition]);
+    }
+
+    function dupliquerContactSelectionne() {
+        const coches = document.querySelectorAll('.cp-select-contact:checked');
+        if (coches.length !== 1) { alert('Cochez exactement un contact à dupliquer.'); return; }
+        const original = contactsEnCours[parseInt(coches[0].value, 10)];
+        contactsEnCours.push({ ...original, est_defaut: false });
+        rendreListeContacts();
+    }
+
+    function retirerContactsSelectionnes() {
+        const indices = Array.from(document.querySelectorAll('.cp-select-contact:checked')).map((el) => parseInt(el.value, 10));
+        if (indices.length === 0) { alert('Cochez au moins un contact à retirer.'); return; }
+        contactsEnCours = contactsEnCours.filter((_, i) => !indices.includes(i));
+        rendreListeContacts();
+    }
+
+    function ouvrirZoneEditionContact(c) {
+        document.getElementById('cp-contact-edit-nom').value = c.nom || '';
+        document.getElementById('cp-contact-edit-prenom').value = c.prenom || '';
+        document.getElementById('cp-contact-edit-fonction').value = c.fonction || '';
+        document.getElementById('cp-contact-edit-telephone').value = c.telephone || '';
+        document.getElementById('cp-contact-edit-defaut').checked = !!c.est_defaut;
+        document.getElementById('cp-contact-edit-zone').style.display = 'block';
+    }
+
+    function annulerEditionContact() {
+        document.getElementById('cp-contact-edit-zone').style.display = 'none';
+    }
+
+    function enregistrerContactEdition() {
+        const nom = document.getElementById('cp-contact-edit-nom').value.trim();
+        if (!nom) { alert('Le nom est requis.'); return; }
+        const nouveauContact = {
+            nom,
+            prenom: document.getElementById('cp-contact-edit-prenom').value.trim(),
+            fonction: document.getElementById('cp-contact-edit-fonction').value.trim(),
+            telephone: document.getElementById('cp-contact-edit-telephone').value.trim(),
+            est_defaut: document.getElementById('cp-contact-edit-defaut').checked,
+        };
+        // Un seul contact par défaut à la fois — cocher celui-ci décoche les autres.
+        if (nouveauContact.est_defaut) contactsEnCours.forEach((c) => { c.est_defaut = false; });
+
+        if (indexContactEnEdition !== null) contactsEnCours[indexContactEnEdition] = nouveauContact;
+        else contactsEnCours.push(nouveauContact);
+
+        document.getElementById('cp-contact-edit-zone').style.display = 'none';
+        document.getElementById('cp-contact-avertissement').style.display = 'none';
+        rendreListeContacts();
+    }
+
+    function collecterContacts() { return contactsEnCours; }
+
+    // Vérification de vraisemblance d'un email EXTERNE (notification
+    // partenaire, validation staff) — plus stricte que la validation
+    // HTML5 native (rejette les domaines sans TLD plausible, les points
+    // consécutifs, etc.). N'est PAS appliquée aux boîtes internes
+    // (celles-là sont testées par une vraie connexion IMAP).
+    function emailEstVraisemblable(email) {
+        if (!email) return false;
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+        if (!regex.test(email)) return false;
+        if (email.includes('..')) return false;
+        return true;
+    }
+
+    function verifierVraisemblanceChamp(idChamp, idMessage) {
+        const valeur = document.getElementById(idChamp).value.trim();
+        const messageEl = document.getElementById(idMessage);
+        if (!valeur) {
+            messageEl.textContent = '⚠️ Cette adresse est vide.';
+            messageEl.style.cssText = 'font-size:11px; color:#dc2626; margin:2px 0 12px; display:block;';
+            return;
+        }
+        if (!emailEstVraisemblable(valeur)) {
+            messageEl.textContent = '⚠️ Cette adresse ne semble pas valide — vérifiez l\'orthographe.';
+            messageEl.style.cssText = 'font-size:11px; color:#dc2626; margin:2px 0 12px; display:block;';
+            return;
+        }
+        messageEl.style.display = 'none';
+    }
+
+    async function verifierEmailPartenaire() {
+        const zone = document.getElementById('cp-email-verif');
+        const idEdition = document.getElementById('cp-id-edition').value;
+        // En mode modification, l'email est verrouillé — pas besoin de vérifier.
+        if (idEdition) { zone.style.display = 'none'; return; }
+
+        const email = document.getElementById('cp-email').value.trim();
+        if (!email) { zone.style.display = 'none'; return; }
+
+        zone.textContent = 'Vérification…';
+        zone.style.cssText = 'font-size:11px; margin:2px 0 12px; display:block; color:var(--gray);';
+
+        try {
+            const resp = await fetch(`/api/staff/partenaires/verifier-email?email=${encodeURIComponent(email)}`, { credentials: 'include' });
+
+            if (resp.status === 401) {
+                zone.textContent = '⚠️ Session expirée — reconnectez-vous avant de continuer (vos informations déjà saisies dans ce champ ne seront pas perdues si vous rouvrez une session dans un autre onglet).';
+                zone.style.color = '#dc2626';
+                return;
+            }
+            if (!resp.ok) {
+                zone.textContent = `⚠️ Vérification indisponible (erreur ${resp.status}) — vous pouvez continuer, le contrôle réel se fera à l'enregistrement.`;
+                zone.style.color = '#dc2626';
+                return;
+            }
+
+            const data = await resp.json();
+            if (!data.succes) {
+                zone.textContent = `⚠️ ${(data.erreurs && data.erreurs[0]) || 'Vérification indisponible.'}`;
+                zone.style.color = '#dc2626';
+                return;
+            }
+
+            if (data.comptes.length === 0) {
+                zone.textContent = '✅ Aucun compte existant sur cette adresse.';
+                zone.style.color = '#047857';
+                return;
+            }
+
+            const actif = data.comptes.find((c) => c.statut_compte === 'actif');
+            if (actif) {
+                zone.textContent = `⚠️ Un compte ACTIF existe déjà sur cette adresse : ${actif.nom_complet}. Impossible d'en créer un nouveau tant qu'il n'est pas suspendu.`;
+                zone.style.color = '#dc2626';
+                return;
+            }
+
+            const noms = data.comptes.map((c) => c.nom_complet).join(', ');
+            zone.textContent = `ℹ️ ${data.comptes.length} compte(s) suspendu(s) déjà sur cette adresse (${noms}) — vous pouvez en créer un nouveau, ou réactiver l'un d'eux depuis la liste.`;
+            zone.style.color = '#b45309';
+        } catch (err) {
+            console.error(err);
+            zone.textContent = '⚠️ Erreur réseau lors de la vérification — vous pouvez continuer, le contrôle réel se fera à l\'enregistrement.';
+            zone.style.color = '#dc2626';
+        }
+    }
+
+    async function chargerTypesPartenaireFormulaire() {
+        const conteneur = document.getElementById('cp-types-conteneur');
+        try {
+            const resp = await fetch('/api/staff/types-partenaires', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) return;
+
+            const parCategorie = {};
+            data.types.forEach((t) => {
+                if (!parCategorie[t.categorie_libelle_fr]) parCategorie[t.categorie_libelle_fr] = [];
+                parCategorie[t.categorie_libelle_fr].push(t);
+            });
+
+            let html = '';
+            Object.keys(parCategorie).forEach((categorie) => {
+                html += `<p style="font-weight:700; margin:8px 0 4px; color:var(--navy);">${categorie}</p>`;
+                parCategorie[categorie].forEach((t) => {
+                    html += `<label style="display:flex; align-items:center; gap:6px; font-weight:400; margin-bottom:4px; cursor:pointer;">
+                        <input type="checkbox" value="${t.id_type_partenaire}" class="cp-type-checkbox" style="width:auto; margin:0;">
+                        <strong>${t.code}</strong> — ${t.libelle_fr}
+                    </label>`;
+                });
+            });
+            conteneur.innerHTML = html;
+        } catch (err) { console.error(err); }
+    }
+
+    document.getElementById('form-creer-partenaire').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const typesCoches = Array.from(document.querySelectorAll('.cp-type-checkbox:checked')).map((el) => parseInt(el.value, 10));
+        const idEdition = document.getElementById('cp-id-edition').value;
+        const contacts = collecterContacts();
+
+        if (typesCoches.length === 0) {
+            alert('Sélectionnez au moins un type de partenaire.');
+            return;
+        }
+        if (contacts.length === 0) {
+            alert('Ajoutez au moins un contact.');
+            return;
+        }
+        if (!contacts.some((c) => c.est_defaut)) {
+            document.getElementById('cp-contact-avertissement').style.display = 'block';
+            return;
+        }
+        document.getElementById('cp-contact-avertissement').style.display = 'none';
+
+        const corps = {
+            nom_complet: document.getElementById('cp-nom-complet').value.trim(),
+            telephone: document.getElementById('cp-telephone').value.trim(),
+            email_notification: document.getElementById('cp-email-notification').value.trim(),
+            id_types_partenaire: typesCoches,
+            contacts,
+        };
+
+        try {
+            let resp;
+            if (idEdition) {
+                resp = await fetch(`/api/staff/partenaires/${idEdition}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify(corps),
+                });
+            } else {
+                corps.email = document.getElementById('cp-email').value.trim();
+                corps.creer_boite_mail = document.getElementById('cp-creer-boite-mail').checked;
+                resp = await fetch('/api/staff/partenaires', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify(corps),
+                });
+            }
+            const data = await resp.json();
+            if (!data.succes) {
+                alert((data.erreurs && data.erreurs[0]) || 'Erreur.');
+                return;
+            }
+
+            const idPartenaireConcerne = idEdition || (data.partenaire && data.partenaire.id_partenaire);
+            const motDePasseBoiteMail = document.getElementById('cp-boite-mail-mdp').value.trim();
+            if (idPartenaireConcerne && motDePasseBoiteMail) {
+                await fetch(`/api/staff/partenaires/${idPartenaireConcerne}/boite-mail`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ mot_de_passe: motDePasseBoiteMail }),
+                });
+            }
+
+            if (idEdition) {
+                alert('Partenaire modifié avec succès.');
+                annulerEditionPartenaire();
+            } else {
+                const adresseEnvoi = corps.email_notification;
+                let texte = adresseEnvoi
+                    ? `Compte créé — email d'activation envoyé à : ${adresseEnvoi}`
+                    : `Compte créé — ⚠️ aucune adresse de notification renseignée, le lien d'activation n'a pas pu être envoyé.`;
+                if (data.boite_mail) {
+                    texte += data.boite_mail.succes
+                        ? ' — boîte mail professionnelle créée avec succès.'
+                        : ` — ⚠️ échec de la création de la boîte mail (${data.boite_mail.erreur}).`;
+                }
+                document.getElementById('cp-resultat-texte').textContent = texte;
+                document.getElementById('cp-resultat').style.display = 'block';
+                this.reset();
+                chargerContactsEnCours([]);
+                document.querySelectorAll('.cp-type-checkbox').forEach((el) => { el.checked = false; });
+            }
+            chargerListePartenaires();
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+        }
+    });
+
+    async function chargerMesDossiersPartenaire() {
+        const conteneur = document.getElementById('dossiers-partenaire-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/partenaire/mes-dossiers', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes || !data.dossiers.length) { conteneur.innerHTML = '<p class="vide">Aucun dossier ne vous est actuellement assigné.</p>'; return; }
+            conteneur.innerHTML = data.dossiers.map((d) => `
+                <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; background:white;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong style="font-size:13px;">${d.type_libelle_fr}</strong>
+                        <span class="badge badge-${d.code_statut_ticket}">${d.statut_libelle_fr}</span>
+                    </div>
+                    <p style="font-size:11px; color:var(--gray); margin:4px 0 0;">${d.code_ticket} — ${new Date(d.date_maj).toLocaleDateString('fr-FR')}</p>
+                </div>
+            `).join('');
+        } catch (err) { console.error(err); }
+    }
+
+    verifierSessions();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+// =====================================================================
+// Mutuelle Pro Assurances — Promotion Prospect → Client
+// Route : POST /api/staff/prospects/:id/promouvoir-client
+// =====================================================================
+// Bascule en un clic (demande explicite de Roger, 21/08/2026) : crée le
+// compte Client à partir des données déjà connues du prospect, sans
+// ressaisie, et envoie un email de bienvenue réutilisant le mécanisme
+// EXISTANT de réinitialisation de mot de passe (site.reinitialisation_mdp_tokens
+// + reinitialisation.html) plutôt qu'un nouveau système parallèle.
+//
+// Les tables restent séparées (site.prospects / site.utilisateurs) —
+// choix retenu pour préserver la distinction légale entre données de
+// prospection et données client (voir échange du 21/08/2026).
+// =====================================================================
+
+const express = require('express');
+const argon2 = require('argon2');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const requireStaffAuth = require('../middleware/requireStaffAuth');
+const requireStaffRole = require('../middleware/requireStaffRole');
+
+const mailTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: Number(process.env.SMTP_PORT) === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+});
+
+module.exports = function (pool) {
+    const router = express.Router();
+
+    router.post('/prospects/:id/promouvoir-client', requireStaffAuth, requireStaffRole(['gestionnaire', 'administrateur']), async (req, res) => {
+        const idProspect = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idProspect)) {
+            return res.status(400).json({ succes: false, erreurs: ['id de prospect invalide'] });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const prospectRes = await client.query('SELECT * FROM site.prospects WHERE id_prospect = $1', [idProspect]);
+            if (prospectRes.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ succes: false, erreurs: ['prospect introuvable'] });
+            }
+            const prospect = prospectRes.rows[0];
+
+            if (prospect.id_utilisateur) {
+                await client.query('ROLLBACK');
+                return res.status(409).json({ succes: false, erreurs: ['ce prospect est déjà lié à un compte client'] });
+            }
+            if (!prospect.email) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ succes: false, erreurs: ['ce prospect n\'a pas d\'adresse email — impossible de créer un compte client'] });
+            }
+
+            // Un compte existe peut-être déjà sur cette adresse (ex: le
+            // prospect avait déjà un compte avant d'être suivi en CRM) —
+            // dans ce cas on relie, sans dupliquer.
+            let idUtilisateur;
+            const existant = await client.query('SELECT id_utilisateur FROM site.utilisateurs WHERE email = $1', [prospect.email]);
+            let compteReutilise = false;
+
+            if (existant.rowCount > 0) {
+                idUtilisateur = existant.rows[0].id_utilisateur;
+                compteReutilise = true;
+            } else {
+                const hacheInutilisable = crypto.randomBytes(32).toString('hex');
+                const insere = await client.query(
+                    `INSERT INTO site.utilisateurs (email, telephone, nom, mot_de_passe_hache, email_verifie, statut_compte)
+                     VALUES ($1, $2, $3, $4, false, 'actif')
+                     RETURNING id_utilisateur`,
+                    [prospect.email, prospect.telephone || null, prospect.nom_complet || null, hacheInutilisable]
+                );
+                idUtilisateur = insere.rows[0].id_utilisateur;
+            }
+
+            await client.query(
+                `UPDATE site.prospects SET id_utilisateur = $1, statut_opportunite = 'gagne' WHERE id_prospect = $2`,
+                [idUtilisateur, idProspect]
+            );
+
+            await client.query(
+                `INSERT INTO site.journal_audit (id_staff, action, table_concernee, id_enregistrement, donnees_apres, adresse_ip)
+                 VALUES ($1, 'prospect.promotion_client', 'prospects', $2, $3::jsonb, $4)`,
+                [req.session.id_staff, idProspect, JSON.stringify({ id_utilisateur: idUtilisateur, compte_reutilise: compteReutilise }), req.ip]
+            );
+
+            let lienEnvoye = false;
+            if (!compteReutilise) {
+                const token = crypto.randomBytes(32).toString('hex');
+                await client.query(
+                    'INSERT INTO site.reinitialisation_mdp_tokens (token, id_utilisateur) VALUES ($1, $2)',
+                    [token, idUtilisateur]
+                );
+
+                const lien = `https://mutuelleproassurances.com/reinitialisation.html?token=${token}`;
+                mailTransporter.sendMail({
+                    from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+                    to: prospect.email,
+                    subject: 'Mutuelle Pro Assurances — Bienvenue, activez votre espace Client',
+                    html: `
+                        <p>Bonjour,</p>
+                        <p>Votre espace Client Mutuelle Pro Assurances est prêt.</p>
+                        <p>Pour l'activer et définir votre mot de passe, cliquez sur le lien ci-dessous (valable 1 heure) :</p>
+                        <p><a href="${lien}">${lien}</a></p>
+                        <p>Passé ce délai, utilisez "Mot de passe oublié" sur l'espace Client pour recevoir un nouveau lien.</p>
+                    `,
+                }).catch((err) => console.error('[promouvoir-client] Erreur envoi email :', err));
+                lienEnvoye = true;
+            }
+
+            await client.query('COMMIT');
+            return res.status(200).json({ succes: true, id_utilisateur: idUtilisateur, compte_reutilise: compteReutilise, lien_envoye: lienEnvoye });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('[POST /api/staff/prospects/:id/promouvoir-client] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        } finally {
+            client.release();
+        }
+    });
+
+    return router;
+};
