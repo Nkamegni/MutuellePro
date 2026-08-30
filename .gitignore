@@ -7,10 +7,13 @@ node_modules/
 # Sauvegardes automatiques (mutuellepro-deploy.sh / mutuellepro-restore.sh)
 Sauvegardes/
 
-# Fichiers de sauvegarde manuels horodatés (tous formats rencontrés)
+# Fichiers de sauvegarde/versions manuelles (tous formats rencontrés)
 *.bak_*
 *.avant_correctif_*
+*.avant_*
+*.backup_*
 *~
+vin-decoder-api/server old.js
 
 # Logs
 *.log
