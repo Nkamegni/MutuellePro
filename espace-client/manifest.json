@@ -1,0 +1,14 @@
+{
+  "name": "Mutuelle Pro — Espace Client",
+  "short_name": "Mon Espace",
+  "start_url": "/espace-client/",
+  "scope": "/espace-client/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "lang": "fr",
+  "icons": [
+    { "src": "/espace-client/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/espace-client/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
