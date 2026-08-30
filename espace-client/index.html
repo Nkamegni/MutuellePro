@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Espace — Mutuelle Pro Assurances</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="/espace-client/manifest.json">
+<link rel="icon" href="/espace-client/icons/icon-192.png">
+<!--
+    Bootstrap du PWA Client — charge la couche données/état partagée
+    (myspace-app.js) et la présentation propre au rôle Client. La
+    présentation elle-même (Phase 2 de l'extraction, non livrée ici)
+    vivra dans /espace-client/presentation-client.js, portée depuis les
+    blocs [PRÉSENTATION-CLIENT] et [PRÉSENTATION-COMMUNE] de la copie de
+    référence annotée.
+-->
+<div id="banniere-hors-ligne" style="display:none; background:#dc2626; color:white; text-align:center; padding:8px; font-size:13px;">
+  Vous êtes hors-ligne — certaines informations peuvent ne pas être à jour.
+</div>
+<div id="banniere-maj" style="display:none; background:#0f172a; color:white; text-align:center; padding:8px; font-size:13px;">
+  Une mise à jour est disponible —
+  <button id="btn-recharger-maj" style="background:white; color:#0f172a; border:none; border-radius:6px; padding:4px 10px; font-weight:700; cursor:pointer;">Recharger</button>
+</div>
+
+<div id="racine-appli"><!-- Présentation Client montée ici (Phase 2) --></div>
+
+<script type="module">
+  import {
+    verifierSessions, initSurveillanceHorsLigne,
+    initDetectionMiseAJour, appliquerMiseAJour,
+  } from '/espace-partage/myspace-app.js';
+
+  const ROLE = 'client';
+
+  initSurveillanceHorsLigne((horsLigne) => {
+    document.getElementById('banniere-hors-ligne').style.display = horsLigne ? 'block' : 'none';
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/espace-client/sw.js').then((registration) => {
+      initDetectionMiseAJour(registration, (reg) => {
+        document.getElementById('banniere-maj').style.display = 'block';
+        document.getElementById('btn-recharger-maj').onclick = () => appliquerMiseAJour(reg);
+      });
+    });
+  }
+
+  window.addEventListener('myspace:connecte', (e) => {
+    // TODO Phase 2 : monter la présentation Client avec e.detail.sessionClient
+  });
+  window.addEventListener('myspace:non-connecte', () => {
+    // TODO Phase 2 : monter l'écran de connexion Client
+  });
+
+  verifierSessions();
+</script>
+</head>
+<body>
+</body>
+</html>
