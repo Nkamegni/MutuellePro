@@ -124,15 +124,31 @@ $client_id    = (int) $env['ISPCONFIG_CLIENT_ID'];
 // mono-serveur (jamais mise en défaut par une erreur différente).
 $email = $entree['email'];
 
+// Correctif du 01/09/2026 : l'API distante SOAP ne calcule PAS le chemin
+// maildir à notre place (contrairement à l'interface web, qui le fait côté
+// JavaScript avant l'envoi du formulaire). Un maildir vide se propage en
+// cascade côté serveur (chown sur '', échec de compilation sieve, et le
+// Maildir physique n'est jamais créé, malgré un succès apparent en base).
+$parties_email = explode('@', $email, 2);
+if (count($parties_email) !== 2 || $parties_email[0] === '' || $parties_email[1] === '') {
+    erreur("Adresse email invalide pour construction du maildir : {$email}");
+}
+[$partie_locale, $domaine] = $parties_email;
+
+// Convention confirmée sur ce serveur (vérifiée sur admin@mutuelleproassurances.com) :
+// /var/vmail/<domaine>/<partie-locale>, sans slash final, sans suffixe /Maildir
+// (Dovecot ajoute Maildir/ lui-même via sa config mail_location).
+$maildir = "/var/vmail/{$domaine}/{$partie_locale}";
+
 $params = [
     'server_id' => 1,
     'email'     => $email,
     'login'     => $email,           // ISPConfig utilise généralement l'email complet comme login
     'password'  => $entree['password'],
     'name'      => $entree['name'],
-    'maildir'   => '',                // laissé vide : ISPConfig calcule le chemin par défaut
+    'maildir'   => $maildir,
     'quota'            => $entree['quota'] ?? 0,   // 0 = illimité, ajustable si besoin
-    'active'           => 'y',
+    'access'           => 'y',       // corrigé le 01/09/2026 : la colonne réelle est 'access', pas 'active'
     'postfix'          => 'y',   // indispensable : sans ça, la boîte ne reçoit pas les mails
     'move_junk'        => 'n',   // ENUM requis par ISPConfig, chaîne vide rejetée
     'purge_trash_days' => 0,     // entier requis, 0 = désactivé
