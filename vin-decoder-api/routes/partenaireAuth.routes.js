@@ -48,6 +48,34 @@ function reinitialiser(cle) { tentatives.delete(cle); }
 module.exports = function (pool) {
     const router = express.Router();
 
+    // Même mécanique que côté Personnel — vérification sans consommation.
+    router.get('/verifier-token-activation', async (req, res) => {
+        const token = req.query.token;
+        if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+            return res.status(200).json({ valide: false, motif: 'invalide' });
+        }
+        try {
+            const resultat = await pool.query(
+                `SELECT t.date_expiration, p.nom_complet
+                 FROM site.activation_partenaire_tokens t
+                 JOIN site.partenaires p ON p.id_partenaire = t.id_partenaire
+                 WHERE t.token = $1`,
+                [token]
+            );
+            if (resultat.rowCount === 0) {
+                return res.status(200).json({ valide: false, motif: 'invalide' });
+            }
+            const { date_expiration, nom_complet } = resultat.rows[0];
+            if (new Date(date_expiration) < new Date()) {
+                return res.status(200).json({ valide: false, motif: 'expire', nom_complet });
+            }
+            return res.status(200).json({ valide: true, nom_complet });
+        } catch (err) {
+            console.error('[GET /api/partenaire/verifier-token-activation] Erreur base de données :', err);
+            return res.status(200).json({ valide: false, motif: 'invalide' });
+        }
+    });
+
     router.post('/connexion', async (req, res) => {
         const { email, mot_de_passe } = req.body;
         if (!email || !mot_de_passe) {

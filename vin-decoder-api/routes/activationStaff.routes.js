@@ -18,6 +18,38 @@ const mailTransporter = nodemailer.createTransport({
 module.exports = function (pool) {
     const router = express.Router();
 
+    // Vérifie un jeton d'activation SANS le consommer -- appelé au
+    // chargement de la page, pour signaler un lien expiré/invalide
+    // AVANT que la personne ne saisisse un mot de passe, pas après
+    // (31/08/2026, retour de Roger). Renvoie aussi le nom du compte
+    // concerné, pour l'afficher sur la page.
+    router.get('/verifier-token-activation', async (req, res) => {
+        const token = req.query.token;
+        if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+            return res.status(200).json({ valide: false, motif: 'invalide' });
+        }
+        try {
+            const resultat = await pool.query(
+                `SELECT t.date_expiration, s.nom_complet
+                 FROM site.activation_staff_tokens t
+                 JOIN site.staff s ON s.id_staff = t.id_staff
+                 WHERE t.token = $1`,
+                [token]
+            );
+            if (resultat.rowCount === 0) {
+                return res.status(200).json({ valide: false, motif: 'invalide' });
+            }
+            const { date_expiration, nom_complet } = resultat.rows[0];
+            if (new Date(date_expiration) < new Date()) {
+                return res.status(200).json({ valide: false, motif: 'expire', nom_complet });
+            }
+            return res.status(200).json({ valide: true, nom_complet });
+        } catch (err) {
+            console.error('[GET /api/staff/verifier-token-activation] Erreur base de données :', err);
+            return res.status(200).json({ valide: false, motif: 'invalide' });
+        }
+    });
+
     router.post('/renvoyer-activation', async (req, res) => {
         const email = (req.body.email || '').trim();
         if (!email) {

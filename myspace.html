@@ -1,4 +1,46 @@
 <!DOCTYPE html>
+<!--
+    =====================================================================
+    Mutuelle Pro Assurances — myspace.html
+    VERSION DE RÉFÉRENCE ANNOTÉE POUR LA SESSION PWA — 29/08/2026
+    =====================================================================
+    Ce fichier sert de copie de référence initiale pour le protocole de
+    synchronisation décrit dans architecture_pwa_triple_espace_29082026.md
+    (Addendum 2) — chaque futur lot transmis sera diffé contre une version
+    de ce fichier, en s'appuyant sur les marqueurs ci-dessous pour classer
+    rapidement chaque changement.
+
+    LÉGENDE DES MARQUEURS (présents devant chaque section HTML et chaque
+    fonction JavaScript significative) :
+
+      [DONNÉES/ÉTAT]           Authentification, appels API, gestion des
+                                3 sessions, utilitaires génériques —
+                                strictement partagé entre les 3 PWA,
+                                jamais spécifique à un rôle.
+
+      [PRÉSENTATION-COMMUNE]   Chrome partagé entre plusieurs rôles (menu,
+                                écran de connexion, page Sécurité,
+                                messagerie) — présent dans plusieurs PWA,
+                                mais avec un contenu conditionnel par rôle
+                                déjà géré en JS.
+
+      [PRÉSENTATION-CLIENT]    Spécifique au rôle Client uniquement.
+      [PRÉSENTATION-PERSONNEL] Spécifique au rôle Personnel uniquement.
+      [PRÉSENTATION-PARTENAIRE] Spécifique au rôle Partenaire uniquement.
+
+    Cette classification a été établie par la session myspace.html au
+    moment de la transmission — à corriger si un cas limite s'avère mal
+    classé en pratique lors du portage.
+
+    NOTE PROSPECTIVE (ajoutée le 29/08/2026, après corrections du cahier
+    des charges) : ce fichier ne contient pas encore de fonction de
+    traduction ni de gestion d'erreur partagée — elles n'existent pas
+    aujourd'hui dans myspace.html. Quand elles apparaîtront dans un futur
+    lot, elles se classeront [DONNÉES/ÉTAT], au même titre que
+    verifierSessions() ou afficherPage() ci-dessous — pas comme une
+    nouvelle catégorie à inventer.
+    =====================================================================
+-->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -9,7 +51,7 @@
     :root { --navy:#0f172a; --purple:#7c3aed; --border:#e5e7eb; --gray:#94a3b8; }
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; background:#f8fafc; color:var(--navy); }
-    header { background:var(--navy); color:white; padding:10px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    header { background:var(--navy); color:white; padding:10px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; position:sticky; top:0; z-index:1000; }
     header h1 { font-size:15px; margin:0; font-weight:800; display:flex; align-items:center; gap:10px; }
     header img.logo { height:32px; width:auto; background:white; border-radius:6px; padding:2px 6px; }
     #identite { font-size:12px; color:#cbd5e1; }
@@ -136,6 +178,7 @@
 <div id="overlay-mobile" onclick="toggleMenuMobile()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:40;"></div>
 
 <!-- ===== VUE CONNEXION ===== -->
+<!-- [PRÉSENTATION-COMMUNE] Écran de connexion — les 3 rôles s'y présentent -->
 <div id="vue-login">
     <div class="zones-login">
         <div class="carte-login">
@@ -149,25 +192,33 @@
 
             <form id="form-login-client">
                 <label for="client-identifiant">Email ou téléphone</label>
-                <input type="text" id="client-identifiant" required>
+                <input type="text" id="client-identifiant" name="username" autocomplete="username" required>
                 <label for="client-password">Mot de passe</label>
-                <input type="password" id="client-password" required>
+                <input type="password" id="client-password" name="password" autocomplete="current-password" required>
                 <button type="submit" class="principal">Se connecter</button>
             </form>
 
+            <p id="lien-mdp-oublie-client" onclick="ouvrirMdpOublieClient()" style="font-size:11px; color:var(--purple); text-align:center; cursor:pointer; margin-top:8px;">Mot de passe oublié ?</p>
+            <div id="bloc-mdp-oublie-client" style="display:none; margin-top:8px;">
+                <label>Email ou téléphone utilisé pour votre compte</label>
+                <input type="text" id="mdp-oublie-client-identifiant" placeholder="vous@exemple.com ou +237...">
+                <button type="button" class="principal" onclick="demanderReinitialisationClient()">Envoyer le lien de réinitialisation</button>
+                <p id="mdp-oublie-client-message" style="font-size:11px; margin-top:8px; display:none;"></p>
+            </div>
+
             <form id="form-login-staff" style="display:none;">
                 <label for="staff-email">Email</label>
-                <input type="email" id="staff-email" required>
+                <input type="email" id="staff-email" name="username" autocomplete="username" onblur="completerDomaineEmail('staff-email')" required>
                 <label for="staff-password">Mot de passe</label>
-                <input type="password" id="staff-password" required>
+                <input type="password" id="staff-password" name="password" autocomplete="current-password" required>
                 <button type="submit" class="principal">Se connecter</button>
             </form>
 
             <form id="form-login-partenaire" style="display:none;">
                 <label for="partenaire-email">Email</label>
-                <input type="email" id="partenaire-email" required>
+                <input type="email" id="partenaire-email" name="username" autocomplete="username" onblur="completerDomaineEmail('partenaire-email')" required>
                 <label for="partenaire-password">Mot de passe</label>
-                <input type="password" id="partenaire-password" required>
+                <input type="password" id="partenaire-password" name="password" autocomplete="current-password" required>
                 <button type="submit" class="principal">Se connecter</button>
             </form>
 
@@ -195,6 +246,7 @@
         <nav class="menu" id="menu-lateral"></nav>
         <main class="contenu">
 
+            <!-- [PRÉSENTATION-COMMUNE] Mon Profil — contenu conditionnel par rôle en JS -->
             <section id="page-profil" class="page page-etroite">
                 <h2>Mon Profil</h2>
                 <div id="profil-client-bloc" style="display:none;">
@@ -237,6 +289,7 @@
                 </div>
             </section>
 
+            <!-- [PRÉSENTATION-COMMUNE] Sécurité — contenu conditionnel par rôle en JS -->
             <section id="page-securite" class="page page-etroite">
                 <h2>Sécurité</h2>
                 <div id="securite-client-bloc" style="display:none; margin-bottom:24px;">
@@ -273,6 +326,7 @@
                 </div>
             </section>
 
+            <!-- [PRÉSENTATION-CLIENT] Export RGPD, fermeture de compte -->
             <section id="page-communications" class="page page-etroite">
                 <h2>Communications</h2>
                 <div class="item-grise">🔒 Préférences de notification (Email/SMS/WhatsApp) — Bientôt disponible</div>
@@ -285,11 +339,13 @@
                 </div>
             </section>
 
+            <!-- [PRÉSENTATION-CLIENT] Suivi des tickets du Client connecté -->
             <section id="page-mes-demandes" class="page page-etroite">
                 <h2>Mes demandes</h2>
                 <div id="mes-demandes-liste"></div>
             </section>
 
+            <!-- [PRÉSENTATION-PERSONNEL] Gestion des tickets (tous) -->
             <section id="page-tickets" class="page">
                 <h2>Tickets</h2>
                 <div class="filtres">
@@ -310,18 +366,21 @@
                 <div id="tickets-staff-conteneur"></div>
             </section>
 
+            <!-- [PRÉSENTATION-PERSONNEL] CRM Prospects -->
             <section id="page-prospects" class="page">
                 <h2>Prospects</h2>
                 <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">Interface minimale — création détaillée et relances à construire dans une session dédiée.</p>
                 <div id="prospects-conteneur"></div>
             </section>
 
+            <!-- [PRÉSENTATION-PARTENAIRE] Dossiers assignés à ce partenaire -->
             <section id="page-mes-dossiers-partenaire" class="page page-etroite">
                 <h2>Mes dossiers</h2>
                 <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">Vous ne voyez que les dossiers qui vous ont été assignés.</p>
                 <div id="dossiers-partenaire-conteneur"></div>
             </section>
 
+            <!-- [PRÉSENTATION-COMMUNE] Messagerie — Personnel ET Partenaire, contenu conditionnel -->
             <section id="page-messagerie" class="page">
                 <h2>Messagerie</h2>
                 <div id="messagerie-liste-vue">
@@ -333,6 +392,7 @@
                 </div>
             </section>
 
+            <!-- [PRÉSENTATION-PERSONNEL] Administration des Partenaires (par le Personnel) -->
             <section id="page-creer-partenaire" class="page">
                 <h2>Gérer les Partenaires</h2>
 
@@ -357,7 +417,7 @@
                     <label>Nom complet / Raison sociale</label>
                     <input type="text" id="cp-nom-complet" required>
                     <label>Email</label>
-                    <input type="email" id="cp-email" required onblur="verifierEmailPartenaire()">
+                    <input type="email" id="cp-email" required onblur="completerDomaineEmail('cp-email'); verifierEmailPartenaire()">
                     <p id="cp-email-verif" style="font-size:11px; margin:2px 0 12px; display:none;"></p>
                     <label>Email de notification <span style="font-weight:400; color:var(--gray);">(adresse personnelle du partenaire — reçoit le lien d'activation et les notifications)</span></label>
                     <input type="email" id="cp-email-notification" required onblur="verifierVraisemblanceChamp('cp-email-notification', 'cp-email-notification-msg')">
@@ -368,7 +428,7 @@
                     <label style="margin-top:10px;">Mot de passe de la boîte mail <span style="font-weight:400; color:var(--gray);">(déjà créée dans ISPConfig, même adresse que l'email ci-dessus)</span></label>
                     <input type="text" id="cp-boite-mail-mdp" placeholder="Laisser vide pour ne pas modifier">
                     <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin:10px 0 14px;">
-                        <input type="checkbox" id="cp-creer-boite-mail" style="width:auto; margin:0;">
+                        <input type="checkbox" id="cp-creer-boite-mail" checked style="width:auto; margin:0;">
                         Créer automatiquement la boîte mail professionnelle si elle n'existe pas encore
                     </label>
 
@@ -409,17 +469,20 @@
                 </div>
             </section>
 
+            <!-- [PRÉSENTATION-PERSONNEL] Pilotage & KPIs -->
             <section id="page-pilotage" class="page">
                 <h2>Pilotage & KPIs</h2>
                 <p style="font-size:11px; color:var(--gray); margin-bottom:16px;">Version basique — chiffres réels déjà en base, pas de tableau de bord Production/Sinistres tant que ces modules n'existent pas.</p>
                 <div id="pilotage-conteneur" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;"></div>
             </section>
 
+            <!-- [PRÉSENTATION-PERSONNEL] Administration des Clients -->
             <section id="page-clients" class="page">
                 <h2>Clients</h2>
                 <div id="clients-liste-conteneur"></div>
             </section>
 
+            <!-- [PRÉSENTATION-PERSONNEL] Administration du Personnel -->
             <section id="page-personnel" class="page">
                 <h2>Personnel</h2>
                 <div id="personnel-liste-conteneur" style="margin-bottom:24px;"></div>
@@ -430,7 +493,7 @@
                     <label>Nom complet</label>
                     <input type="text" id="pers-nom-complet" required>
                     <label>Email (identifiant de connexion)</label>
-                    <input type="email" id="pers-email" required onblur="verifierEmailPersonnel()">
+                    <input type="email" id="pers-email" required onblur="completerDomaineEmail('pers-email'); verifierEmailPersonnel()">
                     <p id="pers-email-verif" style="font-size:11px; margin:2px 0 12px; display:none;"></p>
                     <label>Téléphone</label>
                     <input type="tel" id="pers-telephone">
@@ -442,7 +505,7 @@
                     <label style="margin-top:10px;">Rôle</label>
                     <select id="pers-role" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; font-size:14px;"></select>
                     <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:14px;">
-                        <input type="checkbox" id="pers-creer-boite-mail" style="width:auto; margin:0;">
+                        <input type="checkbox" id="pers-creer-boite-mail" checked style="width:auto; margin:0;">
                         Créer automatiquement la boîte mail professionnelle si elle n'existe pas encore
                     </label>
                     <button type="submit" class="principal">Créer le compte</button>
@@ -478,6 +541,41 @@
     // déplacées vers suivi-ticket.html (page dédiée, 27/08/2026) — la
     // carte "Suivre ma demande" ci-dessus n'est plus qu'un lien.
 
+    // [PRÉSENTATION-COMMUNE]
+    // [PRÉSENTATION-COMMUNE]
+    function ouvrirMdpOublieClient() {
+        document.getElementById('lien-mdp-oublie-client').style.display = 'none';
+        document.getElementById('bloc-mdp-oublie-client').style.display = 'block';
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    async function demanderReinitialisationClient() {
+        const identifiant = document.getElementById('mdp-oublie-client-identifiant').value.trim();
+        const messageEl = document.getElementById('mdp-oublie-client-message');
+        if (!identifiant) return;
+
+        messageEl.style.display = 'block';
+        messageEl.style.color = 'var(--gray)';
+        messageEl.textContent = 'Envoi en cours…';
+
+        try {
+            const resp = await fetch('/api/mot-de-passe-oublie', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiant }),
+            });
+            await resp.json();
+            // Réponse volontairement générique côté serveur (ne révèle
+            // jamais si un compte existe) -- le message affiché ici reste
+            // le même quel que soit le résultat réel.
+            messageEl.style.color = '#047857';
+            messageEl.textContent = 'Si un compte correspond à cet identifiant, un lien de réinitialisation vient d\'être envoyé.';
+        } catch (err) {
+            console.error(err);
+            messageEl.style.color = '#dc2626';
+            messageEl.textContent = 'Erreur réseau.';
+        }
+    }
+
     function basculerTypeConnexion(type) {
         document.getElementById('toggle-client').classList.toggle('actif', type === 'client');
         document.getElementById('toggle-staff').classList.toggle('actif', type === 'staff');
@@ -487,6 +585,7 @@
         document.getElementById('form-login-partenaire').style.display = type === 'partenaire' ? 'block' : 'none';
     }
 
+    // [DONNÉES/ÉTAT]
     async function verifierSessions() {
         try {
             const respClient = await fetch('/api/session', { credentials: 'include' });
@@ -510,6 +609,7 @@
         }
     }
 
+    // [PRÉSENTATION-COMMUNE]
     function afficherLogin() {
         document.getElementById('vue-login').style.display = 'block';
         document.getElementById('vue-appli').style.display = 'none';
@@ -528,6 +628,7 @@
         }
     }
 
+    // [DONNÉES/ÉTAT]
     function viderTousLesChampsMotDePasse() {
         document.querySelectorAll('input[type="password"]').forEach((champ) => { champ.value = ''; });
     }
@@ -539,12 +640,14 @@
     // au mieux le texte disparaît (bug relevé par Roger le 27/08/2026),
     // au pire c'est une porte ouverte à l'injection de script par un
     // expéditeur malveillant.
+    // [DONNÉES/ÉTAT]
     function echapperHtml(texte) {
         const div = document.createElement('div');
         div.textContent = texte == null ? '' : String(texte);
         return div.innerHTML;
     }
 
+    // [DONNÉES/ÉTAT]
     function afficherAppli() {
         document.getElementById('vue-login').style.display = 'none';
         document.getElementById('vue-appli').style.display = 'block';
@@ -580,6 +683,7 @@
         afficherPage('profil');
     }
 
+    // [PRÉSENTATION-COMMUNE]
     function construireMenu() {
         const menu = document.getElementById('menu-lateral');
         const morceauxIdentite = [];
@@ -630,12 +734,14 @@
         menu.innerHTML = html;
     }
 
+    // [PRÉSENTATION-COMMUNE]
     function toggleMenuMobile() {
         document.getElementById('menu-lateral').classList.toggle('ouvert');
         const overlay = document.getElementById('overlay-mobile');
         overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
     }
 
+    // [DONNÉES/ÉTAT]
     function afficherPage(nomPage) {
         document.querySelectorAll('.page').forEach((p) => p.classList.remove('visible'));
         document.querySelectorAll('.menu-item').forEach((b) => b.classList.remove('actif'));
@@ -706,6 +812,7 @@
         } catch (err) { console.error(err); erreurEl.textContent = 'Erreur réseau.'; erreurEl.style.display = 'block'; }
     });
 
+    // [DONNÉES/ÉTAT]
     async function deconnexionTout() {
         try {
             if (sessionClient) await fetch('/api/deconnexion', { method: 'POST', credentials: 'include' });
@@ -716,6 +823,7 @@
         afficherLogin();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function evaluerBarresStaffBoiteMail() {
         const val = document.getElementById('staff-boitemail-mdp').value;
         const confirm = document.getElementById('staff-boitemail-confirm').value;
@@ -739,6 +847,7 @@
         barreCorresp.style.backgroundColor = pct >= 100 ? '#10b981' : '#60a5fa';
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function mettreAJourBoiteMailStaff() {
         const motDePasse = document.getElementById('staff-boitemail-mdp').value;
         const confirmation = document.getElementById('staff-boitemail-confirm').value;
@@ -780,6 +889,7 @@
         }
     }
 
+    // [PRÉSENTATION-COMMUNE]
     async function chargerSessionsActives() {
         const conteneur = document.getElementById('sessions-actives-liste');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
@@ -812,6 +922,7 @@
         conteneur.innerHTML = html || '<p class="vide">Aucune session active.</p>';
     }
 
+    // [PRÉSENTATION-COMMUNE]
     async function revoquerSession(type, sid, urlSuppression) {
         if (!window.confirm('Révoquer cette session ? Elle sera immédiatement déconnectée.')) return;
         try {
@@ -820,6 +931,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-CLIENT]
     async function chargerMonProfil() {
         try {
             const resp = await fetch('/api/mon-compte/profil', { credentials: 'include' });
@@ -834,6 +946,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerMonProfilStaff() {
         try {
             const resp = await fetch('/api/staff/mon-profil', { credentials: 'include' });
@@ -883,6 +996,7 @@
         } catch (err) { console.error(err); }
     });
 
+    // [DONNÉES/ÉTAT]
     function barreMdp(idInput, idBarre) {
         const val = document.getElementById(idInput).value;
         const barre = document.getElementById(idBarre);
@@ -895,6 +1009,7 @@
         barre.style.width = pct + '%';
         barre.style.backgroundColor = score <= 1 ? '#f87171' : score === 2 ? '#fb923c' : score === 3 ? '#facc15' : '#10b981';
     }
+    // [DONNÉES/ÉTAT]
     function barreCorrespondance(idNouveau, idConfirm, idBarre) {
         const val = document.getElementById(idNouveau).value;
         const confirm = document.getElementById(idConfirm).value;
@@ -949,6 +1064,7 @@
         } catch (err) { console.error(err); this.reset(); }
     });
 
+    // [PRÉSENTATION-CLIENT]
     async function exporterMesDonnees() {
         try {
             const resp = await fetch('/api/mon-compte/export', { credentials: 'include' });
@@ -962,6 +1078,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-CLIENT]
     async function ouvrirFermetureCompte() {
         if (!window.confirm("Fermer/suspendre définitivement votre compte Client ?\nVos données ne sont pas supprimées, seulement suspendues.")) return;
         const mot_de_passe = window.prompt('Confirmez votre mot de passe :');
@@ -978,6 +1095,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-CLIENT]
     async function chargerMesDemandes() {
         const conteneur = document.getElementById('mes-demandes-liste');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
@@ -999,6 +1117,7 @@
 
     let typeMessagerieActuel = null;
 
+    // [PRÉSENTATION-COMMUNE]
     async function chargerMessagerie(type) {
         typeMessagerieActuel = type;
         const conteneur = document.getElementById('messagerie-liste-conteneur');
@@ -1051,6 +1170,7 @@
         }
     }
 
+    // [PRÉSENTATION-PARTENAIRE]
     function evaluerBarresBoiteMail() {
         const val = document.getElementById('boite-mail-nouveau-mdp').value;
         const confirm = document.getElementById('boite-mail-confirm-mdp').value;
@@ -1075,6 +1195,7 @@
         barreCorresp.style.backgroundColor = pctCorresp >= 100 ? '#10b981' : '#60a5fa';
     }
 
+    // [PRÉSENTATION-PARTENAIRE]
     async function mettreAJourMotDePasseBoiteMail() {
         const motDePasse = document.getElementById('boite-mail-nouveau-mdp').value;
         const confirmation = document.getElementById('boite-mail-confirm-mdp').value;
@@ -1116,6 +1237,7 @@
         }
     }
 
+    // [PRÉSENTATION-COMMUNE]
     async function ouvrirMessage(uid) {
         const conteneur = document.getElementById('messagerie-detail-conteneur');
         document.getElementById('messagerie-liste-vue').style.display = 'none';
@@ -1146,11 +1268,13 @@
         }
     }
 
+    // [PRÉSENTATION-COMMUNE]
     function fermerDetailMessage() {
         document.getElementById('messagerie-liste-vue').style.display = 'block';
         document.getElementById('messagerie-detail-vue').style.display = 'none';
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerAgents() {
         try {
             const resp = await fetch('/api/staff/agents', { credentials: 'include' });
@@ -1165,6 +1289,7 @@
     let triColonneTickets = 'date_creation';
     let triDescendantTickets = true;
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerTicketsStaff() {
         const conteneur = document.getElementById('tickets-staff-conteneur');
         const statut = document.getElementById('filtre-statut').value;
@@ -1182,12 +1307,14 @@
         } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function trierColonneTickets(colonne) {
         if (triColonneTickets === colonne) { triDescendantTickets = !triDescendantTickets; }
         else { triColonneTickets = colonne; triDescendantTickets = true; }
         afficherTableauTickets();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function libelleGroupeDateTicket(dateStr) {
         const date = new Date(dateStr);
         const joursEcoules = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
@@ -1196,6 +1323,7 @@
         return 'Plus ancien';
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function afficherTableauTickets() {
         const conteneur = document.getElementById('tickets-staff-conteneur');
         if (!ticketsStaffCourants.length) { conteneur.innerHTML = '<p class="vide">Aucun ticket.</p>'; return; }
@@ -1254,6 +1382,7 @@
         conteneur.innerHTML = html;
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function changerStatutTicket(idTicket, codeStatut) {
         try {
             const resp = await fetch(`/api/staff/tickets/${idTicket}/statut`, {
@@ -1266,6 +1395,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function changerAssignationTicket(idTicket, idStaffStr) {
         const id_staff = idStaffStr === '' ? null : parseInt(idStaffStr, 10);
         try {
@@ -1279,6 +1409,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function promouvoirProspectEnClient(idProspect, nom) {
         if (!window.confirm(`Créer un compte Client pour « ${nom} » ? Un email d'activation sera envoyé à son adresse.`)) return;
         try {
@@ -1297,6 +1428,7 @@
         }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerProspects() {
         const conteneur = document.getElementById('prospects-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
@@ -1323,6 +1455,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function changerStatutProspect(idProspect, statut) {
         try {
             await fetch(`/api/staff/prospects/${idProspect}/statut`, {
@@ -1333,6 +1466,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function telechargerModeleCsv() {
         const contenu = [
             'nom_complet,email,email_notification,telephone,codes_types,contacts',
@@ -1346,6 +1480,7 @@
         URL.revokeObjectURL(url);
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function importerPartenairesCsv() {
         const fichierInput = document.getElementById('cp-import-fichier');
         const resultatEl = document.getElementById('cp-import-resultat');
@@ -1388,6 +1523,7 @@
 
     // ---------------- Clients (Administration) ----------------
 
+    // [PRÉSENTATION-PERSONNEL]
     async function verifierEmailPersonnel() {
         const zone = document.getElementById('pers-email-verif');
         const idEdition = document.getElementById('pers-id-edition').value;
@@ -1434,6 +1570,7 @@
         }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function carteKpi(titre, valeur, couleur) {
         return `<div style="background:white; border:1px solid var(--border); border-left:4px solid ${couleur}; border-radius:10px; padding:16px;">
             <p style="font-size:11px; color:var(--gray); text-transform:uppercase; font-weight:700; margin:0 0 6px;">${titre}</p>
@@ -1441,6 +1578,7 @@
         </div>`;
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerKpis() {
         const conteneur = document.getElementById('pilotage-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
@@ -1466,6 +1604,7 @@
         }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerListeClients() {
         const conteneur = document.getElementById('clients-liste-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
@@ -1499,6 +1638,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function actionGroupeeClients(nouveauStatut) {
         const coches = Array.from(document.querySelectorAll('.client-select:checked'));
         if (coches.length === 0) { alert('Sélectionnez au moins un client.'); return; }
@@ -1515,6 +1655,7 @@
 
     let rolesPersonnelCache = [];
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerRolesPersonnel() {
         try {
             const resp = await fetch('/api/staff/roles', { credentials: 'include' });
@@ -1526,6 +1667,57 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
+    function mettreAJourBoutonRenvoiPersonnel() {
+        const bouton = document.getElementById('btn-renvoyer-activation-personnel');
+        const coches = Array.from(document.querySelectorAll('.pers-select:checked'));
+
+        if (coches.length === 0) {
+            bouton.disabled = true;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;';
+            bouton.title = "Sélectionnez uniquement des comptes « En attente d'activation »";
+            return;
+        }
+
+        const tousEnAttente = coches.every((c) => c.dataset.enAttente === '1');
+        const auMoinsUnEnAttente = coches.some((c) => c.dataset.enAttente === '1');
+
+        if (tousEnAttente) {
+            bouton.disabled = false;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid #fde68a; border-radius:6px; background:#fffbeb; color:#b45309; cursor:pointer; font-weight:700;';
+            bouton.title = "Renvoyer le lien d'activation aux comptes sélectionnés";
+        } else if (auMoinsUnEnAttente) {
+            bouton.disabled = true;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid #fde68a; border-radius:6px; background:#fffbeb; color:#b45309; cursor:not-allowed;';
+            bouton.title = "Certains comptes sélectionnés ne sont pas « En attente d'activation » — affinez la sélection";
+        } else {
+            bouton.disabled = true;
+            bouton.style.cssText = 'font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;';
+            bouton.title = "Aucun des comptes sélectionnés n'est « En attente d'activation »";
+        }
+    }
+
+    // [PRÉSENTATION-PERSONNEL]
+    async function renvoyerActivationGroupeePersonnel() {
+        const coches = Array.from(document.querySelectorAll('.pers-select:checked'));
+        if (coches.length === 0) return;
+
+        const confirmation = window.confirm(
+            `Renvoyer le lien d'activation aux comptes suivants ?\n\n${coches.map((c) => `• ${c.dataset.nom}`).join('\n')}`
+        );
+        if (!confirmation) return;
+
+        for (const c of coches) {
+            await fetch('/api/staff/renvoyer-activation', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ email: c.dataset.email }),
+            });
+        }
+        alert(`Lien d'activation renvoyé à ${coches.length} compte(s).`);
+        chargerListePersonnel();
+    }
+
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerListePersonnel() {
         await chargerRolesPersonnel();
         const conteneur = document.getElementById('personnel-liste-conteneur');
@@ -1542,8 +1734,9 @@
                     <button onclick="actionGroupeePersonnel('suspendu')" title="Bloque l'accès du/des compte(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⏸️ Suspendre</button>
                     <button onclick="actionGroupeePersonnel('actif')" title="Rétablit l'accès du/des compte(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">▶️ Réactiver</button>
                     <button onclick="actionGroupeePersonnel('supprimer')" title="Supprime le(s) compte(s) sélectionné(s) — les comptes protégés sont automatiquement ignorés" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
+                    <button id="btn-renvoyer-activation-personnel" onclick="renvoyerActivationGroupeePersonnel()" disabled title="Sélectionnez uniquement des comptes « En attente d'activation »" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;">✉️ Renvoyer le lien d'activation</button>
                 </div>
-                <table><thead><tr><th style="width:24px;"><input type="checkbox" onchange="document.querySelectorAll('.pers-select').forEach(c=>c.checked=this.checked)"></th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th style="width:50px;">Modifier</th></tr></thead><tbody>`;
+                <table><thead><tr><th style="width:24px;"><input type="checkbox" onchange="document.querySelectorAll('.pers-select').forEach(c=>c.checked=this.checked); mettreAJourBoutonRenvoiPersonnel()"></th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th style="width:50px;">Modifier</th></tr></thead><tbody>`;
             data.personnel.forEach((p) => {
                 let statutBadge;
                 if (p.statut_compte !== 'actif') statutBadge = '<span class="badge badge-perdu">Suspendu</span>';
@@ -1551,17 +1744,33 @@
                 else statutBadge = '<span class="badge badge-resolu">Actif</span>';
 
                 const protectionBadge = p.est_compte_racine ? ' 🔒' : (p.suppression_reservee_racine ? ' 🔐' : '');
+                // Ligne grisée, sans action de modification, pour les
+                // comptes protégés (31/08/2026, demande explicite de Roger)
+                // -- visible uniquement par rnkamegni@ de toute façon (filtré
+                // côté serveur), mais visuellement non-éditable même pour lui.
+                // Grisé/non-modifiable UNIQUEMENT quand ce n'est pas mon
+                // propre compte (révisé le 31/08/2026) -- un SuperAdmin
+                // reste pleinement éditable pour lui-même ; seul le compte
+                // d'un AUTRE SuperAdmin (ou un compte protégé par ailleurs)
+                // se voit verrouillé à l'écran.
+                const estMonCompte = sessionStaff && p.id_staff === sessionStaff.id_staff;
+                const estVerrouille = (p.code_role === 'superadmin' || p.suppression_reservee_racine) && !estMonCompte;
+                const styleLigne = estVerrouille ? ' style="background:#f1f5f9; color:#94a3b8;"' : '';
+                const celluleAction = estVerrouille
+                    ? '<span style="font-size:14px;" title="Compte réservé — non modifiable">✅</span>'
+                    : `<button onclick='ouvrirEditionPersonnel(${p.id_staff}, ${JSON.stringify(p.nom_complet)}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")}, ${JSON.stringify(p.email_validation || "")})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>`;
 
-                html += `<tr>
+                html += `<tr${styleLigne}>
                     <td><input type="checkbox" class="pers-select" value="${p.id_staff}"
                         data-nom="${(p.nom_complet || '').replace(/"/g, '&quot;')}" data-telephone="${(p.telephone || '').replace(/"/g, '&quot;')}"
-                        data-racine="${p.est_compte_racine ? '1' : '0'}" data-protege="${p.suppression_reservee_racine ? '1' : '0'}"></td>
+                        data-email="${(p.email || '').replace(/"/g, '&quot;')}" data-en-attente="${!p.mot_de_passe_defini ? '1' : '0'}"
+                        data-racine="${p.est_compte_racine ? '1' : '0'}" data-protege="${p.suppression_reservee_racine ? '1' : '0'}" onchange="mettreAJourBoutonRenvoiPersonnel()"></td>
                     <td><strong>${p.nom_complet}</strong>${protectionBadge}</td>
                     <td>${p.email}</td>
                     <td>${p.role_libelle_fr}</td>
                     <td>${statutBadge}</td>
                     <td style="text-align:center;">
-                        <button onclick='ouvrirEditionPersonnel(${p.id_staff}, ${JSON.stringify(p.nom_complet)}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>
+                        ${celluleAction}
                     </td>
                 </tr>`;
             });
@@ -1570,6 +1779,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function actionGroupeePersonnel(action) {
         const coches = Array.from(document.querySelectorAll('.pers-select:checked'));
         if (coches.length === 0) { alert('Sélectionnez au moins un compte.'); return; }
@@ -1593,6 +1803,7 @@
         chargerListePersonnel();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function dupliquerPersonnelSelectionne() {
         const coches = document.querySelectorAll('.pers-select:checked');
         if (coches.length !== 1) { alert('Cochez exactement un compte à dupliquer.'); return; }
@@ -1604,20 +1815,25 @@
         document.getElementById('pers-form-titre').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function ouvrirEditionPersonnel(id, nomComplet, email, telephone) {
+    // [PRÉSENTATION-PERSONNEL]
+    function ouvrirEditionPersonnel(id, nomComplet, email, telephone, emailValidation) {
         document.getElementById('pers-id-edition').value = id;
         document.getElementById('pers-form-titre').textContent = `Modifier : ${nomComplet}`;
         document.getElementById('pers-nom-complet').value = nomComplet;
         document.getElementById('pers-email').value = email;
         document.getElementById('pers-email').disabled = true;
         document.getElementById('pers-telephone').value = telephone;
-        document.getElementById('pers-email-validation-bloc').style.display = 'none';
+        // Le mail de validation reste visible et modifiable à l'édition
+        // (31/08/2026) -- utile pour corriger une adresse personnelle
+        // erronée, ou pour préparer un futur renvoi d'activation.
+        document.getElementById('pers-email-validation').value = emailValidation || '';
         document.querySelector('#form-personnel button[type="submit"]').textContent = 'Enregistrer les modifications';
         document.getElementById('pers-annuler-btn').style.display = 'block';
         document.getElementById('pers-resultat').style.display = 'none';
         window.scrollTo({ top: document.getElementById('form-personnel').offsetTop, behavior: 'smooth' });
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function annulerEditionPersonnel() {
         document.getElementById('pers-id-edition').value = '';
         document.getElementById('pers-form-titre').textContent = 'Créer un nouveau compte Personnel';
@@ -1628,6 +1844,7 @@
         document.getElementById('form-personnel').reset();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function supprimerPersonnel(id, nomComplet) {
         if (!window.confirm(`Supprimer définitivement le compte « ${nomComplet} » ?`)) return;
         try {
@@ -1643,7 +1860,7 @@
         const idEdition = document.getElementById('pers-id-edition').value;
         const emailValidation = document.getElementById('pers-email-validation').value.trim();
 
-        if (!idEdition && emailValidation && !emailEstVraisemblable(emailValidation)) {
+        if (emailValidation && !emailEstVraisemblable(emailValidation)) {
             alert('L\'adresse de validation ne semble pas valide.');
             return;
         }
@@ -1657,6 +1874,7 @@
         try {
             let resp;
             if (idEdition) {
+                corps.email_validation = emailValidation;
                 resp = await fetch(`/api/staff/personnel/${idEdition}`, {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
                     body: JSON.stringify(corps),
@@ -1696,6 +1914,7 @@
         }
     });
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerListePartenaires() {
         const conteneur = document.getElementById('cp-liste-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
@@ -1747,6 +1966,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function mettreAJourBoutonRenvoi() {
         const bouton = document.getElementById('btn-renvoyer-activation');
         const coches = Array.from(document.querySelectorAll('.cp-select-partenaire:checked'));
@@ -1778,6 +1998,7 @@
         }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function renvoyerActivationGroupee() {
         const coches = Array.from(document.querySelectorAll('.cp-select-partenaire:checked'));
         if (coches.length === 0) return;
@@ -1804,6 +2025,7 @@
         chargerListePartenaires();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function dupliquerPartenaireSelectionne() {
         const coches = document.querySelectorAll('.cp-select-partenaire:checked');
         if (coches.length !== 1) { alert('Cochez exactement un partenaire à dupliquer.'); return; }
@@ -1819,6 +2041,7 @@
         document.getElementById('cp-form-titre').scrollIntoView({ behavior: 'smooth' });
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function actionGroupeePartenaires(action) {
         const ids = Array.from(document.querySelectorAll('.cp-select-partenaire:checked')).map((el) => el.value);
         if (ids.length === 0) { alert('Sélectionnez au moins un partenaire.'); return; }
@@ -1839,6 +2062,7 @@
         chargerListePartenaires();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function ouvrirEditionPartenaire(id, nomComplet, email, telephone, idTypes, contacts, emailNotification) {
         document.getElementById('cp-id-edition').value = id;
         document.getElementById('cp-form-titre').textContent = `Modifier : ${nomComplet}`;
@@ -1859,6 +2083,7 @@
         window.scrollTo({ top: document.getElementById('form-creer-partenaire').offsetTop, behavior: 'smooth' });
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function annulerEditionPartenaire() {
         document.getElementById('cp-id-edition').value = '';
         document.getElementById('cp-form-titre').textContent = 'Créer un nouveau partenaire';
@@ -1871,6 +2096,7 @@
         chargerContactsEnCours([]);
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function basculerStatutPartenaire(id, nouveauStatut) {
         try {
             const resp = await fetch(`/api/staff/partenaires/${id}`, {
@@ -1883,6 +2109,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function supprimerPartenaire(id, nomComplet) {
         if (!window.confirm(`Supprimer définitivement le partenaire « ${nomComplet} » ?\nCette action est irréversible. Les tickets liés seront désassignés, pas supprimés.`)) return;
         try {
@@ -1896,6 +2123,7 @@
     let contactsEnCours = [];
     let indexContactEnEdition = null;
 
+    // [PRÉSENTATION-PERSONNEL]
     function rendreListeContacts() {
         const conteneur = document.getElementById('cp-contacts-liste');
         if (contactsEnCours.length === 0) {
@@ -1915,16 +2143,19 @@
         conteneur.innerHTML = html;
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function chargerContactsEnCours(liste) {
         contactsEnCours = (liste && liste.length ? liste : []).map((c) => ({ ...c }));
         rendreListeContacts();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function ajouterContact() {
         indexContactEnEdition = null;
         ouvrirZoneEditionContact({});
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function modifierContactSelectionne() {
         const coches = document.querySelectorAll('.cp-select-contact:checked');
         if (coches.length !== 1) { alert('Cochez exactement un contact à modifier.'); return; }
@@ -1932,6 +2163,7 @@
         ouvrirZoneEditionContact(contactsEnCours[indexContactEnEdition]);
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function dupliquerContactSelectionne() {
         const coches = document.querySelectorAll('.cp-select-contact:checked');
         if (coches.length !== 1) { alert('Cochez exactement un contact à dupliquer.'); return; }
@@ -1940,6 +2172,7 @@
         rendreListeContacts();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function retirerContactsSelectionnes() {
         const indices = Array.from(document.querySelectorAll('.cp-select-contact:checked')).map((el) => parseInt(el.value, 10));
         if (indices.length === 0) { alert('Cochez au moins un contact à retirer.'); return; }
@@ -1947,6 +2180,7 @@
         rendreListeContacts();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function ouvrirZoneEditionContact(c) {
         document.getElementById('cp-contact-edit-nom').value = c.nom || '';
         document.getElementById('cp-contact-edit-prenom').value = c.prenom || '';
@@ -1956,10 +2190,12 @@
         document.getElementById('cp-contact-edit-zone').style.display = 'block';
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function annulerEditionContact() {
         document.getElementById('cp-contact-edit-zone').style.display = 'none';
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function enregistrerContactEdition() {
         const nom = document.getElementById('cp-contact-edit-nom').value.trim();
         if (!nom) { alert('Le nom est requis.'); return; }
@@ -1981,13 +2217,35 @@
         rendreListeContacts();
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     function collecterContacts() { return contactsEnCours; }
 
     // Vérification de vraisemblance d'un email EXTERNE (notification
     // partenaire, validation staff) — plus stricte que la validation
+    // Complète automatiquement le domaine professionnel si l'utilisateur
+    // n'a saisi que la partie locale ("roger" ou "roger@" -> "roger@
+    // mutuelleproassurances.com") -- appelée à la sortie du champ, avant
+    // la vérification de vraisemblance (31/08/2026, demande de Roger).
+    // Ne touche jamais à une adresse qui contient déjà un domaine complet.
+    // [DONNÉES/ÉTAT]
+    function completerDomaineEmail(idChamp) {
+        const champ = document.getElementById(idChamp);
+        let valeur = champ.value.trim();
+        if (!valeur) return;
+        if (!valeur.includes('@')) {
+            champ.value = `${valeur}@mutuelleproassurances.com`;
+        } else if (valeur.endsWith('@')) {
+            champ.value = `${valeur}mutuelleproassurances.com`;
+        }
+        // Sinon : un domaine est déjà présent, on ne touche à rien --
+        // une adresse externe complète reste possible et légitime.
+    }
+
+    // Vraisemblance d'une adresse email externe -- validation client
     // HTML5 native (rejette les domaines sans TLD plausible, les points
     // consécutifs, etc.). N'est PAS appliquée aux boîtes internes
     // (celles-là sont testées par une vraie connexion IMAP).
+    // [DONNÉES/ÉTAT]
     function emailEstVraisemblable(email) {
         if (!email) return false;
         const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
@@ -1996,6 +2254,7 @@
         return true;
     }
 
+    // [DONNÉES/ÉTAT]
     function verifierVraisemblanceChamp(idChamp, idMessage) {
         const valeur = document.getElementById(idChamp).value.trim();
         const messageEl = document.getElementById(idMessage);
@@ -2012,6 +2271,7 @@
         messageEl.style.display = 'none';
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function verifierEmailPartenaire() {
         const zone = document.getElementById('cp-email-verif');
         const idEdition = document.getElementById('cp-id-edition').value;
@@ -2068,6 +2328,7 @@
         }
     }
 
+    // [PRÉSENTATION-PERSONNEL]
     async function chargerTypesPartenaireFormulaire() {
         const conteneur = document.getElementById('cp-types-conteneur');
         try {
@@ -2179,6 +2440,7 @@
         }
     });
 
+    // [PRÉSENTATION-PARTENAIRE]
     async function chargerMesDossiersPartenaire() {
         const conteneur = document.getElementById('dossiers-partenaire-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';

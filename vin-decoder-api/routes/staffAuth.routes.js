@@ -93,6 +93,7 @@ module.exports = function (pool) {
 
                 req.session.id_staff = staff.id_staff;
                 req.session.code_role = staff.code_role;
+                req.session.email = staff.email;
 
                 pool.query(
                     'UPDATE site.staff SET date_derniere_connexion = now() WHERE id_staff = $1',

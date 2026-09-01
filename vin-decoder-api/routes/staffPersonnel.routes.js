@@ -56,7 +56,7 @@ module.exports = function (pool) {
         }
     });
 
-    router.get('/personnel/verifier-email', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.get('/personnel/verifier-email', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const email = (req.query.email || '').trim();
         if (!email) {
             return res.status(400).json({ succes: false, erreurs: ['email requis'] });
@@ -73,24 +73,35 @@ module.exports = function (pool) {
         }
     });
 
-    router.get('/personnel', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.get('/personnel', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT s.id_staff, s.matricule, s.nom_complet, s.email, s.telephone, s.statut_compte,
+                `SELECT s.id_staff, s.matricule, s.nom_complet, s.email, s.email_validation, s.telephone, s.statut_compte,
                         s.mot_de_passe_defini, s.est_compte_racine, s.suppression_reservee_racine,
                         r.code_role, r.libelle_fr AS role_libelle_fr
                  FROM site.staff s
                  JOIN site.role_staff r ON r.id_role = s.id_role
                  ORDER BY s.est_compte_racine DESC, s.nom_complet`
             );
-            return res.status(200).json({ succes: true, personnel: resultat.rows });
+
+            // Restriction par RÔLE (révisé le 31/08/2026, suite au retour
+            // de Roger) : un compte "superadmin" n'est visible que par un
+            // autre "superadmin" -- généralise ce qui était fait à la main
+            // sur une seule adresse email, couvre aussi le compte racine
+            // lui-même vis-à-vis des autres administrateurs.
+            const estSuperAdmin = req.session.code_role === 'superadmin';
+            const personnel = estSuperAdmin
+                ? resultat.rows
+                : resultat.rows.filter((p) => p.code_role !== 'superadmin');
+
+            return res.status(200).json({ succes: true, personnel });
         } catch (err) {
             console.error('[GET /api/staff/personnel] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
         }
     });
 
-    router.post('/personnel', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/personnel', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const { email, email_validation, nom_complet, telephone, id_role, creer_boite_mail } = req.body;
         if (!email || !nom_complet || !id_role) {
             return res.status(400).json({ succes: false, erreurs: ['email, nom_complet et id_role requis'] });
@@ -151,15 +162,27 @@ module.exports = function (pool) {
         }
     });
 
-    router.patch('/personnel/:id', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.patch('/personnel/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idStaff = parseInt(req.params.id, 10);
-        const { nom_complet, telephone, date_naissance, adresse, id_role, statut_compte } = req.body;
+        const { nom_complet, telephone, date_naissance, adresse, id_role, statut_compte, email_validation } = req.body;
 
         if (!Number.isInteger(idStaff)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
         }
 
         try {
+            // Protection par rôle (révisé le 31/08/2026) : un compte
+            // "superadmin" ne peut être modifié QUE par lui-même -- même un
+            // autre superadmin ne peut pas le faire à sa place, et aucun
+            // compte non-superadmin ne le peut, même en connaissant l'id.
+            const cible = await pool.query(
+                `SELECT r.code_role FROM site.staff s JOIN site.role_staff r ON r.id_role = s.id_role WHERE s.id_staff = $1`,
+                [idStaff]
+            );
+            if (cible.rowCount > 0 && cible.rows[0].code_role === 'superadmin' && req.session.id_staff !== idStaff) {
+                return res.status(403).json({ succes: false, erreurs: ['ce compte est réservé — seul son titulaire peut le modifier'] });
+            }
+
             await pool.query(
                 `UPDATE site.staff
                  SET nom_complet = COALESCE($1, nom_complet),
@@ -167,9 +190,10 @@ module.exports = function (pool) {
                      date_naissance = COALESCE($3, date_naissance),
                      adresse = COALESCE($4, adresse),
                      id_role = COALESCE($5, id_role),
-                     statut_compte = COALESCE($6, statut_compte)
-                 WHERE id_staff = $7`,
-                [nom_complet || null, telephone || null, date_naissance || null, adresse || null, id_role || null, statut_compte || null, idStaff]
+                     statut_compte = COALESCE($6, statut_compte),
+                     email_validation = COALESCE($7, email_validation)
+                 WHERE id_staff = $8`,
+                [nom_complet || null, telephone || null, date_naissance || null, adresse || null, id_role || null, statut_compte || null, email_validation || null, idStaff]
             );
             return res.status(200).json({ succes: true });
         } catch (err) {
@@ -178,7 +202,7 @@ module.exports = function (pool) {
         }
     });
 
-    router.delete('/personnel/:id', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.delete('/personnel/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idStaff = parseInt(req.params.id, 10);
         if (!Number.isInteger(idStaff)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });

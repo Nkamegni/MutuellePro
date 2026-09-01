@@ -17,7 +17,7 @@ const { creerBoiteMail, supprimerBoiteMail } = require('../lib/ispconfig');
 module.exports = function (pool) {
     const router = express.Router();
 
-    router.post('/test-ispconfig-creation', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/test-ispconfig-creation', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const { email, mot_de_passe } = req.body;
         if (!email || !mot_de_passe) {
             return res.status(400).json({ succes: false, erreurs: ['email et mot_de_passe requis dans le corps de la requête'] });

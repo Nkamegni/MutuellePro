@@ -110,7 +110,7 @@ module.exports = function (pool) {
         }
     });
 
-    router.post('/partenaires', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/partenaires', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const { email, email_notification, nom_complet, telephone, id_types_partenaire, contacts, creer_boite_mail } = req.body;
 
         if (!email || !nom_complet || !Array.isArray(id_types_partenaire) || id_types_partenaire.length === 0) {
@@ -207,7 +207,7 @@ module.exports = function (pool) {
         }
     });
 
-    router.patch('/partenaires/:id', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.patch('/partenaires/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
         const { nom_complet, telephone, email_notification, id_types_partenaire, contacts, statut_compte } = req.body;
 
@@ -282,7 +282,7 @@ module.exports = function (pool) {
         }
     });
 
-    router.delete('/partenaires/:id', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.delete('/partenaires/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
         if (!Number.isInteger(idPartenaire)) {
             return res.status(400).json({ succes: false, erreurs: ['id de partenaire invalide'] });
@@ -323,7 +323,7 @@ module.exports = function (pool) {
     // uniquement. Le mot de passe est celui déjà créé manuellement dans
     // ISPConfig pour la boîte du partenaire (même adresse que son email
     // de connexion). Jamais stocké en clair — voir lib/chiffrement.js.
-    router.patch('/partenaires/:id/boite-mail', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.patch('/partenaires/:id/boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
         const { mot_de_passe } = req.body;
 
@@ -450,7 +450,7 @@ module.exports = function (pool) {
         return contacts;
     }
 
-    router.post('/partenaires/import', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/partenaires/import', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const { contenu_csv } = req.body;
         if (!contenu_csv || typeof contenu_csv !== 'string') {
             return res.status(400).json({ succes: false, erreurs: ['contenu_csv requis'] });
@@ -545,7 +545,7 @@ module.exports = function (pool) {
     // Renvoi du lien d'activation, à l'initiative du staff — utilisé par
     // l'action groupée "Renvoyer le lien d'activation" sur les comptes
     // "En attente d'activation".
-    router.post('/partenaires/:id/renvoyer-activation', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/partenaires/:id/renvoyer-activation', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
         if (!Number.isInteger(idPartenaire)) {
             return res.status(400).json({ succes: false, erreurs: ['id de partenaire invalide'] });

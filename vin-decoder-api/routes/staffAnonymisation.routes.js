@@ -24,7 +24,7 @@ const requireStaffRole = require('../middleware/requireStaffRole');
 module.exports = function (pool) {
     const router = express.Router();
 
-    router.post('/clients/:id/anonymiser', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/clients/:id/anonymiser', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idUtilisateur = parseInt(req.params.id, 10);
         if (!Number.isInteger(idUtilisateur)) {
             return res.status(400).json({ succes: false, erreurs: ['id client invalide'] });

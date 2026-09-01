@@ -14,7 +14,7 @@ const requireStaffRole = require('../middleware/requireStaffRole');
 module.exports = function (pool) {
     const router = express.Router();
 
-    router.get('/clients', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.get('/clients', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         try {
             const resultat = await pool.query(
                 `SELECT id_utilisateur, email, telephone, nom, prenom, statut_compte, email_verifie, telephone_verifie, date_creation, date_derniere_connexion
@@ -29,7 +29,7 @@ module.exports = function (pool) {
         }
     });
 
-    router.patch('/clients/:id', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.patch('/clients/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idUtilisateur = parseInt(req.params.id, 10);
         const { statut_compte } = req.body;
         if (!Number.isInteger(idUtilisateur)) {
