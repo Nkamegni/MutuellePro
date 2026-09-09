@@ -19,3 +19,13 @@ vin-decoder-api/server old.js
 *.log
 npm-debug.log*
 favicon_myspace.zip
+
+# Sécurité — fichiers backend ne doivent jamais résider dans js/ ou public/js/
+js/server.js
+js/requireAuth.js
+js/requireStaffAuth.js
+js/*.routes.js
+public/js/server.js
+public/js/requireAuth.js
+public/js/requireStaffAuth.js
+public/js/*.routes.js
