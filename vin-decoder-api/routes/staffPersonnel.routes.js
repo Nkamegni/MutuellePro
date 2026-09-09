@@ -16,6 +16,7 @@ const requireStaffAuth = require('../middleware/requireStaffAuth');
 const { creerBoiteMail } = require('../lib/ispconfig');
 const { chiffrer } = require('../lib/chiffrement');
 const requireStaffRole = require('../middleware/requireStaffRole');
+const { gabaritEmail, corpsActivation } = require('../lib/gabaritEmail');
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -28,15 +29,10 @@ async function envoyerEmailActivationStaff(emailValidation, nomComplet, token) {
     const lien = `https://mutuelleproassurances.com/activation-staff.html?token=${token}`;
     try {
         await mailTransporter.sendMail({
-            from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+            from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailValidation,
             subject: 'Mutuelle Pro Assurances — Activez votre compte Personnel',
-            html: `
-                <p>Bonjour,</p>
-                <p>Un compte Personnel a été créé pour <strong>${nomComplet}</strong> sur l'espace Mutuelle Pro Assurances.</p>
-                <p>Pour l'activer et définir votre mot de passe, cliquez sur le lien ci-dessous (valable 72 heures) :</p>
-                <p><a href="${lien}">${lien}</a></p>
-            `,
+            html: gabaritEmail('Activez votre compte Personnel', corpsActivation({ nomComplet, typeCompte: 'staff', lien })),
         });
     } catch (err) {
         console.error('[envoyerEmailActivationStaff] Erreur envoi email :', err);
@@ -63,7 +59,7 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                'SELECT id_staff, nom_complet, statut_compte FROM site.staff WHERE email = $1',
+                'SELECT id_staff, nom, prenom, statut_compte FROM site.staff WHERE email = $1',
                 [email]
             );
             return res.status(200).json({ succes: true, comptes: resultat.rows });
@@ -76,12 +72,13 @@ module.exports = function (pool) {
     router.get('/personnel', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT s.id_staff, s.matricule, s.nom_complet, s.email, s.email_validation, s.telephone, s.statut_compte,
+                `SELECT s.id_staff, s.matricule, s.nom, s.prenom, s.email, s.email_validation, s.telephone, s.statut_compte,
                         s.mot_de_passe_defini, s.est_compte_racine, s.suppression_reservee_racine,
+                        (s.imap_mot_de_passe_chiffre IS NOT NULL) AS boite_mail_configuree,
                         r.code_role, r.libelle_fr AS role_libelle_fr
                  FROM site.staff s
                  JOIN site.role_staff r ON r.id_role = s.id_role
-                 ORDER BY s.est_compte_racine DESC, s.nom_complet`
+                 ORDER BY s.est_compte_racine DESC, s.nom, s.prenom`
             );
 
             // Restriction par RÔLE (révisé le 31/08/2026, suite au retour
@@ -102,13 +99,26 @@ module.exports = function (pool) {
     });
 
     router.post('/personnel', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
-        const { email, email_validation, nom_complet, telephone, id_role, creer_boite_mail } = req.body;
-        if (!email || !nom_complet || !id_role) {
-            return res.status(400).json({ succes: false, erreurs: ['email, nom_complet et id_role requis'] });
+        const { email, email_validation, nom, prenom, telephone, id_role, creer_boite_mail } = req.body;
+        if (!email || !nom || !id_role) {
+            return res.status(400).json({ succes: false, erreurs: ['email, nom et id_role requis'] });
         }
         if (!email_validation) {
             return res.status(400).json({ succes: false, erreurs: ['une adresse de validation personnelle est requise — c\'est elle qui recevra le lien d\'activation'] });
         }
+        // Confirmé par Roger le 03/09/2026 : téléphone obligatoire pour
+        // Personnel, plus optionnel comme avant.
+        if (!telephone) {
+            return res.status(400).json({ succes: false, erreurs: ['téléphone requis'] });
+        }
+        // Confirmé par Roger le 03/09/2026 : "on n'accepte pas les emails
+        // externes" -- l'adresse professionnelle Personnel doit être sur
+        // le domaine de l'entreprise, contrairement à Partenaires.
+        if (!email.toLowerCase().endsWith('@mutuelleproassurances.com')) {
+            return res.status(400).json({ succes: false, erreurs: ['l\'email professionnel doit être sur le domaine @mutuelleproassurances.com — aucune adresse externe acceptée pour le Personnel'] });
+        }
+
+        const nomComplet = prenom ? `${prenom} ${nom}` : nom;
 
         const client = await pool.connect();
         try {
@@ -119,10 +129,10 @@ module.exports = function (pool) {
             const matricule = `MPA-${String(parseInt(dernierMatricule.rows[0].total, 10) + 1).padStart(4, '0')}`;
 
             const insere = await client.query(
-                `INSERT INTO site.staff (matricule, email, mot_de_passe_hache, id_role, nom_complet, telephone, mot_de_passe_defini, email_validation)
-                 VALUES ($1, $2, $3, $4, $5, $6, false, $7)
-                 RETURNING id_staff, email, nom_complet`,
-                [matricule, email, hacheInutilisable, id_role, nom_complet, telephone || null, email_validation]
+                `INSERT INTO site.staff (matricule, email, mot_de_passe_hache, id_role, nom, prenom, telephone, mot_de_passe_defini, email_validation)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8)
+                 RETURNING id_staff, email, nom, prenom`,
+                [matricule, email, hacheInutilisable, id_role, nom, prenom || null, telephone, email_validation]
             );
             const nouveauStaff = insere.rows[0];
 
@@ -131,7 +141,7 @@ module.exports = function (pool) {
 
             await client.query('COMMIT');
 
-            envoyerEmailActivationStaff(email_validation, nom_complet, token);
+            envoyerEmailActivationStaff(email_validation, nomComplet, token);
 
             // Création de boîte mail — APRÈS le commit, volontairement non
             // bloquante : un échec ici ne doit jamais annuler la création
@@ -140,9 +150,17 @@ module.exports = function (pool) {
             if (creer_boite_mail) {
                 try {
                     const motDePasseGenere = crypto.randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
-                    await creerBoiteMail({ email, motDePasse: motDePasseGenere, nomAffiche: nom_complet });
-                    await pool.query('UPDATE site.staff SET imap_mot_de_passe_chiffre = $1 WHERE id_staff = $2', [chiffrer(motDePasseGenere), nouveauStaff.id_staff]);
-                    boiteMail = { succes: true };
+                    const resultatBoite = await creerBoiteMail({ email, motDePasse: motDePasseGenere, nomAffiche: nomComplet });
+                    // Correctif du 03/09/2026, suite au changement côté pont
+                    // ISPConfig (deja_existant remonté en succès plutôt qu'en
+                    // échec) : si la boîte existait déjà, motDePasseGenere n'a
+                    // JAMAIS été appliqué dessus -- l'enregistrer serait faux.
+                    if (resultatBoite.deja_existant) {
+                        boiteMail = { succes: true, deja_existant: true, avertissement: 'Une boîte mail existait déjà pour cette adresse — le mot de passe réel est inconnu, rien n\'a été enregistré. Utilisez « Configurer ma boîte mail » avec le vrai mot de passe si besoin.' };
+                    } else {
+                        await pool.query('UPDATE site.staff SET imap_mot_de_passe_chiffre = $1 WHERE id_staff = $2', [chiffrer(motDePasseGenere), nouveauStaff.id_staff]);
+                        boiteMail = { succes: true };
+                    }
                 } catch (err) {
                     console.error('[POST /api/staff/personnel] Échec création boîte mail (non bloquant) :', err);
                     boiteMail = { succes: false, erreur: err.message };
@@ -164,7 +182,7 @@ module.exports = function (pool) {
 
     router.patch('/personnel/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idStaff = parseInt(req.params.id, 10);
-        const { nom_complet, telephone, date_naissance, adresse, id_role, statut_compte, email_validation } = req.body;
+        const { nom, prenom, telephone, date_naissance, adresse, id_role, statut_compte, email_validation } = req.body;
 
         if (!Number.isInteger(idStaff)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
@@ -183,22 +201,61 @@ module.exports = function (pool) {
                 return res.status(403).json({ succes: false, erreurs: ['ce compte est réservé — seul son titulaire peut le modifier'] });
             }
 
+            // nom_complet éliminé (03/09/2026) -- plus de resynchronisation
+            // nécessaire, nom/prenom sont désormais la seule donnée.
             await pool.query(
                 `UPDATE site.staff
-                 SET nom_complet = COALESCE($1, nom_complet),
-                     telephone = COALESCE($2, telephone),
-                     date_naissance = COALESCE($3, date_naissance),
-                     adresse = COALESCE($4, adresse),
-                     id_role = COALESCE($5, id_role),
-                     statut_compte = COALESCE($6, statut_compte),
-                     email_validation = COALESCE($7, email_validation)
-                 WHERE id_staff = $8`,
-                [nom_complet || null, telephone || null, date_naissance || null, adresse || null, id_role || null, statut_compte || null, email_validation || null, idStaff]
+                 SET nom = COALESCE($1, nom),
+                     prenom = COALESCE($2, prenom),
+                     telephone = COALESCE($3, telephone),
+                     date_naissance = COALESCE($4, date_naissance),
+                     adresse = COALESCE($5, adresse),
+                     id_role = COALESCE($6, id_role),
+                     statut_compte = COALESCE($7, statut_compte),
+                     email_validation = COALESCE($8, email_validation)
+                 WHERE id_staff = $9`,
+                [nom || null, prenom || null, telephone || null, date_naissance || null, adresse || null, id_role || null, statut_compte || null, email_validation || null, idStaff]
             );
             return res.status(200).json({ succes: true });
         } catch (err) {
             console.error('[PATCH /api/staff/personnel/:id] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    // Provisionne une boîte mail pour un compte Personnel EXISTANT --
+    // comble un trou : la création automatique n'existait qu'au moment
+    // de créer le compte, jamais après coup (01/09/2026, demande de Roger).
+    router.post('/personnel/:id/provisionner-boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        const idStaff = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idStaff)) {
+            return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        }
+        try {
+            const compte = await pool.query('SELECT email, nom, prenom, imap_mot_de_passe_chiffre FROM site.staff WHERE id_staff = $1', [idStaff]);
+            if (compte.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['compte introuvable'] });
+            }
+            if (compte.rows[0].imap_mot_de_passe_chiffre) {
+                return res.status(409).json({ succes: false, erreurs: ['une boîte mail est déjà configurée pour ce compte'] });
+            }
+            const { email, nom, prenom } = compte.rows[0];
+            const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
+            const motDePasseGenere = crypto.randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
+            const resultatBoite = await creerBoiteMail({ email, motDePasse: motDePasseGenere, nomAffiche });
+            // Correctif du 03/09/2026 -- voir même commentaire dans le flux
+            // de création un peu plus haut dans ce fichier.
+            if (resultatBoite.deja_existant) {
+                return res.status(200).json({
+                    succes: true, deja_existant: true,
+                    avertissement: 'Une boîte mail existait déjà pour cette adresse — le mot de passe réel est inconnu, rien n\'a été enregistré. Utilisez « Configurer ma boîte mail » avec le vrai mot de passe si besoin.',
+                });
+            }
+            await pool.query('UPDATE site.staff SET imap_mot_de_passe_chiffre = $1 WHERE id_staff = $2', [chiffrer(motDePasseGenere), idStaff]);
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/staff/personnel/:id/provisionner-boite-mail] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
         }
     });
 
@@ -231,6 +288,25 @@ module.exports = function (pool) {
             // quand même la suppression du compte racine.
             console.error('[DELETE /api/staff/personnel/:id] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur — ou suppression bloquée par une protection de sécurité'] });
+        }
+    });
+
+    // Addendum comptes sans boîte mail professionnelle (Lot B, 02/09/2026)
+    // -- interroge les deux tables, réservé administrateur/superadmin :
+    // l'endpoint entier est refusé aux autres rôles, pas seulement une clé
+    // de la réponse (contrairement au patron taches_par_responsable).
+    router.get('/comptes-sans-boite', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        try {
+            const resultat = await pool.query(`
+                SELECT id_staff AS id, TRIM(COALESCE(prenom, '') || ' ' || nom) AS nom_complet, email, 'staff' AS type_compte FROM site.staff WHERE imap_mot_de_passe_chiffre IS NULL
+                UNION ALL
+                SELECT id_partenaire AS id, TRIM(COALESCE(prenom, '') || ' ' || nom) AS nom_complet, email, 'partenaire' AS type_compte FROM site.partenaires WHERE imap_mot_de_passe_chiffre IS NULL
+                ORDER BY nom_complet
+            `);
+            return res.status(200).json({ succes: true, comptes: resultat.rows });
+        } catch (err) {
+            console.error('[GET /api/staff/comptes-sans-boite] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
         }
     });
 

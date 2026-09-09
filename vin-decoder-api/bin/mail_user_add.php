@@ -124,13 +124,26 @@ $client_id    = (int) $env['ISPCONFIG_CLIENT_ID'];
 // mono-serveur (jamais mise en défaut par une erreur différente).
 $email = $entree['email'];
 
+$parties_email = explode('@', $email, 2);
+if (count($parties_email) !== 2 || $parties_email[0] === '' || $parties_email[1] === '') {
+    erreur("Adresse email invalide pour construction du maildir : {$email}");
+}
+[$partie_locale, $domaine] = $parties_email;
+
+// Convention confirmée sur ce serveur (vérifiée sur admin@mutuelleproassurances.com) :
+// /var/vmail/<domaine>/<partie-locale>, sans slash final, sans suffixe /Maildir
+// (Dovecot ajoute Maildir/ lui-même via sa config mail_location).
+$maildir = "/var/vmail/{$domaine}/{$partie_locale}";
+
 $params = [
     'server_id' => 1,
     'email'     => $email,
     'login'     => $email,           // ISPConfig utilise généralement l'email complet comme login
     'password'  => $entree['password'],
     'name'      => $entree['name'],
-    'maildir'   => '',                // laissé vide : ISPConfig calcule le chemin par défaut
+    'maildir'   => $maildir,
+    'quota'            => $entree['quota'] ?? 0,   // 0 = illimité, ajustable si besoin
+    'access'           => 'y',       // corrigé : la colonne réelle est 'access', pas 'active
     'quota'            => $entree['quota'] ?? 0,   // 0 = illimité, ajustable si besoin
     'active'           => 'y',
     'postfix'          => 'y',   // indispensable : sans ça, la boîte ne reçoit pas les mails
@@ -165,10 +178,30 @@ try {
     if (empty($session_id)) {
         erreur('Login ISPConfig : session_id vide retourné sans exception.');
     }
-
     try {
         $id_mail_user = $client->mail_user_add($session_id, $client_id, $params);
     } catch (Throwable $e) {
+        // Cas attendu, pas une erreur système : le compte existe déjà.
+        // ISPConfig rejette via une validation d'unicité (login_error_unique
+        // et/ou email_error_unique) — on le détecte pour renvoyer un succès
+        // explicite plutôt qu'un échec, et laisser l'appelant enchaîner sur
+        // le rattachement sans avoir à interpréter le message d'erreur brut.
+        if (str_contains($e->getMessage(), 'error_unique')) {
+            try {
+                $boites = $client->mail_user_get_all_by_client($session_id, $client_id);
+                foreach ($boites as $boite) {
+                    $boite = (array) $boite;
+                    if (($boite['email'] ?? null) === $email) {
+                        repondre_et_quitter(true, [
+                            'id_mail_user' => (int) $boite['mailuser_id'],
+                            'deja_existant' => true,
+                        ]);
+                    }
+                }
+            } catch (Throwable $e2) {
+                // Repli sur l'erreur d'origine si la recherche échoue elle-même.
+            }
+        }
         erreur('Échec mail_user_add : ' . $e->getMessage());
     }
 

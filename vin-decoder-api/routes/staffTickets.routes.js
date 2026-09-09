@@ -37,7 +37,7 @@ async function notifierClientChangementStatut(emailClient, codeTicket, nouveauSt
     if (!emailClient) return;
     try {
         await mailTransporter.sendMail({
-            from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+            from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailClient,
             subject: `Mutuelle Pro Assurances — Mise à jour de votre demande ${codeTicket}`,
             html: `
@@ -89,7 +89,7 @@ module.exports = function (pool) {
                     t.id_utilisateur,
                     u.email AS compte_email,
                     t.id_staff_assigne,
-                    sa.nom_complet AS staff_assigne_nom,
+                    TRIM(COALESCE(sa.prenom, '') || ' ' || sa.nom) AS staff_assigne_nom,
                     t.date_creation,
                     t.date_maj
                  FROM site.tickets t
@@ -117,11 +117,11 @@ module.exports = function (pool) {
     router.get('/agents', requireStaffAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT s.id_staff, s.nom_complet, r.code_role
+                `SELECT s.id_staff, s.nom, s.prenom, r.code_role
                  FROM site.staff s
                  JOIN site.role_staff r ON r.id_role = s.id_role
                  WHERE s.statut_compte = 'actif'
-                 ORDER BY s.nom_complet`
+                 ORDER BY s.nom, s.prenom`
             );
             return res.status(200).json({ succes: true, agents: resultat.rows });
         } catch (err) {

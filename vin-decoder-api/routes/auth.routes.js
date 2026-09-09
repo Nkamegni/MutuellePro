@@ -15,6 +15,18 @@
 
 const express = require('express');
 const argon2 = require('argon2');
+const nodemailer = require('nodemailer');
+const { gabaritEmail, corpsConnexionReussie } = require('../lib/gabaritEmail');
+const { analyserNavigateur, analyserSysteme } = require('../lib/analyseurUserAgent');
+const { genererEtEnvoyerCode, verifierCode } = require('../lib/verificationConnexion');
+const { masquerEmail, masquerTelephone } = require('../lib/masquage');
+
+const mailTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: Number(process.env.SMTP_PORT) === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+});
 
 // ---------------------------------------------------------------------
 // Limitation anti-brute-force — auto-contenue dans ce fichier plutôt que
@@ -52,6 +64,7 @@ function reinitialiser(cle) {
 
 module.exports = function (pool) {
     const router = express.Router();
+
     router.post('/connexion', async (req, res) => {
         const { identifiant, mot_de_passe } = req.body; // identifiant = email OU téléphone
 
@@ -69,7 +82,7 @@ module.exports = function (pool) {
 
         try {
             const resultat = await pool.query(
-                `SELECT id_utilisateur, email, telephone, mot_de_passe_hache, statut_compte
+                `SELECT id_utilisateur, email, telephone, nom, prenom, mot_de_passe_hache, statut_compte
                  FROM site.utilisateurs
                  WHERE email = $1 OR telephone = $1`,
                 [identifiant]
@@ -97,12 +110,77 @@ module.exports = function (pool) {
 
             reinitialiser(cle);
 
-            // Régénération de l'id de session à chaque connexion — empêche
-            // la fixation de session (un attaquant qui aurait fixé un id de
-            // session avant l'authentification ne peut pas en hériter).
-            req.session.regenerate((err) => {
+            // 2FA (02/09/2026) : plus de session créée ici. On génère et
+            // envoie le code, la session ne sera créée qu'après vérification
+            // (voir POST /connexion/verifier-code plus bas).
+            const nomAffiche = [compte.prenom, compte.nom].filter(Boolean).join(' ') || compte.email;
+            try {
+                await genererEtEnvoyerCode({
+                    pool, mailTransporter, typeCompte: 'client', idCompte: compte.id_utilisateur,
+                    email: compte.email, nomComplet: nomAffiche, referenceCompte: compte.id_utilisateur, req,
+                });
+            } catch (err) {
+                console.error('[POST /api/connexion] Erreur génération/envoi du code :', err);
+                return res.status(500).json({ succes: false, erreurs: ["erreur lors de l'envoi du code de connexion, veuillez réessayer"] });
+            }
+
+            return res.status(200).json({
+                succes: true, code_requis: true, id_compte: compte.id_utilisateur,
+                email_masque: masquerEmail(compte.email),
+                telephone_masque: masquerTelephone(compte.telephone),
+            });
+        } catch (err) {
+            console.error('[POST /api/connexion] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
+        }
+    });
+
+    // 2FA (02/09/2026) — étape 2 : vérifie le code, ne crée la session
+    // qu'à ce moment-là. C'est ICI que vit désormais toute la logique
+    // qui était avant dans le callback de regenerate().
+    router.post('/connexion/verifier-code', async (req, res) => {
+        const { id_compte, code } = req.body;
+        if (!Number.isInteger(id_compte) || !code) {
+            return res.status(400).json({ succes: false, erreurs: ['id_compte et code requis'] });
+        }
+
+        try {
+            const resultatVerif = await verifierCode({ pool, typeCompte: 'client', idCompte: id_compte, code });
+            if (!resultatVerif.valide) {
+                const messages = {
+                    aucun_code_actif: 'aucun code actif — recommencez la connexion',
+                    trop_de_tentatives: 'trop de tentatives — recommencez la connexion',
+                    expire: 'code expiré — recommencez la connexion',
+                    code_incorrect: 'code incorrect',
+                };
+                return res.status(401).json({ succes: false, erreurs: [messages[resultatVerif.motif] || 'code invalide'] });
+            }
+
+            const resultatCompte = await pool.query(
+                'SELECT id_utilisateur, email, telephone, nom, prenom FROM site.utilisateurs WHERE id_utilisateur = $1',
+                [id_compte]
+            );
+            if (resultatCompte.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['compte introuvable'] });
+            }
+            const compte = resultatCompte.rows[0];
+
+            let derniereConnexionPrecedente = null;
+            try {
+                const precedente = await pool.query(
+                    `SELECT date_connexion, adresse_ip FROM site.historique_connexions
+                     WHERE type_compte = 'client' AND id_compte = $1
+                     ORDER BY date_connexion DESC LIMIT 1`,
+                    [id_compte]
+                );
+                if (precedente.rowCount > 0) derniereConnexionPrecedente = precedente.rows[0];
+            } catch (err) {
+                console.error('[POST /api/connexion/verifier-code] Erreur lecture historique_connexions :', err);
+            }
+
+            req.session.regenerate(async (err) => {
                 if (err) {
-                    console.error('[POST /api/connexion] Erreur régénération session :', err);
+                    console.error('[POST /api/connexion/verifier-code] Erreur régénération session :', err);
                     return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
                 }
 
@@ -111,7 +189,34 @@ module.exports = function (pool) {
                 pool.query(
                     'UPDATE site.utilisateurs SET date_derniere_connexion = now() WHERE id_utilisateur = $1',
                     [compte.id_utilisateur]
-                ).catch(err => console.error('[POST /api/connexion] Erreur mise à jour date_derniere_connexion :', err));
+                ).catch(err => console.error('[POST /api/connexion/verifier-code] Erreur mise à jour date_derniere_connexion :', err));
+
+                try {
+                    const inseree = await pool.query(
+                        `INSERT INTO site.historique_connexions (type_compte, id_compte, adresse_ip)
+                         VALUES ('client', $1, $2) RETURNING id_historique`,
+                        [compte.id_utilisateur, req.ip]
+                    );
+                    req.session.id_historique_connexion = inseree.rows[0].id_historique;
+                } catch (err) {
+                    console.error('[POST /api/connexion/verifier-code] Erreur écriture historique_connexions :', err);
+                }
+
+                const nomAffiche = [compte.prenom, compte.nom].filter(Boolean).join(' ') || compte.email;
+                mailTransporter.sendMail({
+                    from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
+                    to: compte.email,
+                    subject: 'Connexion réussie à votre espace client',
+                    html: gabaritEmail('Connexion réussie à votre espace client', corpsConnexionReussie({
+                        nomComplet: nomAffiche,
+                        typeCompte: 'client',
+                        referenceCompte: compte.id_utilisateur,
+                        date: new Date(),
+                        ip: req.ip,
+                        navigateur: analyserNavigateur(req.headers['user-agent']),
+                        systeme: analyserSysteme(req.headers['user-agent']),
+                    })),
+                }).catch(err => console.error('[POST /api/connexion/verifier-code] Erreur envoi notification connexion :', err));
 
                 return res.status(200).json({
                     succes: true,
@@ -119,11 +224,13 @@ module.exports = function (pool) {
                         id_utilisateur: compte.id_utilisateur,
                         email: compte.email,
                         telephone: compte.telephone
-                    }
+                    },
+                    derniere_connexion_precedente: derniereConnexionPrecedente,
+                    adresse_ip_actuelle: req.ip
                 });
             });
         } catch (err) {
-            console.error('[POST /api/connexion] Erreur base de données :', err);
+            console.error('[POST /api/connexion/verifier-code] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
         }
     });

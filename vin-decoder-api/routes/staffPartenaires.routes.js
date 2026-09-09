@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const requireStaffAuth = require('../middleware/requireStaffAuth');
 const requireStaffRole = require('../middleware/requireStaffRole');
+const { gabaritEmail, corpsActivation } = require('../lib/gabaritEmail');
 const { chiffrer } = require('../lib/chiffrement');
 const { creerBoiteMail } = require('../lib/ispconfig');
 
@@ -26,15 +27,10 @@ async function envoyerEmailActivationPartenaire(emailNotification, nomComplet, t
     const lien = `https://mutuelleproassurances.com/activation-partenaire.html?token=${token}`;
     try {
         await mailTransporter.sendMail({
-            from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+            from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailNotification,
             subject: 'Mutuelle Pro Assurances — Activez votre compte partenaire',
-            html: `
-                <p>Bonjour,</p>
-                <p>Un compte partenaire a été créé pour <strong>${nomComplet}</strong> sur l'espace Mutuelle Pro Assurances.</p>
-                <p>Pour l'activer et définir votre mot de passe, cliquez sur le lien ci-dessous (valable 72 heures) :</p>
-                <p><a href="${lien}">${lien}</a></p>
-            `,
+            html: gabaritEmail('Activez votre compte partenaire', corpsActivation({ nomComplet, typeCompte: 'partenaire', lien })),
         });
     } catch (err) {
         console.error('[envoyerEmailActivationPartenaire] Erreur envoi email :', err);
@@ -47,16 +43,19 @@ async function envoyerEmailActivationPartenaire(emailNotification, nomComplet, t
 // que le partenaire n'a pas encore configurée (problème de l'œuf et la
 // poule, résolu le 21/08/2026). Réutilisé par la création unitaire ET
 // l'import en masse.
-async function creerPartenaireEtActiver(client, { email, email_notification, nom_complet, telephone, id_types_partenaire, contacts }) {
+// nom_complet éliminé (03/09/2026, reconstruction des 4 tables
+// centrales) -- nom/prenom uniquement désormais, y compris côté import
+// CSV qui utilise maintenant les mêmes deux colonnes.
+async function creerPartenaireEtActiver(client, { email, email_notification, nom, prenom, telephone, id_types_partenaire, contacts }) {
     const hacheInutilisable = crypto.randomBytes(32).toString('hex');
     const dernierMatricule = await client.query('SELECT COUNT(*) AS total FROM site.partenaires');
     const matricule = `PART-${String(parseInt(dernierMatricule.rows[0].total, 10) + 1).padStart(4, '0')}`;
 
     const inserePartenaire = await client.query(
-        `INSERT INTO site.partenaires (matricule, email, email_notification, mot_de_passe_hache, nom_complet, telephone)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id_partenaire, email, email_notification, nom_complet`,
-        [matricule, email, email_notification, hacheInutilisable, nom_complet, telephone || null]
+        `INSERT INTO site.partenaires (matricule, email, email_notification, mot_de_passe_hache, nom, prenom, telephone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id_partenaire, email, email_notification, nom, prenom`,
+        [matricule, email, email_notification, hacheInutilisable, nom, prenom || null, telephone]
     );
     const partenaire = inserePartenaire.rows[0];
 
@@ -80,7 +79,7 @@ async function creerPartenaireEtActiver(client, { email, email_notification, nom
 // Régénère un jeton d'activation pour un partenaire existant en attente
 // (renvoi de lien) — invalide l'ancien jeton avant d'en créer un nouveau.
 async function renvoyerActivation(pool, idPartenaire) {
-    const infos = await pool.query('SELECT email_notification, nom_complet, mot_de_passe_defini FROM site.partenaires WHERE id_partenaire = $1', [idPartenaire]);
+    const infos = await pool.query('SELECT email_notification, nom, prenom, mot_de_passe_defini FROM site.partenaires WHERE id_partenaire = $1', [idPartenaire]);
     if (infos.rowCount === 0) return { succes: false, erreur: 'partenaire introuvable' };
     if (infos.rows[0].mot_de_passe_defini) return { succes: false, erreur: 'ce compte est déjà activé' };
     if (!infos.rows[0].email_notification) return { succes: false, erreur: 'aucune adresse de notification enregistrée pour ce partenaire' };
@@ -88,7 +87,8 @@ async function renvoyerActivation(pool, idPartenaire) {
     await pool.query('DELETE FROM site.activation_partenaire_tokens WHERE id_partenaire = $1', [idPartenaire]);
     const token = crypto.randomBytes(32).toString('hex');
     await pool.query('INSERT INTO site.activation_partenaire_tokens (token, id_partenaire) VALUES ($1, $2)', [token, idPartenaire]);
-    await envoyerEmailActivationPartenaire(infos.rows[0].email_notification, infos.rows[0].nom_complet, token);
+    const nomAffiche = infos.rows[0].prenom ? `${infos.rows[0].prenom} ${infos.rows[0].nom}` : infos.rows[0].nom;
+    await envoyerEmailActivationPartenaire(infos.rows[0].email_notification, nomAffiche, token);
     return { succes: true };
 }
 
@@ -111,13 +111,19 @@ module.exports = function (pool) {
     });
 
     router.post('/partenaires', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
-        const { email, email_notification, nom_complet, telephone, id_types_partenaire, contacts, creer_boite_mail } = req.body;
+        const { email, email_notification, nom, prenom, telephone, id_types_partenaire, contacts, creer_boite_mail } = req.body;
 
-        if (!email || !nom_complet || !Array.isArray(id_types_partenaire) || id_types_partenaire.length === 0) {
-            return res.status(400).json({ succes: false, erreurs: ['email, nom_complet et id_types_partenaire (tableau non vide) requis'] });
+        if (!email || !nom || !Array.isArray(id_types_partenaire) || id_types_partenaire.length === 0) {
+            return res.status(400).json({ succes: false, erreurs: ['email, nom et id_types_partenaire (tableau non vide) requis'] });
         }
         if (!email_notification) {
             return res.status(400).json({ succes: false, erreurs: ['une adresse de notification externe est requise — c\'est elle qui recevra le lien d\'activation'] });
+        }
+        // Confirmé par Roger le 03/09/2026 : téléphone obligatoire pour
+        // Partenaires aussi. Contrairement à Personnel, aucune restriction
+        // de domaine sur l'email — les emails externes sont acceptés.
+        if (!telephone) {
+            return res.status(400).json({ succes: false, erreurs: ['téléphone requis'] });
         }
         if (!Array.isArray(contacts) || contacts.length === 0) {
             return res.status(400).json({ succes: false, erreurs: ['au moins un contact requis'] });
@@ -126,13 +132,15 @@ module.exports = function (pool) {
             return res.status(400).json({ succes: false, erreurs: ['un contact par défaut doit être désigné'] });
         }
 
+        const nomComplet = prenom ? `${prenom} ${nom}` : nom;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            const { partenaire, token } = await creerPartenaireEtActiver(client, { email, email_notification, nom_complet, telephone, id_types_partenaire, contacts });
+            const { partenaire, token } = await creerPartenaireEtActiver(client, { email, email_notification, nom, prenom, telephone, id_types_partenaire, contacts });
             await client.query('COMMIT');
 
-            envoyerEmailActivationPartenaire(email_notification, nom_complet, token);
+            envoyerEmailActivationPartenaire(email_notification, nomComplet, token);
 
             // Création de boîte mail — APRÈS le commit, volontairement non
             // bloquante, même patron que côté Personnel (28/08/2026).
@@ -140,9 +148,13 @@ module.exports = function (pool) {
             if (creer_boite_mail) {
                 try {
                     const motDePasseGenere = crypto.randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
-                    await creerBoiteMail({ email, motDePasse: motDePasseGenere, nomAffiche: nom_complet });
-                    await pool.query('UPDATE site.partenaires SET imap_mot_de_passe_chiffre = $1 WHERE id_partenaire = $2', [chiffrer(motDePasseGenere), partenaire.id_partenaire]);
-                    boiteMail = { succes: true };
+                    const resultatBoite = await creerBoiteMail({ email, motDePasse: motDePasseGenere, nomAffiche: nomComplet });
+                    if (resultatBoite.deja_existant) {
+                        boiteMail = { succes: true, deja_existant: true, avertissement: 'Une boîte mail existait déjà pour cette adresse — le mot de passe réel est inconnu, rien n\'a été enregistré. Utilisez « Configurer ma boîte mail » avec le vrai mot de passe si besoin.' };
+                    } else {
+                        await pool.query('UPDATE site.partenaires SET imap_mot_de_passe_chiffre = $1 WHERE id_partenaire = $2', [chiffrer(motDePasseGenere), partenaire.id_partenaire]);
+                        boiteMail = { succes: true };
+                    }
                 } catch (err) {
                     console.error('[POST /api/staff/partenaires] Échec création boîte mail (non bloquant) :', err);
                     boiteMail = { succes: false, erreur: err.message };
@@ -173,7 +185,7 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                'SELECT id_partenaire, nom_complet, statut_compte, mot_de_passe_defini FROM site.partenaires WHERE email = $1 ORDER BY id_partenaire DESC',
+                'SELECT id_partenaire, nom, prenom, statut_compte, mot_de_passe_defini FROM site.partenaires WHERE email = $1 ORDER BY id_partenaire DESC',
                 [email]
             );
             return res.status(200).json({ succes: true, comptes: resultat.rows });
@@ -186,7 +198,8 @@ module.exports = function (pool) {
     router.get('/partenaires', requireStaffAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT p.id_partenaire, p.matricule, p.nom_complet, p.email, p.email_notification, p.telephone, p.statut_compte, p.mot_de_passe_defini,
+                `SELECT p.id_partenaire, p.matricule, p.nom, p.prenom, p.email, p.email_notification, p.telephone, p.statut_compte, p.mot_de_passe_defini,
+                        (p.imap_mot_de_passe_chiffre IS NOT NULL) AS boite_mail_configuree,
                         COALESCE(array_agg(DISTINCT pt.id_type_partenaire) FILTER (WHERE pt.id_type_partenaire IS NOT NULL), '{}') AS id_types_partenaire,
                         COALESCE(string_agg(DISTINCT tp.code || ' ' || tp.libelle_fr, ', ' ORDER BY tp.code || ' ' || tp.libelle_fr), '') AS types_libelles,
                         COALESCE(
@@ -198,7 +211,7 @@ module.exports = function (pool) {
                  LEFT JOIN site.type_partenaire tp ON tp.id_type_partenaire = pt.id_type_partenaire
                  LEFT JOIN site.partenaire_contacts pc ON pc.id_partenaire = p.id_partenaire
                  GROUP BY p.id_partenaire
-                 ORDER BY p.nom_complet`
+                 ORDER BY p.nom, p.prenom`
             );
             return res.status(200).json({ succes: true, partenaires: resultat.rows });
         } catch (err) {
@@ -209,7 +222,7 @@ module.exports = function (pool) {
 
     router.patch('/partenaires/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
-        const { nom_complet, telephone, email_notification, id_types_partenaire, contacts, statut_compte } = req.body;
+        const { nom, prenom, telephone, email_notification, id_types_partenaire, contacts, statut_compte } = req.body;
 
         if (!Number.isInteger(idPartenaire)) {
             return res.status(400).json({ succes: false, erreurs: ['id de partenaire invalide'] });
@@ -231,14 +244,17 @@ module.exports = function (pool) {
                 return res.status(404).json({ succes: false, erreurs: ['partenaire introuvable'] });
             }
 
+            // nom_complet éliminé (03/09/2026) -- plus de resynchronisation
+            // nécessaire, nom/prenom sont désormais la seule donnée.
             await client.query(
                 `UPDATE site.partenaires
-                 SET nom_complet = COALESCE($1, nom_complet),
-                     telephone = COALESCE($2, telephone),
-                     email_notification = COALESCE($3, email_notification),
-                     statut_compte = COALESCE($4, statut_compte)
-                 WHERE id_partenaire = $5`,
-                [nom_complet || null, telephone || null, email_notification || null, statut_compte || null, idPartenaire]
+                 SET nom = COALESCE($1, nom),
+                     prenom = COALESCE($2, prenom),
+                     telephone = COALESCE($3, telephone),
+                     email_notification = COALESCE($4, email_notification),
+                     statut_compte = COALESCE($5, statut_compte)
+                 WHERE id_partenaire = $6`,
+                [nom || null, prenom || null, telephone || null, email_notification || null, statut_compte || null, idPartenaire]
             );
 
             if (Array.isArray(id_types_partenaire) && id_types_partenaire.length > 0) {
@@ -357,6 +373,42 @@ module.exports = function (pool) {
         }
     });
 
+    // Provisionne une boîte mail pour un Partenaire EXISTANT sans boîte --
+    // même patron que POST /personnel/:id/provisionner-boite-mail (Lot B,
+    // 02/09/2026, addendum comptes sans boîte mail). Distinct du PATCH
+    // ci-dessus, qui ne fait qu'enregistrer un mot de passe déjà existant
+    // sans jamais créer la boîte côté serveur mail.
+    router.post('/partenaires/:id/provisionner-boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        const idPartenaire = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idPartenaire)) {
+            return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        }
+        try {
+            const compte = await pool.query('SELECT email, nom, prenom, imap_mot_de_passe_chiffre FROM site.partenaires WHERE id_partenaire = $1', [idPartenaire]);
+            if (compte.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['partenaire introuvable'] });
+            }
+            if (compte.rows[0].imap_mot_de_passe_chiffre) {
+                return res.status(409).json({ succes: false, erreurs: ['une boîte mail est déjà configurée pour ce compte'] });
+            }
+            const { email, nom, prenom } = compte.rows[0];
+            const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
+            const motDePasseGenere = crypto.randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
+            const resultatBoite = await creerBoiteMail({ email, motDePasse: motDePasseGenere, nomAffiche });
+            if (resultatBoite.deja_existant) {
+                return res.status(200).json({
+                    succes: true, deja_existant: true,
+                    avertissement: 'Une boîte mail existait déjà pour cette adresse — le mot de passe réel est inconnu, rien n\'a été enregistré. Utilisez « Configurer ma boîte mail » avec le vrai mot de passe si besoin.',
+                });
+            }
+            await pool.query('UPDATE site.partenaires SET imap_mot_de_passe_chiffre = $1 WHERE id_partenaire = $2', [chiffrer(motDePasseGenere), idPartenaire]);
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/staff/partenaires/:id/provisionner-boite-mail] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
+        }
+    });
+
     router.patch('/tickets/:id/assignation-partenaire', requireStaffAuth, requireStaffRole(ROLES_ECRITURE), async (req, res) => {
         const idTicket = parseInt(req.params.id, 10);
         const idPartenaire = req.body.id_partenaire === null ? null : parseInt(req.body.id_partenaire, 10);
@@ -384,9 +436,9 @@ module.exports = function (pool) {
     });
 
     // -------------------------------------------------------------
-    // Import CSV v2 — format documenté dans le rapport de session :
+    // Import CSV v3 (03/09/2026, nom_complet éliminé) :
     //
-    //   nom_complet,email,telephone,codes_types,contacts
+    //   nom;prenom;email;email_notification;telephone;codes_types;contacts
     //
     // codes_types : codes (ex: A01) séparés par virgule et/ou plage avec
     // tiret (ex: "E03-E04,E08,E09").
@@ -404,7 +456,7 @@ module.exports = function (pool) {
             if (car === '"') {
                 if (dansGuillemets && ligne[i + 1] === '"') { champActuel += '"'; i++; }
                 else dansGuillemets = !dansGuillemets;
-            } else if (car === ',' && !dansGuillemets) {
+            } else if (car === ';' && !dansGuillemets) {
                 champs.push(champActuel.trim());
                 champActuel = '';
             } else {
@@ -461,10 +513,10 @@ module.exports = function (pool) {
             return res.status(400).json({ succes: false, erreurs: ['fichier vide ou sans données'] });
         }
 
-        const enteteAttendue = ['nom_complet', 'email', 'email_notification', 'telephone', 'codes_types', 'contacts'];
+        const enteteAttendue = ['nom', 'prenom', 'email', 'email_notification', 'telephone', 'codes_types', 'contacts'];
         const entete = parserLigneCsv(lignes[0]).map((c) => c.toLowerCase());
         if (JSON.stringify(entete) !== JSON.stringify(enteteAttendue)) {
-            return res.status(400).json({ succes: false, erreurs: [`en-tête invalide — attendu : ${enteteAttendue.join(',')}`] });
+            return res.status(400).json({ succes: false, erreurs: [`en-tête invalide — attendu : ${enteteAttendue.join(';')}`] });
         }
 
         const typesRef = await pool.query('SELECT id_type_partenaire, code FROM site.type_partenaire');
@@ -475,10 +527,10 @@ module.exports = function (pool) {
         for (let i = 1; i < lignes.length; i++) {
             const numeroLigne = i + 1;
             const champs = parserLigneCsv(lignes[i]);
-            const [nom_complet, email, email_notification, telephone, codesTypesStr, contactsStr] = champs;
+            const [nom, prenom, email, email_notification, telephone, codesTypesStr, contactsStr] = champs;
 
-            if (!nom_complet || !email || !email_notification || !codesTypesStr || !contactsStr) {
-                resultats.erreurs.push(`Ligne ${numeroLigne} : nom_complet, email, email_notification, codes_types et contacts sont obligatoires`);
+            if (!nom || !email || !email_notification || !codesTypesStr || !contactsStr) {
+                resultats.erreurs.push(`Ligne ${numeroLigne} : nom, email, email_notification, codes_types et contacts sont obligatoires`);
                 continue;
             }
 
@@ -508,16 +560,18 @@ module.exports = function (pool) {
                 continue;
             }
 
+            const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
+
             const client = await pool.connect();
             try {
                 await client.query('BEGIN');
                 const { partenaire, token } = await creerPartenaireEtActiver(client, {
-                    email, email_notification, nom_complet, telephone, id_types_partenaire: idsTypes, contacts
+                    email, email_notification, nom, prenom: prenom || null, telephone, id_types_partenaire: idsTypes, contacts
                 });
                 await client.query('COMMIT');
 
-                envoyerEmailActivationPartenaire(email_notification, nom_complet, token);
-                resultats.crees.push({ email, nom_complet });
+                envoyerEmailActivationPartenaire(email_notification, nomAffiche, token);
+                resultats.crees.push({ email, nom: nomAffiche });
             } catch (err) {
                 await client.query('ROLLBACK');
                 if (err.code === '23505') {

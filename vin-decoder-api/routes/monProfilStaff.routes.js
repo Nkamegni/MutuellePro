@@ -18,7 +18,7 @@ module.exports = function (pool) {
     router.get('/mon-profil', requireStaffAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT email, nom_complet, telephone, date_naissance, adresse, est_compte_racine, suppression_reservee_racine
+                `SELECT email, nom, prenom, telephone, date_naissance, adresse, est_compte_racine, suppression_reservee_racine
                  FROM site.staff WHERE id_staff = $1`,
                 [req.session.id_staff]
             );
@@ -33,16 +33,17 @@ module.exports = function (pool) {
     });
 
     router.patch('/mon-profil', requireStaffAuth, async (req, res) => {
-        const { nom_complet, telephone, date_naissance, adresse } = req.body;
+        const { nom, prenom, telephone, date_naissance, adresse } = req.body;
         try {
             await pool.query(
                 `UPDATE site.staff
-                 SET nom_complet = COALESCE($1, nom_complet),
-                     telephone = COALESCE($2, telephone),
-                     date_naissance = $3,
-                     adresse = COALESCE($4, adresse)
-                 WHERE id_staff = $5`,
-                [nom_complet || null, telephone || null, date_naissance || null, adresse || null, req.session.id_staff]
+                 SET nom = COALESCE($1, nom),
+                     prenom = COALESCE($2, prenom),
+                     telephone = COALESCE($3, telephone),
+                     date_naissance = $4,
+                     adresse = COALESCE($5, adresse)
+                 WHERE id_staff = $6`,
+                [nom || null, prenom || null, telephone || null, date_naissance || null, adresse || null, req.session.id_staff]
             );
             return res.status(200).json({ succes: true });
         } catch (err) {

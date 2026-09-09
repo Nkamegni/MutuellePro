@@ -1,0 +1,14 @@
+{
+  "name": "Mutuelle Pro — Espace Personnel",
+  "short_name": "Personnel",
+  "start_url": "/espace-personnel/",
+  "scope": "/espace-personnel/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "lang": "fr",
+  "icons": [
+    { "src": "/espace-personnel/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/espace-personnel/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

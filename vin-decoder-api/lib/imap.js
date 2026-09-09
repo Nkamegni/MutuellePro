@@ -54,8 +54,6 @@ async function testerConnexion(user, pass) {
         if (estPanneServeur(err)) {
             return { ok: false, echecAuthentification: false, panneServeur: true };
         }
-        // Erreur ambiguë — on ne présume ni de l'un ni de l'autre, par
-        // prudence (ne jamais suggérer à tort un changement de mot de passe).
         return { ok: false, echecAuthentification: false, panneServeur: false };
     }
 }
@@ -113,7 +111,6 @@ async function lireEmail(user, pass, uid) {
                 texte: parsed.text || '',
                 html: parsed.html || null,
             };
-            // Marque comme lu — comportement standard d'un client mail.
             await client.messageFlagsAdd({ uid: String(uid) }, ['\\Seen'], { uid: true });
         } finally {
             lock.release();
@@ -124,4 +121,30 @@ async function lireEmail(user, pass, uid) {
     return resultat;
 }
 
-module.exports = { listerEmails, lireEmail, testerConnexion, estEchecAuthentification, estPanneServeur };
+// Récupère UIDVALIDITY (dossier) et Message-ID (message) sans marquer le
+// message comme lu ni en modifier l'état -- utilisé uniquement par la
+// création de tâche (site.emails_cache), pas par l'affichage.
+async function obtenirMetadonneesPourTache(user, pass, uid, dossier = 'INBOX') {
+    const client = creerClient(user, pass);
+    let resultat = null;
+    await client.connect();
+    try {
+        const lock = await client.getMailboxLock(dossier);
+        try {
+            const uidvalidity = client.mailbox && client.mailbox.uidValidity
+                ? Number(client.mailbox.uidValidity)
+                : null;
+            const message = await client.fetchOne(uid, { envelope: true, source: true, uid: true }, { uid: true });
+            if (!message) return null;
+            const parsed = await simpleParser(message.source);
+            resultat = { uidvalidity, messageId: parsed.messageId || null };
+        } finally {
+            lock.release();
+        }
+    } finally {
+        await client.logout();
+    }
+    return resultat;
+}
+
+module.exports = { listerEmails, lireEmail, testerConnexion, estEchecAuthentification, estPanneServeur, obtenirMetadonneesPourTache };

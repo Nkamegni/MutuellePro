@@ -63,7 +63,7 @@ module.exports = function (pool) {
 
             const lien = `https://mutuelleproassurances.com/reinitialisation.html?token=${token}`;
             mailTransporter.sendMail({
-                from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+                from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
                 to: compte.email,
                 subject: 'Mutuelle Pro Assurances — Réinitialisation de votre mot de passe',
                 html: `

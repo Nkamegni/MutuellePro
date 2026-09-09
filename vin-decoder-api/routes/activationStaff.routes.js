@@ -7,6 +7,7 @@ const express = require('express');
 const argon2 = require('argon2');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { gabaritEmail, corpsActivation } = require('../lib/gabaritEmail');
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -30,7 +31,7 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                `SELECT t.date_expiration, s.nom_complet
+                `SELECT t.date_expiration, TRIM(COALESCE(s.prenom, '') || ' ' || s.nom) AS nom_complet
                  FROM site.activation_staff_tokens t
                  JOIN site.staff s ON s.id_staff = t.id_staff
                  WHERE t.token = $1`,
@@ -57,13 +58,14 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                'SELECT id_staff, nom_complet, email_validation FROM site.staff WHERE email = $1 AND mot_de_passe_defini = false',
+                'SELECT id_staff, nom, prenom, email_validation FROM site.staff WHERE email = $1 AND mot_de_passe_defini = false',
                 [email]
             );
             if (resultat.rowCount === 0 || !resultat.rows[0].email_validation) {
                 return res.status(200).json({ succes: true });
             }
-            const { id_staff, nom_complet, email_validation } = resultat.rows[0];
+            const { id_staff, nom, prenom, email_validation } = resultat.rows[0];
+            const nomComplet = prenom ? `${prenom} ${nom}` : nom;
 
             await pool.query('DELETE FROM site.activation_staff_tokens WHERE id_staff = $1', [id_staff]);
             const token = crypto.randomBytes(32).toString('hex');
@@ -71,10 +73,10 @@ module.exports = function (pool) {
 
             const lien = `https://mutuelleproassurances.com/activation-staff.html?token=${token}`;
             mailTransporter.sendMail({
-                from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+                from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
                 to: email_validation,
                 subject: 'Mutuelle Pro Assurances — Nouveau lien d\'activation',
-                html: `<p>Bonjour,</p><p>Voici votre nouveau lien d'activation pour <strong>${nom_complet}</strong> (valable 72 heures) :</p><p><a href="${lien}">${lien}</a></p>`,
+                html: gabaritEmail('Activez votre compte Personnel', corpsActivation({ nomComplet, typeCompte: 'staff', lien })),
             }).catch((err) => console.error('[POST /api/staff/renvoyer-activation] Erreur envoi email :', err));
 
             return res.status(200).json({ succes: true });

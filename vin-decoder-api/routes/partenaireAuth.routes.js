@@ -21,6 +21,11 @@ const express = require('express');
 const argon2 = require('argon2');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { gabaritEmail, corpsConnexionReussie, corpsActivation } = require('../lib/gabaritEmail');
+const { analyserNavigateur, analyserSysteme } = require('../lib/analyseurUserAgent');
+const { genererEtEnvoyerCode, verifierCode } = require('../lib/verificationConnexion');
+const { masquerEmail, masquerTelephone } = require('../lib/masquage');
+const { envoyerLienReinitialisation, appliquerReinitialisation } = require('../lib/reinitialisationMdp');
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -56,7 +61,7 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                `SELECT t.date_expiration, p.nom_complet
+                `SELECT t.date_expiration, TRIM(COALESCE(p.prenom, '') || ' ' || p.nom) AS nom_complet
                  FROM site.activation_partenaire_tokens t
                  JOIN site.partenaires p ON p.id_partenaire = t.id_partenaire
                  WHERE t.token = $1`,
@@ -88,7 +93,7 @@ module.exports = function (pool) {
 
         try {
             const resultat = await pool.query(
-                `SELECT p.id_partenaire, p.email, p.mot_de_passe_hache, p.nom_complet, p.statut_compte,
+                `SELECT p.id_partenaire, p.matricule, p.email, p.email_notification, p.telephone, p.mot_de_passe_hache, p.nom, p.prenom, p.statut_compte,
                         COALESCE(string_agg(tp.libelle_fr, ', ' ORDER BY tp.libelle_fr), '') AS types_libelles
                  FROM site.partenaires p
                  LEFT JOIN site.partenaire_types pty ON pty.id_partenaire = p.id_partenaire
@@ -102,6 +107,7 @@ module.exports = function (pool) {
                 return res.status(401).json({ succes: false, erreurs: ['identifiants incorrects'] });
             }
             const partenaire = resultat.rows[0];
+            const nomComplet = partenaire.prenom ? `${partenaire.prenom} ${partenaire.nom}` : partenaire.nom;
             if (partenaire.statut_compte !== 'actif') {
                 return res.status(403).json({ succes: false, erreurs: ['compte suspendu, contactez Mutuelle Pro Assurances'] });
             }
@@ -112,28 +118,131 @@ module.exports = function (pool) {
             }
             reinitialiser(cle);
 
-            req.session.regenerate((err) => {
+            // 2FA (02/09/2026) : plus de session créée ici — voir
+            // POST /partenaire/connexion/verifier-code plus bas.
+            // Repli préventif (03/09/2026, même défaut trouvé côté staff
+            // avec rnkamegni@ -- comptes anciens pouvant avoir ce champ vide).
+            const adresseCode = partenaire.email_notification || partenaire.email;
+            try {
+                await genererEtEnvoyerCode({
+                    pool, mailTransporter, typeCompte: 'partenaire', idCompte: partenaire.id_partenaire,
+                    email: adresseCode, nomComplet, referenceCompte: partenaire.matricule, req,
+                });
+            } catch (err) {
+                console.error('[POST /api/partenaire/connexion] Erreur génération/envoi du code :', err);
+                return res.status(500).json({ succes: false, erreurs: ["erreur lors de l'envoi du code de connexion, veuillez réessayer"] });
+            }
+
+            return res.status(200).json({
+                succes: true, code_requis: true, id_compte: partenaire.id_partenaire,
+                email_masque: masquerEmail(adresseCode),
+                telephone_masque: masquerTelephone(partenaire.telephone),
+            });
+        } catch (err) {
+            console.error('[POST /api/partenaire/connexion] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
+        }
+    });
+
+    // 2FA (02/09/2026) — étape 2 : vérifie le code, crée la session.
+    router.post('/connexion/verifier-code', async (req, res) => {
+        const { id_compte, code } = req.body;
+        if (!Number.isInteger(id_compte) || !code) {
+            return res.status(400).json({ succes: false, erreurs: ['id_compte et code requis'] });
+        }
+
+        try {
+            const resultatVerif = await verifierCode({ pool, typeCompte: 'partenaire', idCompte: id_compte, code });
+            if (!resultatVerif.valide) {
+                const messages = {
+                    aucun_code_actif: 'aucun code actif — recommencez la connexion',
+                    trop_de_tentatives: 'trop de tentatives — recommencez la connexion',
+                    expire: 'code expiré — recommencez la connexion',
+                    code_incorrect: 'code incorrect',
+                };
+                return res.status(401).json({ succes: false, erreurs: [messages[resultatVerif.motif] || 'code invalide'] });
+            }
+
+            const resultatPartenaire = await pool.query(
+                `SELECT p.id_partenaire, p.matricule, p.email, p.email_notification, p.nom, p.prenom,
+                        COALESCE(string_agg(tp.libelle_fr, ', ' ORDER BY tp.libelle_fr), '') AS types_libelles
+                 FROM site.partenaires p
+                 LEFT JOIN site.partenaire_types pty ON pty.id_partenaire = p.id_partenaire
+                 LEFT JOIN site.type_partenaire tp ON tp.id_type_partenaire = pty.id_type_partenaire
+                 WHERE p.id_partenaire = $1
+                 GROUP BY p.id_partenaire`,
+                [id_compte]
+            );
+            if (resultatPartenaire.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['compte introuvable'] });
+            }
+            const partenaire = resultatPartenaire.rows[0];
+            const nomComplet = partenaire.prenom ? `${partenaire.prenom} ${partenaire.nom}` : partenaire.nom;
+
+            let derniereConnexionPrecedente = null;
+            try {
+                const precedente = await pool.query(
+                    `SELECT date_connexion, adresse_ip FROM site.historique_connexions
+                     WHERE type_compte = 'partenaire' AND id_compte = $1
+                     ORDER BY date_connexion DESC LIMIT 1`,
+                    [id_compte]
+                );
+                if (precedente.rowCount > 0) derniereConnexionPrecedente = precedente.rows[0];
+            } catch (err) {
+                console.error('[POST /api/partenaire/connexion/verifier-code] Erreur lecture historique_connexions :', err);
+            }
+
+            req.session.regenerate(async (err) => {
                 if (err) {
-                    console.error('[POST /api/partenaire/connexion] Erreur régénération session :', err);
+                    console.error('[POST /api/partenaire/connexion/verifier-code] Erreur régénération session :', err);
                     return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
                 }
                 req.session.id_partenaire = partenaire.id_partenaire;
 
                 pool.query('UPDATE site.partenaires SET date_derniere_connexion = now() WHERE id_partenaire = $1', [partenaire.id_partenaire])
-                    .catch(err => console.error('[POST /api/partenaire/connexion] Erreur mise à jour date :', err));
+                    .catch(err => console.error('[POST /api/partenaire/connexion/verifier-code] Erreur mise à jour date :', err));
+
+                try {
+                    const inseree = await pool.query(
+                        `INSERT INTO site.historique_connexions (type_compte, id_compte, adresse_ip)
+                         VALUES ('partenaire', $1, $2) RETURNING id_historique`,
+                        [partenaire.id_partenaire, req.ip]
+                    );
+                    req.session.id_historique_connexion = inseree.rows[0].id_historique;
+                } catch (err) {
+                    console.error('[POST /api/partenaire/connexion/verifier-code] Erreur écriture historique_connexions :', err);
+                }
+
+                mailTransporter.sendMail({
+                    from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
+                    to: partenaire.email_notification || partenaire.email,
+                    subject: 'Connexion réussie à votre espace partenaire',
+                    html: gabaritEmail('Connexion réussie à votre espace partenaire', corpsConnexionReussie({
+                        nomComplet,
+                        typeCompte: 'partenaire',
+                        referenceCompte: partenaire.matricule,
+                        date: new Date(),
+                        ip: req.ip,
+                        navigateur: analyserNavigateur(req.headers['user-agent']),
+                        systeme: analyserSysteme(req.headers['user-agent']),
+                    })),
+                }).catch(err => console.error('[POST /api/partenaire/connexion/verifier-code] Erreur envoi notification connexion :', err));
 
                 return res.status(200).json({
                     succes: true,
                     partenaire: {
                         id_partenaire: partenaire.id_partenaire,
                         email: partenaire.email,
-                        nom_complet: partenaire.nom_complet,
+                        nom: partenaire.nom,
+                        prenom: partenaire.prenom,
                         types_libelles: partenaire.types_libelles
-                    }
+                    },
+                    derniere_connexion_precedente: derniereConnexionPrecedente,
+                    adresse_ip_actuelle: req.ip
                 });
             });
         } catch (err) {
-            console.error('[POST /api/partenaire/connexion] Erreur base de données :', err);
+            console.error('[POST /api/partenaire/connexion/verifier-code] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
         }
     });
@@ -178,6 +287,26 @@ module.exports = function (pool) {
         }
     });
 
+    // Journal de connexions (Lot B, 02/09/2026)
+    router.get('/mes-connexions', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) {
+            return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        }
+        try {
+            const resultat = await pool.query(
+                `SELECT id_historique, date_connexion, adresse_ip FROM site.historique_connexions
+                 WHERE type_compte = 'partenaire' AND id_compte = $1
+                 ORDER BY date_connexion DESC LIMIT 20`,
+                [req.session.id_partenaire]
+            );
+            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique === req.session.id_historique_connexion }));
+            return res.status(200).json({ succes: true, connexions });
+        } catch (err) {
+            console.error('[GET /api/partenaire/mes-connexions] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
     router.delete('/mes-sessions/:sid', async (req, res) => {
         if (!req.session || !req.session.id_partenaire) {
             return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
@@ -191,6 +320,55 @@ module.exports = function (pool) {
         } catch (err) {
             console.error('[DELETE /api/partenaire/mes-sessions/:sid] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    // Mot de passe oublié (03/09/2026) — n'existait pas côté Partenaire.
+    router.post('/mot-de-passe-oublie', async (req, res) => {
+        const identifiant = (req.body.identifiant || '').trim();
+        if (!identifiant) {
+            return res.status(400).json({ succes: false, erreurs: ['identifiant requis'] });
+        }
+        try {
+            const resultat = await pool.query(
+                'SELECT id_partenaire, email, email_notification, nom, prenom FROM site.partenaires WHERE email = $1',
+                [identifiant]
+            );
+            if (resultat.rowCount === 0) {
+                return res.status(200).json({ succes: true, message: 'si un compte correspond, un email a été envoyé' });
+            }
+            const partenaire = resultat.rows[0];
+            const adresseEnvoi = partenaire.email_notification || partenaire.email;
+            const nomComplet = partenaire.prenom ? `${partenaire.prenom} ${partenaire.nom}` : partenaire.nom;
+            try {
+                await envoyerLienReinitialisation({
+                    pool, mailTransporter, typeCompte: 'partenaire', idCompte: partenaire.id_partenaire,
+                    email: adresseEnvoi, nomComplet,
+                });
+            } catch (err) {
+                console.error('[POST /api/partenaire/mot-de-passe-oublie] Erreur envoi email :', err);
+            }
+            return res.status(200).json({ succes: true, message: 'si un compte correspond, un email a été envoyé' });
+        } catch (err) {
+            console.error('[POST /api/partenaire/mot-de-passe-oublie] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
+        }
+    });
+
+    router.post('/reinitialiser-mot-de-passe', async (req, res) => {
+        const { token, mot_de_passe, mot_de_passe_confirmation } = req.body;
+        try {
+            const resultat = await appliquerReinitialisation({
+                pool, typeCompte: 'partenaire', token, motDePasse: mot_de_passe, motDePasseConfirmation: mot_de_passe_confirmation,
+                tableCompte: 'site.partenaires', colonneId: 'id_partenaire', tableSession: 'site.session_partenaire', colonneSessionId: 'id_partenaire',
+            });
+            if (!resultat.succes) {
+                return res.status(resultat.statut).json({ succes: false, erreurs: resultat.erreurs });
+            }
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/partenaire/reinitialiser-mot-de-passe] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
         }
     });
 
@@ -280,7 +458,7 @@ module.exports = function (pool) {
 
         try {
             const resultat = await pool.query(
-                'SELECT id_partenaire, nom_complet, email_notification FROM site.partenaires WHERE email = $1 AND mot_de_passe_defini = false',
+                'SELECT id_partenaire, nom, prenom, email_notification FROM site.partenaires WHERE email = $1 AND mot_de_passe_defini = false',
                 [email]
             );
             if (resultat.rowCount === 0) {
@@ -288,7 +466,8 @@ module.exports = function (pool) {
                 return res.status(200).json({ succes: true });
             }
 
-            const { id_partenaire, nom_complet, email_notification } = resultat.rows[0];
+            const { id_partenaire, nom, prenom, email_notification } = resultat.rows[0];
+            const nomComplet = prenom ? `${prenom} ${nom}` : nom;
             if (!email_notification) {
                 // Compte créé avant l'ajout de l'adresse de notification —
                 // cas limite, à régulariser par le staff.
@@ -304,14 +483,10 @@ module.exports = function (pool) {
 
             const lien = `https://mutuelleproassurances.com/activation-partenaire.html?token=${token}`;
             mailTransporter.sendMail({
-                from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+                from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
                 to: email_notification,
                 subject: 'Mutuelle Pro Assurances — Nouveau lien d\'activation',
-                html: `
-                    <p>Bonjour,</p>
-                    <p>Voici votre nouveau lien d'activation pour <strong>${nom_complet}</strong> (valable 72 heures) :</p>
-                    <p><a href="${lien}">${lien}</a></p>
-                `,
+                html: gabaritEmail('Activez votre compte partenaire', corpsActivation({ nomComplet, typeCompte: 'partenaire', lien })),
             }).catch((err) => console.error('[POST /api/partenaire/renvoyer-activation] Erreur envoi email :', err));
 
             return res.status(200).json({ succes: true });

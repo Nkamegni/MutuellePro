@@ -39,7 +39,11 @@ async function creerBoiteMail({ email, motDePasse, nomAffiche, quota }) {
     try {
         ({ stdout } = await execFileAsync('php', [CHEMIN_AJOUT, params], { timeout: 20000 }));
     } catch (err) {
-        throw new Error(`Échec d'exécution du script de création : ${err.message}`);
+        // err.message seul ne contient que le texte générique de child_process
+        // ("Command failed: ...") -- la vraie raison (PHP ou ISPConfig) est
+        // dans stdout/stderr, ignorés jusqu'ici (bug trouvé le 01/09/2026).
+        const details = (err.stderr || err.stdout || '').toString().trim();
+        throw new Error(`Échec d'exécution du script de création${details ? ' : ' + details : ' : ' + err.message}`);
     }
 
     let resultat;
@@ -64,7 +68,8 @@ async function supprimerBoiteMail({ email }) {
     try {
         ({ stdout } = await execFileAsync('php', [CHEMIN_SUPPRESSION, params], { timeout: 20000 }));
     } catch (err) {
-        throw new Error(`Échec d'exécution du script de suppression : ${err.message}`);
+        const details = (err.stderr || err.stdout || '').toString().trim();
+        throw new Error(`Échec d'exécution du script de suppression${details ? ' : ' + details : ' : ' + err.message}`);
     }
 
     let resultat;

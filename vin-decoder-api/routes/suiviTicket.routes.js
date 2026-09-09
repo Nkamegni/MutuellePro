@@ -34,7 +34,7 @@ function estUnEmail(identifiant) {
 async function envoyerCodeParEmail(email, code) {
     try {
         await mailTransporter.sendMail({
-            from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+            from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: email,
             subject: `Code de suivi du statut de votre demande : ${code}`,
             html: `

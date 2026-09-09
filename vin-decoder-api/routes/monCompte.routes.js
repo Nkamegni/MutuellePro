@@ -195,6 +195,23 @@ module.exports = function (pool) {
         }
     });
 
+    // Journal de connexions (Lot B, 02/09/2026)
+    router.get('/connexions', requireAuth, async (req, res) => {
+        try {
+            const resultat = await pool.query(
+                `SELECT id_historique, date_connexion, adresse_ip FROM site.historique_connexions
+                 WHERE type_compte = 'client' AND id_compte = $1
+                 ORDER BY date_connexion DESC LIMIT 20`,
+                [req.session.id_utilisateur]
+            );
+            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique === req.session.id_historique_connexion }));
+            return res.status(200).json({ succes: true, connexions });
+        } catch (err) {
+            console.error('[GET /api/mon-compte/connexions] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
     router.delete('/sessions/:sid', requireAuth, async (req, res) => {
         try {
             await pool.query(

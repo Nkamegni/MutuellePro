@@ -69,10 +69,10 @@ module.exports = function (pool) {
             } else {
                 const hacheInutilisable = crypto.randomBytes(32).toString('hex');
                 const insere = await client.query(
-                    `INSERT INTO site.utilisateurs (email, telephone, nom, mot_de_passe_hache, email_verifie, statut_compte)
-                     VALUES ($1, $2, $3, $4, false, 'actif')
+                    `INSERT INTO site.utilisateurs (email, telephone, nom, prenom, mot_de_passe_hache, email_verifie, statut_compte)
+                     VALUES ($1, $2, $3, $4, $5, false, 'actif')
                      RETURNING id_utilisateur`,
-                    [prospect.email, prospect.telephone || null, prospect.nom_complet || null, hacheInutilisable]
+                    [prospect.email, prospect.telephone || null, prospect.nom, prospect.prenom || null, hacheInutilisable]
                 );
                 idUtilisateur = insere.rows[0].id_utilisateur;
             }
@@ -98,7 +98,7 @@ module.exports = function (pool) {
 
                 const lien = `https://mutuelleproassurances.com/reinitialisation.html?token=${token}`;
                 mailTransporter.sendMail({
-                    from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+                    from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
                     to: prospect.email,
                     subject: 'Mutuelle Pro Assurances — Bienvenue, activez votre espace Client',
                     html: `

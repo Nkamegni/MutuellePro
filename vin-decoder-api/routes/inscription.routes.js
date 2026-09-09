@@ -77,7 +77,7 @@ async function envoyerEmailBienvenueEtVerification(email, token) {
         <p>Si vous n'êtes pas à l'origine de cette création de compte, vous pouvez ignorer ce message.</p>
     `;
     await mailTransporter.sendMail({
-        from: '"Mutuelle Pro Assurances" <admin@mutuelleproassurances.com>',
+        from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
         to: email,
         subject: 'Bienvenue chez Mutuelle Pro Assurances — Confirmez votre email',
         html,
