@@ -1,0 +1,422 @@
+
+<Directory /var/www/mutuelleproassurances.com>
+		AllowOverride None
+				Require all denied
+		</Directory>
+
+<VirtualHost *:80>
+
+
+					DocumentRoot /var/www/clients/client0/web1/web
+			
+		ServerName mutuelleproassurances.com
+		ServerAlias www.mutuelleproassurances.com
+		ServerAdmin webmaster@mutuelleproassurances.com
+
+
+		ErrorLog /var/log/ispconfig/httpd/mutuelleproassurances.com/error.log
+
+		Alias /error/ "/var/www/mutuelleproassurances.com/web/error/"
+		ErrorDocument 400 /error/400.html
+		ErrorDocument 401 /error/401.html
+		ErrorDocument 403 /error/403.html
+		ErrorDocument 404 /error/404.html
+		ErrorDocument 405 /error/405.html
+		ErrorDocument 500 /error/500.html
+		ErrorDocument 502 /error/502.html
+		ErrorDocument 503 /error/503.html
+
+
+		<Directory /var/www/mutuelleproassurances.com/web>
+				# Clear PHP settings of this website
+				<FilesMatch ".+\.ph(p[345]?|t|tml)$">
+						SetHandler None
+				</FilesMatch>
+								Options +SymlinksIfOwnerMatch
+								AllowOverride All
+								Require all granted
+						</Directory>
+		<Directory /var/www/clients/client0/web1/web>
+				# Clear PHP settings of this website
+				<FilesMatch ".+\.ph(p[345]?|t|tml)$">
+						SetHandler None
+				</FilesMatch>
+								Options +SymlinksIfOwnerMatch
+								AllowOverride All
+								Require all granted
+						</Directory>
+
+
+
+
+		# suexec enabled
+		<IfModule mod_suexec.c>
+			SuexecUserGroup web1 client0
+		</IfModule>
+		<IfModule mod_fastcgi.c>
+				<Directory /var/www/clients/client0/web1/cgi-bin>
+										Require all granted
+								    </Directory>
+				<Directory /var/www/mutuelleproassurances.com/web>
+					<FilesMatch "\.php[345]?$">
+						<If "-f '%{REQUEST_FILENAME}'">
+							SetHandler php-fcgi
+						</If>
+					</FilesMatch>
+				</Directory>
+				<Directory /var/www/clients/client0/web1/web>
+					<FilesMatch "\.php[345]?$">
+						<If "-f '%{REQUEST_FILENAME}'">
+							SetHandler php-fcgi
+						</If>
+					</FilesMatch>
+				</Directory>
+                Action php-fcgi /php-fcgi virtual
+				Alias /php-fcgi /var/www/clients/client0/web1/cgi-bin/php-fcgi-*-80-mutuelleproassurances.com
+                FastCgiExternalServer /var/www/clients/client0/web1/cgi-bin/php-fcgi-*-80-mutuelleproassurances.com -idle-timeout 300 -socket /run/php/web1.sock -pass-header Authorization  -pass-header Content-Type
+		</IfModule>
+		<IfModule mod_proxy_fcgi.c>
+			#ProxyPassMatch ^/(.*\.php[345]?(/.*)?)$ unix:///run/php/web1.sock|fcgi://localhost//var/www/clients/client0/web1/web/$1
+			<Directory /var/www/mutuelleproassurances.com/web>
+				<FilesMatch "\.php[345]?$">
+					<If "-f '%{REQUEST_FILENAME}'">
+						SetHandler "proxy:unix:/run/php/web1.sock|fcgi://localhost"
+					</If>
+				</FilesMatch>
+			</Directory>
+			<Directory /var/www/clients/client0/web1/web>
+				<FilesMatch "\.php[345]?$">
+					<If "-f '%{REQUEST_FILENAME}'">
+						SetHandler "proxy:unix:/run/php/web1.sock|fcgi://localhost"
+					</If>
+				</FilesMatch>
+			</Directory>
+			</IfModule>
+
+
+
+		# add support for apache mpm_itk
+		<IfModule mpm_itk_module>
+			AssignUserId web1 client0
+		</IfModule>
+
+		<IfModule mod_dav_fs.c>
+		# Do not execute PHP files in webdav directory
+			<Directory /var/www/clients/client0/web1/webdav>
+				<ifModule mod_security2.c>
+					SecRuleRemoveById 960015
+					SecRuleRemoveById 960032
+				</ifModule>
+				<FilesMatch "\.ph(p3?|tml)$">
+					SetHandler None
+				</FilesMatch>
+			</Directory>
+			DavLockDB /var/www/clients/client0/web1/tmp/DavLock
+			# DO NOT REMOVE THE COMMENTS!
+			# IF YOU REMOVE THEM, WEBDAV WILL NOT WORK ANYMORE!
+      # WEBDAV BEGIN
+			# WEBDAV END
+		</IfModule>
+
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteCond %{REQUEST_URI} !^/webmail
+RewriteCond %{REQUEST_URI} !^/error/
+RewriteRule ^/(.*)$ http://localhost:3000/$1 [P,L]
+
+Alias /webmail /var/lib/roundcube/public_html
+<Directory /var/lib/roundcube/public_html/>
+  Options +FollowSymLinks
+  DirectoryIndex index.php
+  AllowOverride All
+  <FilesMatch "\.php$">
+    SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost"
+  </FilesMatch>
+  <IfVersion >= 2.3>
+    Require all granted
+  </IfVersion>
+  <IfVersion < 2.3>
+    Order allow,deny
+    Allow from all
+  </IfVersion>
+</Directory>
+
+ProxyPassReverse / http://localhost:3000/
+
+# ===================================================================
+# En-tetes de securite -- CSP et HSTS
+# A ajouter dans ISPConfig : Sites -> mutuelleproassurances.com ->
+# Options -> Directives Apache (meme emplacement que le ProxyPass
+# deja en place pour Let's Encrypt).
+#
+# IMPORTANT : ajoutez ce bloc APRES les lignes ProxyPass existantes,
+# ne les remplacez pas.
+# ===================================================================
+
+<IfModule mod_headers.c>
+
+    # HSTS -- force HTTPS pour ce domaine (et sous-domaines) pendant 1 an,
+    # empeche tout downgrade vers HTTP meme si un lien http:// trainait
+    # quelque part.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Protection anti-clickjacking -- empeche le site d'etre affiche
+    # dans une frame sur un autre site (protection deja tres standard).
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Empeche le navigateur de deviner le type d'un fichier different
+    # de ce que le serveur declare (protection contre certains abus).
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Politique de referrer -- n'envoie l'URL complete qu'aux domaines
+    # de confiance (le notre), sinon juste le domaine, jamais le chemin
+    # complet vers un site externe.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content-Security-Policy -- liste explicite de tout ce que le site
+    # est autorise a charger. Toute nouvelle ressource externe ajoutee
+    # plus tard (nouveau CDN, nouvelle police, etc.) devra etre ajoutee
+    # ICI aussi, sinon elle sera bloquee silencieusement par le
+    # navigateur -- verifiez toujours la Console (F12) apres tout ajout
+    # de ressource externe.
+    # MIS A JOUR le 17/08/2026 : retrait de cdn.tailwindcss.com --
+    # migration vers un CSS Tailwind compile localement (tailwind.css),
+    # le CDN externe n'est plus charge du tout. Beneficie collateral :
+    # une source externe en moins autorisee, surface d'attaque reduite.
+    # MIS A JOUR le 19/08/2026 : ajout de X-Forwarded-Proto, necessaire
+    # pour que express-session sache que la connexion d'origine est en
+    # HTTPS (le VPS/Node ne voit que du HTTP en local derriere le proxy
+    # Apache) -- indispensable pour que les cookies de session "Secure"
+    # soient emis. Bloc CSP unique conserve (l'ancien bloc obsolete avec
+    # cdn.tailwindcss.com a ete retire de ce champ).
+    # NNR - 22/08/2026 - GEM : Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
+    RequestHeader set X-Forwarded-Proto "https"
+
+</IfModule>
+
+	
+
+</VirtualHost>
+
+
+<VirtualHost *:443>
+
+
+					DocumentRoot /var/www/clients/client0/web1/web
+			
+		ServerName mutuelleproassurances.com
+		ServerAlias www.mutuelleproassurances.com
+		ServerAdmin webmaster@mutuelleproassurances.com
+
+		<IfModule mod_http2.c>
+			Protocols h2 http/1.1
+		</IfModule>
+
+		<IfModule mod_brotli.c>
+			AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript application/xml application/xml+rss application/atom+xml application/json application/x-font-ttf application/vnd.ms-fontobject image/x-icon
+		</IfModule>
+
+		ErrorLog /var/log/ispconfig/httpd/mutuelleproassurances.com/error.log
+
+		Alias /error/ "/var/www/mutuelleproassurances.com/web/error/"
+		ErrorDocument 400 /error/400.html
+		ErrorDocument 401 /error/401.html
+		ErrorDocument 403 /error/403.html
+		ErrorDocument 404 /error/404.html
+		ErrorDocument 405 /error/405.html
+		ErrorDocument 500 /error/500.html
+		ErrorDocument 502 /error/502.html
+		ErrorDocument 503 /error/503.html
+
+  <IfModule mod_ssl.c>
+		SSLEngine on
+		SSLProtocol All -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
+		# SSLCipherSuite          ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS
+		SSLHonorCipherOrder     on
+		# <IfModule mod_headers.c>
+		# Header always add Strict-Transport-Security "max-age=15768000"
+		# </IfModule>
+		SSLCertificateFile /var/www/clients/client0/web1/ssl/mutuelleproassurances.com-le.crt
+		SSLCertificateKeyFile /var/www/clients/client0/web1/ssl/mutuelleproassurances.com-le.key
+						
+      </IfModule>
+
+		<Directory /var/www/mutuelleproassurances.com/web>
+				# Clear PHP settings of this website
+				<FilesMatch ".+\.ph(p[345]?|t|tml)$">
+						SetHandler None
+				</FilesMatch>
+								Options +SymlinksIfOwnerMatch
+								AllowOverride All
+								Require all granted
+						</Directory>
+		<Directory /var/www/clients/client0/web1/web>
+				# Clear PHP settings of this website
+				<FilesMatch ".+\.ph(p[345]?|t|tml)$">
+						SetHandler None
+				</FilesMatch>
+								Options +SymlinksIfOwnerMatch
+								AllowOverride All
+								Require all granted
+						</Directory>
+
+
+
+
+		# suexec enabled
+		<IfModule mod_suexec.c>
+			SuexecUserGroup web1 client0
+		</IfModule>
+		<IfModule mod_fastcgi.c>
+				<Directory /var/www/clients/client0/web1/cgi-bin>
+										Require all granted
+								    </Directory>
+				<Directory /var/www/mutuelleproassurances.com/web>
+					<FilesMatch "\.php[345]?$">
+						<If "-f '%{REQUEST_FILENAME}'">
+							SetHandler php-fcgi
+						</If>
+					</FilesMatch>
+				</Directory>
+				<Directory /var/www/clients/client0/web1/web>
+					<FilesMatch "\.php[345]?$">
+						<If "-f '%{REQUEST_FILENAME}'">
+							SetHandler php-fcgi
+						</If>
+					</FilesMatch>
+				</Directory>
+                Action php-fcgi /php-fcgi virtual
+				Alias /php-fcgi /var/www/clients/client0/web1/cgi-bin/php-fcgi-*-443-mutuelleproassurances.com
+                FastCgiExternalServer /var/www/clients/client0/web1/cgi-bin/php-fcgi-*-443-mutuelleproassurances.com -idle-timeout 300 -socket /run/php/web1.sock -pass-header Authorization  -pass-header Content-Type
+		</IfModule>
+		<IfModule mod_proxy_fcgi.c>
+			#ProxyPassMatch ^/(.*\.php[345]?(/.*)?)$ unix:///run/php/web1.sock|fcgi://localhost//var/www/clients/client0/web1/web/$1
+			<Directory /var/www/mutuelleproassurances.com/web>
+				<FilesMatch "\.php[345]?$">
+					<If "-f '%{REQUEST_FILENAME}'">
+						SetHandler "proxy:unix:/run/php/web1.sock|fcgi://localhost"
+					</If>
+				</FilesMatch>
+			</Directory>
+			<Directory /var/www/clients/client0/web1/web>
+				<FilesMatch "\.php[345]?$">
+					<If "-f '%{REQUEST_FILENAME}'">
+						SetHandler "proxy:unix:/run/php/web1.sock|fcgi://localhost"
+					</If>
+				</FilesMatch>
+			</Directory>
+			</IfModule>
+
+
+
+		# add support for apache mpm_itk
+		<IfModule mpm_itk_module>
+			AssignUserId web1 client0
+		</IfModule>
+
+		<IfModule mod_dav_fs.c>
+		# Do not execute PHP files in webdav directory
+			<Directory /var/www/clients/client0/web1/webdav>
+				<ifModule mod_security2.c>
+					SecRuleRemoveById 960015
+					SecRuleRemoveById 960032
+				</ifModule>
+				<FilesMatch "\.ph(p3?|tml)$">
+					SetHandler None
+				</FilesMatch>
+			</Directory>
+			DavLockDB /var/www/clients/client0/web1/tmp/DavLock
+			# DO NOT REMOVE THE COMMENTS!
+			# IF YOU REMOVE THEM, WEBDAV WILL NOT WORK ANYMORE!
+      # WEBDAV BEGIN
+			# WEBDAV END
+		</IfModule>
+
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteCond %{REQUEST_URI} !^/webmail
+RewriteCond %{REQUEST_URI} !^/error/
+RewriteRule ^/(.*)$ http://localhost:3000/$1 [P,L]
+
+Alias /webmail /var/lib/roundcube/public_html
+<Directory /var/lib/roundcube/public_html/>
+  Options +FollowSymLinks
+  DirectoryIndex index.php
+  AllowOverride All
+  <FilesMatch "\.php$">
+    SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost"
+  </FilesMatch>
+  <IfVersion >= 2.3>
+    Require all granted
+  </IfVersion>
+  <IfVersion < 2.3>
+    Order allow,deny
+    Allow from all
+  </IfVersion>
+</Directory>
+
+ProxyPassReverse / http://localhost:3000/
+
+#NNR - 22/08/2026 - GEM
+RequestHeader set X-Forwarded-Proto "https"
+
+# ===================================================================
+# En-tetes de securite -- CSP et HSTS
+# A ajouter dans ISPConfig : Sites -> mutuelleproassurances.com ->
+# Options -> Directives Apache (meme emplacement que le ProxyPass
+# deja en place pour Let's Encrypt).
+#
+# IMPORTANT : ajoutez ce bloc APRES les lignes ProxyPass existantes,
+# ne les remplacez pas.
+# ===================================================================
+
+<IfModule mod_headers.c>
+
+    # HSTS -- force HTTPS pour ce domaine (et sous-domaines) pendant 1 an,
+    # empeche tout downgrade vers HTTP meme si un lien http:// trainait
+    # quelque part.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Protection anti-clickjacking -- empeche le site d'etre affiche
+    # dans une frame sur un autre site (protection deja tres standard).
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Empeche le navigateur de deviner le type d'un fichier different
+    # de ce que le serveur declare (protection contre certains abus).
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Politique de referrer -- n'envoie l'URL complete qu'aux domaines
+    # de confiance (le notre), sinon juste le domaine, jamais le chemin
+    # complet vers un site externe.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content-Security-Policy -- liste explicite de tout ce que le site
+    # est autorise a charger. Toute nouvelle ressource externe ajoutee
+    # plus tard (nouveau CDN, nouvelle police, etc.) devra etre ajoutee
+    # ICI aussi, sinon elle sera bloquee silencieusement par le
+    # navigateur -- verifiez toujours la Console (F12) apres tout ajout
+    # de ressource externe.
+    # MIS A JOUR le 17/08/2026 : retrait de cdn.tailwindcss.com --
+    # migration vers un CSS Tailwind compile localement (tailwind.css),
+    # le CDN externe n'est plus charge du tout. Beneficie collateral :
+    # une source externe en moins autorisee, surface d'attaque reduite.
+    # MIS A JOUR le 19/08/2026 : ajout de X-Forwarded-Proto, necessaire
+    # pour que express-session sache que la connexion d'origine est en
+    # HTTPS (le VPS/Node ne voit que du HTTP en local derriere le proxy
+    # Apache) -- indispensable pour que les cookies de session "Secure"
+    # soient emis. Bloc CSP unique conserve (l'ancien bloc obsolete avec
+    # cdn.tailwindcss.com a ete retire de ce champ).
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
+
+    RequestHeader set X-Forwarded-Proto "https"
+
+</IfModule>
+
+
+
+</VirtualHost>
+
+
+
+
