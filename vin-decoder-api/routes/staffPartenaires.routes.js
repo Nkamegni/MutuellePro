@@ -14,7 +14,7 @@ const { gabaritEmail, corpsActivation } = require('../lib/gabaritEmail');
 const { chiffrer } = require('../lib/chiffrement');
 const { creerBoiteMail } = require('../lib/ispconfig');
 
-const ROLES_ECRITURE = ['gestionnaire', 'administrateur'];
+const ROLES_ECRITURE = ['gestionnaire', 'administrateur', 'superadmin'];
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,

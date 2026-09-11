@@ -120,6 +120,58 @@ module.exports = function (pool) {
         }
     });
 
+    // Édition des coordonnées d'un prospect (09/09/2026, demandée par
+    // Roger -- aucune route de correction n'existait jusqu'ici, seul le
+    // statut était modifiable). Restreinte à administrateur/superadmin
+    // (décision explicite de Roger, plus stricte que ROLES_ECRITURE
+    // utilisée ailleurs) -- cohérent avec DELETE et l'import CSV,
+    // déjà au même niveau de restriction dans ce fichier.
+    //
+    // Ne vérifie PAS l'unicité email/téléphone contre les autres
+    // prospects avant d'enregistrer (aucune contrainte UNIQUE en base
+    // sur ces colonnes pour site.prospects, contrairement à
+    // site.utilisateurs) -- laissé au jugement de l'administrateur, qui
+    // corrige justement un doublon identifié à la main. Un doublon
+    // résiduel resterait de toute façon détecté à la promotion (déjà
+    // le cas, voir prospectPromotion.routes.js).
+    router.patch('/prospects/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        const idProspect = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idProspect)) {
+            return res.status(400).json({ succes: false, erreurs: ['id de prospect invalide'] });
+        }
+        const { nom, prenom, email, telephone } = req.body;
+        if (!nom || !nom.trim()) {
+            return res.status(400).json({ succes: false, erreurs: ['le nom est obligatoire'] });
+        }
+        if (!email && !telephone) {
+            return res.status(400).json({ succes: false, erreurs: ['au moins un email ou un téléphone est requis'] });
+        }
+        try {
+            const avantRes = await pool.query('SELECT nom, prenom, email, telephone FROM site.prospects WHERE id_prospect = $1', [idProspect]);
+            if (avantRes.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['prospect introuvable'] });
+            }
+            const avant = avantRes.rows[0];
+            const apres = { nom: nom.trim(), prenom: prenom ? prenom.trim() : null, email: email || null, telephone: telephone || null };
+
+            await pool.query(
+                `UPDATE site.prospects SET nom = $1, prenom = $2, email = $3, telephone = $4, date_maj = now() WHERE id_prospect = $5`,
+                [apres.nom, apres.prenom, apres.email, apres.telephone, idProspect]
+            );
+
+            await pool.query(
+                `INSERT INTO site.journal_audit (id_staff, action, table_concernee, id_enregistrement, donnees_apres, adresse_ip)
+                 VALUES ($1, 'prospect.modification', 'prospects', $2, $3::jsonb, $4)`,
+                [req.session.id_staff, idProspect, JSON.stringify({ avant, apres }), req.ip]
+            );
+
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[PATCH /api/staff/prospects/:id] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
     router.get('/prospects/:id/interactions', requireStaffAuth, async (req, res) => {
         const idProspect = parseInt(req.params.id, 10);
         try {

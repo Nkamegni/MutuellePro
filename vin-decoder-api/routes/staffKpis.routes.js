@@ -51,6 +51,26 @@
 //     Objectif unique : GET /api/staff/kpis/export (staffKpisExport.routes.js)
 //     réutilise EXACTEMENT cette même fonction, jamais une copie divergente
 //     des requêtes SQL.
+//
+// Vue "Suivi comparatif" (09/09/2026, cahier des charges + proposition
+// validée le même jour) :
+//   - ?comparatif=semaine|mois|trimestre|annee : additif, absent sans ce
+//     paramètre -- aucune régression sur le comportement existant.
+//   - Bornes calendaires calculées via date_trunc() côté SQL (jamais en
+//     JS) -- gère nativement années bissextiles et passages d'année.
+//     Vérifié sur le cas piège du 5 janvier 2027 (T4 2026 / T3 2026).
+//   - Indicateurs de flux (créés/résolus/tâches créées/temps de
+//     traitement) : comparaison exacte sur les bornes de la période N et
+//     N-1, réutilise calculerEvolution().
+//   - Indicateurs d'état (non assignés/en attente/en retard/actifs) :
+//     comparaison via le snapshot le plus proche de chaque borne de fin
+//     de période, tolérance de 3 jours en arrière. Sans snapshot dans
+//     cette tolérance pour l'une des deux bornes : comparatif.etat.
+//     historique_suffisant = false, aucun chiffre approximatif non
+//     signalé. Au 09/09/2026 (5 jours de snapshots), c'est le cas pour
+//     quasi toutes les granularités sauf la période N Hebdomadaire --
+//     attendu, se résorbe seul avec le temps, ne nécessite aucun code
+//     supplémentaire.
 // =====================================================================
 
 const express = require('express');
@@ -60,11 +80,48 @@ const requireStaffAuth = require('../middleware/requireStaffAuth');
 // dans une requête SQL. Toute valeur numérique passe en paramètre lié ($n).
 const MAPPING_PERIODE_JOURS = { semaine: 7, mois: 30, trimestre: 90, annee: 365 };
 
+// Suivi comparatif -- bucket (pour date_trunc) et intervalle (pour le
+// recul d'une période) par granularité. Comme bucketTendance plus bas,
+// provient exclusivement de ce mapping interne, jamais de req.query.*
+// interpolé -- sûr malgré l'absence de paramètre lié à cet endroit.
+const MAPPING_COMPARATIF = {
+    semaine: { bucket: 'week', intervalle: '7 days' },
+    mois: { bucket: 'month', intervalle: '1 month' },
+    trimestre: { bucket: 'quarter', intervalle: '3 months' },
+    annee: { bucket: 'year', intervalle: '1 year' },
+};
+
+// Snapshot le plus proche d'une date de fin de période, tolérance 3
+// jours en arrière -- jamais un snapshot postérieur (représenterait un
+// état futur pour une date passée, incohérent). null si hors tolérance :
+// c'est le signal "historique insuffisant", jamais une valeur approximée
+// silencieusement au-delà de cette fenêtre.
+async function snapshotProcheDe(pool, dateFin) {
+    const resultat = await pool.query(
+        `SELECT * FROM site.snapshot_kpis_quotidien
+         WHERE date_snapshot <= $1 AND date_snapshot >= $1::date - interval '3 days'
+         ORDER BY date_snapshot DESC LIMIT 1`,
+        [dateFin]
+    );
+    return resultat.rows[0] || null;
+}
+
 function calculerEvolution(ligne) {
     const actuelle = ligne.actuelle;
     const precedente = ligne.precedente;
     const variation_pct = precedente > 0 ? Math.round(((actuelle - precedente) / precedente) * 1000) / 10 : null;
-    return { actuelle, precedente, variation_pct };
+    // Ajouté le 09/09/2026 (session myspace.html) -- le nouveau mode
+    // comparaison (construireCarteComparatif, front) lit
+    // evolution.variation_absolue pour afficher l'écart en valeur brute
+    // à côté du badge %, jamais fourni jusqu'ici -- sans ce champ,
+    // "Écart : undefined" s'affichait littéralement à l'écran. null
+    // uniquement si l'une des deux valeurs est elle-même absente --
+    // jamais de division ici, donc pas besoin de la garde precedente > 0
+    // qu'exige variation_pct.
+    const variation_absolue = (actuelle !== null && actuelle !== undefined && precedente !== null && precedente !== undefined)
+        ? actuelle - precedente
+        : null;
+    return { actuelle, precedente, variation_pct, variation_absolue };
 }
 
 // Construit l'intégralité de la réponse KPI -- utilisée par GET /api/staff/kpis
@@ -211,6 +268,88 @@ async function construireDonneesKpis(pool, req) {
         console.error('[construireDonneesKpis] Snapshots indisponibles, dégradation silencieuse :', err.message);
     }
     Object.assign(reponse, evolutionEtat);
+
+    // Suivi comparatif (09/09/2026) -- entièrement additif, absent de la
+    // réponse sans ?comparatif=. Aucune requête supplémentaire exécutée
+    // si le paramètre n'est pas fourni ou invalide.
+    const granulariteComparatif = MAPPING_COMPARATIF[req.query.comparatif];
+    if (granulariteComparatif) {
+        const { bucket, intervalle } = granulariteComparatif;
+        const bornes = await pool.query(`
+            SELECT
+                (date_trunc('${bucket}', CURRENT_DATE) - interval '${intervalle}')::date AS n_debut,
+                (date_trunc('${bucket}', CURRENT_DATE) - interval '1 day')::date AS n_fin,
+                (date_trunc('${bucket}', CURRENT_DATE) - interval '${intervalle}' - interval '${intervalle}')::date AS n1_debut,
+                (date_trunc('${bucket}', CURRENT_DATE) - interval '${intervalle}' - interval '1 day')::date AS n1_fin
+        `);
+        const { n_debut, n_fin, n1_debut, n1_fin } = bornes.rows[0];
+
+        const [fluxTickets, fluxResolus, fluxTaches, fluxTraitement] = await Promise.all([
+            pool.query(`
+                SELECT
+                    COUNT(*) FILTER (WHERE date_creation >= $1 AND date_creation < $2::date + interval '1 day')::int AS actuelle,
+                    COUNT(*) FILTER (WHERE date_creation >= $3 AND date_creation < $4::date + interval '1 day')::int AS precedente
+                FROM site.tickets
+            `, [n_debut, n_fin, n1_debut, n1_fin]),
+            pool.query(`
+                SELECT
+                    COUNT(*) FILTER (WHERE id_statut_ticket = 3 AND date_maj >= $1 AND date_maj < $2::date + interval '1 day')::int AS actuelle,
+                    COUNT(*) FILTER (WHERE id_statut_ticket = 3 AND date_maj >= $3 AND date_maj < $4::date + interval '1 day')::int AS precedente
+                FROM site.tickets
+            `, [n_debut, n_fin, n1_debut, n1_fin]),
+            pool.query(`
+                SELECT
+                    COUNT(*) FILTER (WHERE date_creation >= $1 AND date_creation < $2::date + interval '1 day')::int AS actuelle,
+                    COUNT(*) FILTER (WHERE date_creation >= $3 AND date_creation < $4::date + interval '1 day')::int AS precedente
+                FROM site.taches
+            `, [n_debut, n_fin, n1_debut, n1_fin]),
+            pool.query(`
+                SELECT
+                    ROUND(AVG(EXTRACT(EPOCH FROM (date_cloture - date_creation)) / 86400) FILTER (WHERE date_cloture >= $1 AND date_cloture < $2::date + interval '1 day')::numeric, 1) AS actuelle,
+                    ROUND(AVG(EXTRACT(EPOCH FROM (date_cloture - date_creation)) / 86400) FILTER (WHERE date_cloture >= $3 AND date_cloture < $4::date + interval '1 day')::numeric, 1) AS precedente
+                FROM site.taches WHERE date_cloture IS NOT NULL
+            `, [n_debut, n_fin, n1_debut, n1_fin]),
+        ]);
+
+        reponse.comparatif = {
+            granularite: req.query.comparatif,
+            periode_n: { debut: n_debut, fin: n_fin },
+            periode_n1: { debut: n1_debut, fin: n1_fin },
+            flux: {
+                tickets_crees: calculerEvolution(fluxTickets.rows[0]),
+                tickets_resolus: calculerEvolution(fluxResolus.rows[0]),
+                taches_creees: calculerEvolution(fluxTaches.rows[0]),
+                temps_traitement_moyen_jours: calculerEvolution({
+                    actuelle: fluxTraitement.rows[0].actuelle !== null ? Number(fluxTraitement.rows[0].actuelle) : null,
+                    precedente: fluxTraitement.rows[0].precedente !== null ? Number(fluxTraitement.rows[0].precedente) : null,
+                }),
+            },
+            etat: { historique_suffisant: false },
+        };
+
+        // Indicateurs d'état -- protégé séparément, même principe de
+        // dégradation silencieuse que evolutionEtat plus haut : la
+        // table snapshot peut ne pas exister, ou n'avoir aucune ligne
+        // dans la tolérance de 3 jours pour l'une des deux bornes.
+        try {
+            const [snapshotN, snapshotN1] = await Promise.all([
+                snapshotProcheDe(pool, n_fin),
+                snapshotProcheDe(pool, n1_fin),
+            ]);
+            if (snapshotN && snapshotN1) {
+                reponse.comparatif.etat = {
+                    historique_suffisant: true,
+                    tickets_non_assignes: calculerEvolution({ actuelle: snapshotN.tickets_non_assignes, precedente: snapshotN1.tickets_non_assignes }),
+                    taches_en_attente: calculerEvolution({ actuelle: snapshotN.taches_en_attente, precedente: snapshotN1.taches_en_attente }),
+                    taches_en_retard: calculerEvolution({ actuelle: snapshotN.taches_en_retard, precedente: snapshotN1.taches_en_retard }),
+                    clients_actifs: calculerEvolution({ actuelle: snapshotN.clients_actifs, precedente: snapshotN1.clients_actifs }),
+                    partenaires_actifs: calculerEvolution({ actuelle: snapshotN.partenaires_actifs, precedente: snapshotN1.partenaires_actifs }),
+                };
+            }
+        } catch (err) {
+            console.error('[construireDonneesKpis] Comparatif -- snapshots indisponibles, historique_suffisant reste false :', err.message);
+        }
+    }
 
     // Agrégation par responsable, pipeline et Kanban Prospects --
     // UNIQUEMENT ajoutés à la réponse pour Administrateur/SuperAdmin.

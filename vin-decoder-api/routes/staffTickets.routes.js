@@ -18,7 +18,7 @@ const nodemailer = require('nodemailer');
 const requireStaffAuth = require('../middleware/requireStaffAuth');
 const requireStaffRole = require('../middleware/requireStaffRole');
 
-const ROLES_ECRITURE = ['gestionnaire', 'administrateur'];
+const ROLES_ECRITURE = ['gestionnaire', 'administrateur', 'superadmin'];
 const STATUTS_VALIDES = ['recu', 'en_cours', 'resolu'];
 
 const STATUT_LIBELLE_FR = { recu: 'Reçu', en_cours: 'En cours de traitement', resolu: 'Résolu' };

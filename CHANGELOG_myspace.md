@@ -4,6 +4,41 @@ Convention de version : `AAAA.MM.JJ-lettre` (lettre incrémentée à chaque dép
 
 ---
 
+## 2026.09.09-k
+- **Correctif critique, régression introduite par 09.09-j** : `Uncaught TypeError: Cannot read properties of null` au chargement de **toute** page (signalé par Roger) — le déplacement du formulaire d'inscription en modale (fin de `<body>`) laissait `document.getElementById('form-inscription-client').addEventListener(...)` s'exécuter avant que le navigateur n'ait analysé jusque-là. Liaison différée jusqu'à `DOMContentLoaded` ; les 3 formulaires de connexion, plus haut dans le document, n'étaient pas affectés
+
+## 2026.09.09-j
+- **Bug corrigé** (signalé par Roger, capture d'écran à l'appui) : après création de compte, basculer sur "Je suis Personnel" laissait le formulaire de connexion Client visible en dessous — `basculerInscriptionClient(false)` réaffichait sans condition `form-login-client`, écrasant le masquage correct fait juste avant par `basculerTypeConnexion`
+- **Inscription Client déplacée en modale** (exigence explicite de Roger, 3 points) : (1) connexion et inscription Client ne doivent jamais être visibles ensemble, (2) l'inscription ne doit jamais exister dans le contexte Personnel/Partenaire, (3) la hauteur de la carte Connexion doit rester strictement constante — égale à celle de "Suivre ma demande" — quel que soit l'état de l'inscription. Un formulaire en ligne (plus long qu'un simple formulaire de connexion) aurait fait grandir les deux colonnes ensemble par l'étirement flex, créant le vide visible sur la capture. La modale règle les 3 points par construction, sans surveillance manuelle
+- **Nom affiché après connexion** (Personnel/Partenaire) — `GET /api/staff/session` et `GET /api/partenaire/session` ne renvoyaient que le rôle/l'identifiant technique, jamais le nom de la personne (signalé par Roger). Les deux routes interrogent désormais `nom`/`prenom`, une requête supplémentaire mais uniquement à la vérification de session
+- **Délai réel avant déblocage** sur le message de limitation de débit (`server.js`, hors dépôt Git) — "réessayez dans quelques minutes" remplacé par un calcul exact à partir de la fenêtre glissante, plus l'en-tête HTTP standard `Retry-After`
+
+## 2026.09.09-i
+- **Inscription Client** réintégrée à la porte d'entrée unique de `myspace.html` — migration restée inachevée depuis le retrait de l'ancien formulaire d'`index.html` le 25/08/2026 (l'ancien système avait été retiré en vue de cette consolidation, mais le nouveau formulaire n'avait jamais été construit côté Client). Réutilise le contrat déjà vérifié en conditions réelles ce soir (`POST /api/inscription`, mêmes 4 champs). Réservée au Client — Personnel et Partenaire n'ont pas d'auto-inscription
+- **Bug trouvé et corrigé en cours de construction** : le message de succès réutilisait la zone d'erreur de connexion en vert, sans jamais réinitialiser la couleur — une vraie erreur de connexion survenant juste après aurait pu s'afficher à tort en vert. Corrigé sur les 4 points d'entrée de cette zone partagée (3 formulaires de connexion + vérification du code 2FA)
+
+## 2026.09.09-h
+- **Édition des coordonnées d'un prospect** (nom/prénom/email/téléphone) — décidée par Roger, aucune correction n'était possible jusqu'ici, seul le statut était modifiable. Route `PATCH /api/staff/prospects/:id`, restreinte Administrateur/Superadmin (choix explicite de Roger). Bouton ✏️ dans la colonne Nom, visible aux mêmes rôles côté front, journalisée dans `site.journal_audit` (avant/après dans un seul champ JSON, aucune colonne `donnees_avant` séparée en base)
+- **Message d'erreur explicite sur doublon de téléphone** à la promotion (`utilisateurs_telephone_key`) — remplace un "erreur serveur" générique par un message exploitable
+
+## 2026.09.09-g
+- **Traçabilité de la promotion groupée Prospect → Client** (signalé par Roger — "processus pas très bavard") : le backend renvoyait déjà un motif d'échec précis (`data.erreurs`), jamais lu jusqu'ici — un simple compteur muet remplacé par un panneau listant chaque prospect en échec avec son motif exact
+- Trouvé et corrigé au passage, en conditions réelles : `superadmin` absent de 4 contrôles de rôle (`prospectPromotion`, `prospectQualification`, et la constante `ROLES_ECRITURE` dupliquée dans `staffPartenaires`/`staffTickets`) ; `matricule` jamais généré à la création d'un compte Client via promotion ; `GRANT` manquant sur `site.seq_matricule_client` (bloquait aussi l'inscription publique) ; `site.historique_connexions` disparue, recréée
+
+## 2026.09.09-f
+- **Correctif** : la vue "Défaut" du système de personnalisation du dashboard est désormais **jamais supprimable**, sur les 3 rôles (front + back) — trouvé lors du test manuel B8 (protocole "Tableau de bord") : la règle précédente ne protégeait que "la dernière vue restante", "Défaut" pouvait donc être supprimée tant qu'au moins une autre vue existait
+
+## 2026.09.09-e
+- **Mode comparaison** (reconception demandée directement par Roger à la session Tableau de bord, remplace le widget "Suivi comparatif" de 09-d) : "Vue d'ensemble" et "Flux" basculent en place vers une comparaison Période N / N-1 (bouton "⇄ Mode comparaison"), plutôt qu'un widget séparé qui dupliquait des cartes déjà affichées ailleurs. Graphiques et Bientôt disponible restent inchangés dans les deux cas
+- **Correctif backend** (`staffKpis.routes.js`) : `calculerEvolution()` ne retournait pas `variation_absolue`, pourtant lu par la nouvelle carte comparative — sans ce champ, "Écart : undefined" se serait affiché littéralement sur chaque carte. Vérifié avant et après correctif (simulation exacte de l'affichage résultant)
+- Le widget séparé, sa fonction `chargerSuiviComparatif`, et son entrée dans les listes de widgets connus (front + back) sont retirés partout, cohérence vérifiée entre les deux fichiers
+
+## 2026.09.09-d
+- Widget "Suivi comparatif" (5ᵉ widget du modèle Support Personnel) — compare la dernière période calendaire complète à la période précédente (4 granularités), sur `?comparatif=` de `GET /api/staff/kpis`. Bornes calculées via `date_trunc()` SQL, vérifiées indépendamment (4 granularités, date réelle du jour) — correctes
+- Indicateurs d'état comparés seulement si un snapshot existe à ±3 jours de chaque borne — "Historique insuffisant" affiché explicitement sinon, jamais un chiffre approximé silencieusement
+- **Fusion manuelle nécessaire** : le fichier reçu de la session Tableau de bord repartait d'une copie antérieure à 09/09-c (correctif glisser-déposer, bulles d'aide) — les deux réintégrés en fusionnant leur nouveauté sur la bonne base plutôt que de régresser
+- **Régression SQL évitée** (`dashboardPreferences.routes.js`) : la copie reçue ne contenait pas non plus le correctif du bug `42P08` déjà résolu — réappliqué avant déploiement
+
 ## 2026.09.09-c
 - Bulles d'aide ajoutées sur les 10 occurrences de la poignée (`⠿` — "Glissez pour réordonner ce bloc") et du bouton `👁️` ("Afficher ou masquer ce bloc") — aucune indication n'existait auparavant, signalé par Roger
 

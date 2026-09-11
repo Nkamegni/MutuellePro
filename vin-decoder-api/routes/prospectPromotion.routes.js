@@ -30,7 +30,7 @@ const mailTransporter = nodemailer.createTransport({
 module.exports = function (pool) {
     const router = express.Router();
 
-    router.post('/prospects/:id/promouvoir-client', requireStaffAuth, requireStaffRole(['gestionnaire', 'administrateur']), async (req, res) => {
+    router.post('/prospects/:id/promouvoir-client', requireStaffAuth, requireStaffRole(['gestionnaire', 'administrateur', 'superadmin']), async (req, res) => {
         const idProspect = parseInt(req.params.id, 10);
         if (!Number.isInteger(idProspect)) {
             return res.status(400).json({ succes: false, erreurs: ['id de prospect invalide'] });
@@ -68,11 +68,18 @@ module.exports = function (pool) {
                 compteReutilise = true;
             } else {
                 const hacheInutilisable = crypto.randomBytes(32).toString('hex');
+                // Correctif 09/09/2026 -- matricule jamais généré ici,
+                // NOT NULL en base (site.utilisateurs.matricule), cause du
+                // 500 en production. Même mécanisme que inscription.routes.js
+                // (seule autre route qui insère dans site.utilisateurs) :
+                // séquence dédiée site.seq_matricule_client, format CLI-000123.
+                const resultatMatricule = await client.query("SELECT nextval('site.seq_matricule_client') AS n");
+                const matricule = 'CLI-' + String(resultatMatricule.rows[0].n).padStart(6, '0');
                 const insere = await client.query(
-                    `INSERT INTO site.utilisateurs (email, telephone, nom, prenom, mot_de_passe_hache, email_verifie, statut_compte)
-                     VALUES ($1, $2, $3, $4, $5, false, 'actif')
+                    `INSERT INTO site.utilisateurs (matricule, email, telephone, nom, prenom, mot_de_passe_hache, email_verifie, statut_compte)
+                     VALUES ($1, $2, $3, $4, $5, $6, false, 'actif')
                      RETURNING id_utilisateur`,
-                    [prospect.email, prospect.telephone || null, prospect.nom, prospect.prenom || null, hacheInutilisable]
+                    [matricule, prospect.email, prospect.telephone || null, prospect.nom, prospect.prenom || null, hacheInutilisable]
                 );
                 idUtilisateur = insere.rows[0].id_utilisateur;
             }
@@ -117,6 +124,18 @@ module.exports = function (pool) {
         } catch (err) {
             await client.query('ROLLBACK');
             console.error('[POST /api/staff/prospects/:id/promouvoir-client] Erreur base de données :', err);
+            // Traduction du doublon de téléphone (09/09/2026, signalé par
+            // Roger -- "erreur serveur" ne dit rien d'exploitable). Le
+            // doublon d'email est déjà géré en amont (compte réutilisé,
+            // jamais une tentative d'INSERT) -- seul le téléphone peut
+            // encore heurter la contrainte UNIQUE ici, faute d'une
+            // vérification préalable équivalente.
+            if (err.code === '23505' && err.constraint === 'utilisateurs_telephone_key') {
+                return res.status(409).json({
+                    succes: false,
+                    erreurs: [`le numéro de téléphone de ce prospect est déjà utilisé par un autre compte Client -- vérifier s'il s'agit d'un doublon avant de réessayer`],
+                });
+            }
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
         } finally {
             client.release();

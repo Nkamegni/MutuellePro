@@ -256,11 +256,21 @@ module.exports = function (pool) {
         });
     });
 
-    router.get('/session', (req, res) => {
+    router.get('/session', async (req, res) => {
         if (!req.session || !req.session.id_partenaire) {
             return res.status(401).json({ succes: false, connecte: false });
         }
-        return res.status(200).json({ succes: true, connecte: true, id_partenaire: req.session.id_partenaire });
+        // Ajouté le 09/09/2026 (signalé par Roger -- rien n'identifiait la
+        // personne connectée côté Partenaire, même pas un rôle comme pour
+        // Personnel).
+        let nom = null, prenom = null;
+        try {
+            const resultat = await pool.query('SELECT nom, prenom FROM site.partenaires WHERE id_partenaire = $1', [req.session.id_partenaire]);
+            if (resultat.rowCount > 0) { nom = resultat.rows[0].nom; prenom = resultat.rows[0].prenom; }
+        } catch (err) {
+            console.error('[GET /api/partenaire/session] Erreur lecture nom/prénom (ignorée) :', err);
+        }
+        return res.status(200).json({ succes: true, connecte: true, id_partenaire: req.session.id_partenaire, nom, prenom });
     });
 
     // Sessions actives — même mécanique que côté Client/Personnel (27/08/2026).

@@ -103,11 +103,21 @@ module.exports = function (pool) {
             // déjà alignés sur les recommandations OWASP actuelles.
             const hache = await argon2.hash(mot_de_passe, { type: argon2.argon2id });
 
+            const resultatMatricule = await client.query("SELECT nextval('site.seq_matricule_client') AS n");
+            const matricule = 'CLI-' + String(resultatMatricule.rows[0].n).padStart(6, '0');
+
+            // Correctif 09/09/2026 -- nom jamais fourni ici (le formulaire
+            // d'inscription ne le collecte pas), pourtant NOT NULL en base
+            // (site.utilisateurs.nom) -- cette route échouait probablement
+            // à chaque appel depuis la reconstruction du 03-04/09. Email
+            // utilisé comme valeur temporaire, cohérent avec le repli déjà
+            // utilisé ailleurs dans l'interface (nomAffiche(p) || p.email)
+            // -- corrigible ensuite via le profil (monCompte.routes.js).
             const resultatCompte = await client.query(
-                `INSERT INTO site.utilisateurs (email, telephone, mot_de_passe_hache)
-                 VALUES ($1, $2, $3)
-                 RETURNING id_utilisateur, email, telephone, date_creation`,
-                [email, telephone, hache]
+                `INSERT INTO site.utilisateurs (matricule, nom, email, telephone, mot_de_passe_hache)
+                 VALUES ($1, $2, $3, $4, $5)
+                 RETURNING id_utilisateur, matricule, email, telephone, date_creation`,
+                [matricule, email, email, telephone, hache]
             );
             const compte = resultatCompte.rows[0];
 

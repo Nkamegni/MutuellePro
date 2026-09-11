@@ -131,7 +131,7 @@ Données du prospect (anonymisées) :
 ${JSON.stringify(anonymiserContexte(contexte), null, 2)}`;
     }
 
-    router.post('/prospects/:id/qualifier', requireStaffAuth, requireStaffRole(['gestionnaire', 'administrateur']), async (req, res) => {
+    router.post('/prospects/:id/qualifier', requireStaffAuth, requireStaffRole(['gestionnaire', 'administrateur', 'superadmin']), async (req, res) => {
         const idProspect = parseInt(req.params.id, 10);
         if (!Number.isInteger(idProspect)) {
             return res.status(400).json({ succes: false, erreurs: ['id de prospect invalide'] });

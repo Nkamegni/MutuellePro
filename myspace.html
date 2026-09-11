@@ -45,9 +45,80 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.09.09-c
+    Version actuelle    : 2026.09.09-m
     Dernière modification : 09/09/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
+
+    Résumé de cette version :
+      - Nouvelle vue d'inscription Client corrigée (signalé par Roger) :
+        s'étirait sur toute la largeur de l'écran, faute d'une
+        contrainte de largeur propre. Classe partagée introduite
+        (.conteneur-vue-connexion), appliquée aux 3 vues du bloc
+        connexion (Connexion, Nouveau mot de passe, Inscription) — le
+        même défaut existait déjà sur "Nouveau mot de passe", jamais
+        remarqué faute de test visuel régulier
+
+    Résumé de cette version :
+      - Inscription Client : la modale (09.09-j/k) remplacée par une
+        vraie vue sœur de #vue-login (motif déjà établi par
+        #vue-nouveau-mdp) — Roger a jugé la modale trop anxiogène pour
+        un acte aussi tranquille que créer un compte
+
+    Résumé de cette version :
+      - Correctif critique : erreur JS "Cannot read properties of null"
+        au chargement de toute page (trouvée par Roger) — introduite
+        par le déplacement du formulaire d'inscription en modale
+        (09.09-j), liaison différée jusqu'à DOMContentLoaded
+
+    Résumé de cette version :
+      - Correctif d'un bug de bascule Client/Personnel/Partenaire trouvé
+        par Roger (formulaire Client resté visible sous Personnel)
+      - Inscription Client déplacée en modale (exigence de Roger) : la
+        carte Connexion garde une hauteur constante, équilibrée avec
+        "Suivre ma demande", quel que soit l'état de l'inscription
+      - Nom affiché après connexion Personnel/Partenaire (auparavant
+        seul le rôle apparaissait)
+      - Délai réel avant déblocage précisé sur le message de limitation
+        de débit (server.js, hors dépôt)
+
+    Résumé de cette version :
+      - Inscription Client réintégrée dans la porte d'entrée unique de
+        myspace.html (migration restée inachevée depuis le retrait de
+        l'ancien formulaire d'index.html le 25/08/2026)
+
+    Résumé de cette version :
+      - Édition des coordonnées d'un prospect (nom/prénom/email/
+        téléphone), bouton ✏️ réservé Administrateur/Superadmin —
+        aucune correction n'était possible jusqu'ici
+
+    Résumé de cette version :
+      - Traçabilité de la promotion Prospect → Client (traitement
+        groupé) : le motif exact de chaque échec est désormais capturé
+        et affiché nommément, plus un simple compteur muet
+
+    Résumé de cette version :
+      - Vue "Défaut" jamais supprimable (garde front + back), suite au
+        test manuel B8 — auparavant seule "la dernière vue restante"
+        était protégée, "Défaut" pouvait être supprimée si d'autres
+        vues existaient encore
+
+    Résumé de cette version :
+      - Mode comparaison (reconception demandée par Roger, remplace le
+        5e widget "Suivi comparatif" de 09-d) : bascule "Vue d'ensemble"
+        et "Flux" en comparaison N/N-1 en place, plutôt qu'un widget
+        séparé qui dupliquait des cartes déjà affichées ailleurs
+      - Correctif backend (staffKpis.routes.js) : variation_absolue
+        manquant, "Écart : undefined" se serait affiché sur chaque
+        carte comparative
+
+    Résumé de cette version :
+      - Widget "Suivi comparatif" (5e widget Personnel) : dernière
+        période calendaire complète vs période précédente, 4 granularités
+        (Hebdo/Mensuel/Trimestriel/Annuel)
+      - Fusionné manuellement sur la base 09/09-c — le fichier reçu de
+        la session Tableau de bord repartait d'une copie antérieure au
+        correctif du glisser-déposer et aux bulles d'aide, tous deux
+        réintégrés au passage
 
     Résumé de cette version :
       - Bulles d'aide ajoutées sur la poignée et le bouton de visibilité
@@ -95,14 +166,23 @@
     .btn-header { background:transparent; border:1px solid #475569; color:#cbd5e1; padding:6px 12px; border-radius:8px; font-size:11px; cursor:pointer; margin-left:8px; }
     .btn-header:hover { background:#1e293b; }
 
-    #vue-login { max-width:820px; margin:60px auto; padding:0 16px; }
+    /* Contrainte de largeur commune aux 3 vues de ce bloc (Connexion,
+       Nouveau mot de passe, Inscription) -- centralisée ici pour ne
+       jamais avoir à la dupliquer. Bug trouvé par Roger (09/09/2026) :
+       #vue-inscription-client (et #vue-nouveau-mdp avant elle, jamais
+       remarqué) n'avait cette contrainte nulle part -- une carte seule
+       avec flex:1, sans plafond de conteneur, s'étirait jusqu'au bord
+       de l'écran sur laptop. La classe garantit désormais la même
+       largeur, que la vue contienne une seule carte ou deux côte à
+       côte -- "la fiche unique occupe exactement la plage occupée par
+       la paire", exigence explicite de Roger. */
+    .conteneur-vue-connexion { max-width:820px; margin:60px auto; padding:0 16px; }
     .zones-login { display:flex; gap:20px; flex-wrap:wrap; align-items:stretch; }
     .carte-login { flex:1; min-width:300px; background:white; padding:32px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
     .carte-suivi { border:2px solid var(--purple); background:#faf5ff; justify-content:space-between; }
     .texte-mobile { display:none; }
-    #vue-login h2 { font-size:16px; margin:0 0 8px; }
-    #vue-login p.sous-titre { font-size:12px; color:var(--gray); margin:0 0 20px; }
-    #vue-nouveau-mdp p.sous-titre { font-size:12px; color:var(--gray); margin:0 0 20px; }
+    .conteneur-vue-connexion h2 { font-size:16px; margin:0 0 8px; }
+    .conteneur-vue-connexion p.sous-titre { font-size:12px; color:var(--gray); margin:0 0 20px; }
     .toggle-type { display:flex; gap:8px; margin-bottom:20px; background:#f1f5f9; border-radius:10px; padding:4px; }
     .toggle-type button { flex:1; border:none; background:transparent; padding:8px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; color:var(--gray); }
     .toggle-type button.actif { background:white; color:var(--navy); box-shadow:0 1px 3px rgba(0,0,0,0.1); }
@@ -179,7 +259,7 @@
         #identite { display: none; } /* déjà visible dans "Mon Profil" — évite le débordement d'en-tête */
         .btn-header { padding: 6px 8px; font-size: 0; } /* icône seule sur mobile, texte masqué */
         .btn-header::before { content: '⏻'; font-size: 14px; }
-        #vue-login { margin: 16px 10px; padding: 0; }
+        .conteneur-vue-connexion { margin: 16px 10px; padding: 0; }
         .zones-login { gap: 12px; }
         .carte-login { padding: 18px 16px; min-width: 0; width: 100%; } /* min-width:300px (desktop) provoquait le débordement sur petits écrans */
         .carte-login h2 { font-size: 15px; margin-bottom: 4px; }
@@ -279,6 +359,19 @@
 .carte-dashboard-libelle { font-size:9px; color:var(--gray); margin-top:2px; text-transform:uppercase; letter-spacing:0.03em; line-height:1.2; }
 .carte-dashboard-verrouillee { background:#f8fafc; border:1px dashed var(--border); border-radius:6px; padding:7px 8px; box-sizing:border-box; min-height:clamp(56px, 14vw, 84px); display:flex; flex-direction:column; justify-content:center; color:var(--gray); cursor:not-allowed; }
 .carte-dashboard-verrouillee .carte-dashboard-libelle { text-transform:none; letter-spacing:normal; font-size:9px; margin-top:1px; line-height:1.2; }
+
+/* Carte comparative (09/09/2026) -- N / N-1 / écart absolu / écart
+   relatif visibles simultanément, conception explicite de Roger,
+   distincte du badge compact utilisé ailleurs dans le dashboard. */
+.carte-comparative { min-height:auto; padding:7px 8px; }
+.carte-comparative-valeurs { display:flex; align-items:baseline; justify-content:space-between; margin-top:3px; }
+.carte-comparative-colonne { display:flex; flex-direction:column; }
+.carte-comparative-colonne-n1 { align-items:flex-end; }
+.carte-comparative-chiffre { font-size:15px; }
+.carte-comparative-chiffre-n1 { font-size:11px; font-weight:700; color:var(--gray); line-height:1.15; }
+.carte-comparative-etiquette { font-size:7px; color:var(--gray); text-transform:uppercase; letter-spacing:0.03em; margin-top:1px; }
+.carte-comparative-ecarts { display:flex; align-items:center; justify-content:space-between; margin-top:5px; padding-top:4px; border-top:1px solid var(--border); font-size:9px; color:var(--navy); font-weight:600; }
+
 .btn-periode { font-size:9px; padding:3px 6px; border:1px solid var(--border); border-radius:10px; background:white; cursor:pointer; color:var(--gray); }
 .btn-periode.actif { background:var(--purple); border-color:var(--purple); color:white; font-weight:700; }
 .evolution-badge { font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px; margin-left:3px; }
@@ -345,7 +438,7 @@
      via le lien reçu par email (?reinit_token=...&reinit_type=...),
      Personnel et Partenaire uniquement (Client garde sa propre page
      reinitialisation.html, existante avant ce chantier, non touchée). -->
-<div id="vue-nouveau-mdp" style="display:none;">
+<div id="vue-nouveau-mdp" class="conteneur-vue-connexion" style="display:none;">
     <div class="zones-login">
         <div class="carte-login">
             <h2>Nouveau mot de passe</h2>
@@ -366,7 +459,7 @@
 
 <!-- ===== VUE CONNEXION ===== -->
 <!-- [PRÉSENTATION-COMMUNE] Écran de connexion — les 3 rôles s'y présentent -->
-<div id="vue-login">
+<div id="vue-login" class="conteneur-vue-connexion">
     <div class="zones-login">
         <div class="carte-login">
             <h2>Connexion</h2>
@@ -393,6 +486,26 @@
                 <p id="mdp-oublie-client-message" style="font-size:11px; margin-top:8px; display:none;"></p>
                 <p onclick="annulerMdpOublie('client')" style="font-size:11px; color:var(--purple); text-align:center; cursor:pointer; margin-top:8px;">← Annuler</p>
             </div>
+
+            <!-- Inscription Client (09/09/2026) -- porte ce qui existait
+                 auparavant sur index.html (retiré le 25/08/2026 lors de la
+                 consolidation vers une porte d'entrée unique sur
+                 myspace.html), jamais reconstruit côté Client depuis --
+                 migration restée inachevée jusqu'ici. Réservée au Client :
+                 Personnel et Partenaire n'ont pas d'auto-inscription, leurs
+                 comptes sont créés par le staff.
+                 RÉVISÉ 09/09/2026 (exigence de Roger, deux itérations) :
+                 essai en ligne d'abord (rejeté, grandissait la carte
+                 "Connexion" et déséquilibrait "Suivre ma demande"), puis
+                 en modale (rejetée à son tour -- une boîte de dialogue
+                 porte une connotation de stress/urgence, pas adaptée à un
+                 acte aussi tranquille que créer un compte). Le formulaire
+                 vit désormais dans #vue-inscription-client, une vraie vue
+                 sœur de #vue-login (voir juste après sa fermeture), qui
+                 REMPLACE entièrement les deux cadres jumeaux plutôt que de
+                 les recouvrir ou d'en faire grandir un -- même motif déjà
+                 établi par #vue-nouveau-mdp. -->
+            <p id="lien-creer-compte-client" onclick="ouvrirVueInscriptionClient()" style="font-size:11px; color:var(--purple); text-align:center; cursor:pointer; margin-top:12px; font-weight:700;">Pas encore de compte ? Créer un compte</p>
 
             <form id="form-login-staff" style="display:none;">
                 <label for="staff-email">Email</label>
@@ -476,6 +589,40 @@
     </div>
 </div>
 
+<!-- Inscription Client (09/09/2026) -- vue sœur de #vue-login, sur le
+     même motif que #vue-nouveau-mdp : remplace ENTIÈREMENT les deux
+     cadres jumeaux (Connexion + Suivre ma demande), pas une boîte de
+     dialogue par-dessus. Revu à la demande explicite de Roger après une
+     première version en modale : une modale, avec son fond assombri,
+     porte une connotation d'urgence/d'interruption forcée, pas adaptée
+     à un acte aussi tranquille que créer un compte. Résout aussi
+     naturellement la contrainte de hauteur (§ exigence précédente) --
+     quand cette vue est affichée, "Connexion" et "Suivre ma demande"
+     sont tous deux masqués, leur équilibre mutuel n'a donc plus à être
+     maintenu à ce moment précis. -->
+<div id="vue-inscription-client" class="conteneur-vue-connexion" style="display:none;">
+    <div class="zones-login">
+        <div class="carte-login">
+            <h2>Créer un compte</h2>
+            <p class="sous-titre">Renseignez vos coordonnées pour créer votre espace Client.</p>
+            <form id="form-inscription-client">
+                <label for="inscription-client-email">Email</label>
+                <input type="email" id="inscription-client-email" autocomplete="email" required>
+                <label for="inscription-client-telephone">Téléphone</label>
+                <input type="text" id="inscription-client-telephone" placeholder="+237..." autocomplete="tel" required>
+                <label for="inscription-client-password">Mot de passe</label>
+                <input type="password" id="inscription-client-password" autocomplete="new-password" required>
+                <p style="font-size:10px; color:var(--gray); margin:-8px 0 10px;">Au moins 10 caractères, avec une lettre, un chiffre et un caractère spécial.</p>
+                <label for="inscription-client-password-confirm">Confirmer le mot de passe</label>
+                <input type="password" id="inscription-client-password-confirm" autocomplete="new-password" required>
+                <button type="submit" class="principal">Créer mon compte</button>
+                <p id="inscription-client-erreur" style="color:#dc2626; font-size:12px; margin-top:10px; display:none;"></p>
+                <p onclick="fermerVueInscriptionClient()" style="font-size:11px; color:var(--purple); text-align:center; cursor:pointer; margin-top:10px;">← Retour à la connexion</p>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- ===== VUE APPLICATION ===== -->
 <div id="vue-appli">
     <div class="layout">
@@ -492,6 +639,15 @@
                         <button type="button" class="btn-modele" data-modele="support" onclick="changerModeleDashboardPersonnel('support')" title="Vue Support : tickets et tâches du helpdesk"><span class="btn-modele-icone">🎧</span>Support</button>
                         <button type="button" class="btn-modele" data-modele="portefeuille" onclick="changerModeleDashboardPersonnel('portefeuille')" title="Vue Portefeuille : clients et partenaires actifs"><span class="btn-modele-icone">💼</span>Portefeuille</button>
                         <button type="button" class="btn-modele" data-modele="commercial" id="btn-modele-commercial" style="display:none;" onclick="changerModeleDashboardPersonnel('commercial')" title="Vue Commercial : pipeline Prospects"><span class="btn-modele-icone">📈</span>Commercial</button>
+                    </div>
+                    <div id="dashboard-entete-comparaison" class="dashboard-entete-bloc" style="display:none;">
+                        <button type="button" id="btn-mode-comparaison" class="btn-modele" onclick="basculerModeComparaison()" title="Fait basculer Vue d'ensemble et Flux en comparaison période N vs période N-1 -- Graphiques et Bientôt disponible restent inchangés"><span class="btn-modele-icone">⇄</span>Mode comparaison</button>
+                        <span id="comparaison-granularite-selecteur" style="display:none; gap:3px;">
+                            <button type="button" class="btn-periode" data-granularite="semaine" onclick="changerGranulariteComparaison('semaine')" title="Dernière semaine complète (lundi-dimanche) vs semaine précédente">Hebdo</button>
+                            <button type="button" class="btn-periode" data-granularite="mois" onclick="changerGranulariteComparaison('mois')" title="Dernier mois calendaire complet vs mois précédent">Mensuel</button>
+                            <button type="button" class="btn-periode" data-granularite="trimestre" onclick="changerGranulariteComparaison('trimestre')" title="Dernier trimestre calendaire complet vs trimestre précédent">Trimestriel</button>
+                            <button type="button" class="btn-periode" data-granularite="annee" onclick="changerGranulariteComparaison('annee')" title="Dernière année calendaire complète vs année précédente">Annuel</button>
+                        </span>
                     </div>
                 </div>
 
@@ -1435,6 +1591,7 @@
         if (!connexion2faEnCours) return;
         const erreurEl = document.getElementById('login-erreur');
         erreurEl.style.display = 'none';
+        erreurEl.style.color = ''; // reinitialise une eventuelle couleur verte laissee par le message de succes d'inscription
         const code = document.getElementById('code-connexion-saisie').value.trim();
         if (!/^\d{6}$/.test(code)) {
             erreurEl.textContent = 'Le code doit comporter 6 chiffres.';
@@ -1478,6 +1635,34 @@
             document.getElementById(`lien-mdp-oublie-${r}`).style.display = type === r ? 'block' : 'none';
             document.getElementById(`bloc-mdp-oublie-${r}`).style.display = 'none';
         });
+        // Le lien "Créer un compte" (09/09/2026) n'a de sens que sous
+        // l'onglet Client -- Personnel et Partenaire n'ont pas
+        // d'auto-inscription.
+        document.getElementById('lien-creer-compte-client').style.display = type === 'client' ? 'block' : 'none';
+        // Fermeture de sécurité -- si la vue d'inscription était
+        // ouverte, on la referme au changement d'onglet (défensif :
+        // en pratique inatteignable, les boutons de bascule vivent dans
+        // #vue-login, masquée pendant que #vue-inscription-client est
+        // affichée).
+        fermerVueInscriptionClient();
+    }
+
+    // Bascule connexion/inscription pour le seul rôle Client (09/09/2026).
+    // Personnel et Partenaire n'ont pas cette bascule -- leurs comptes sont
+    // créés par le staff, jamais en auto-inscription.
+    // Inscription Client en modale (09/09/2026, exigence de Roger) -- ne
+    // touche plus jamais à la carte "Connexion" en dessous, qui garde sa
+    // hauteur naturelle constante quel que soit l'état de l'inscription.
+    function ouvrirVueInscriptionClient() {
+        document.getElementById('vue-login').style.display = 'none';
+        document.getElementById('vue-inscription-client').style.display = 'block';
+    }
+
+    function fermerVueInscriptionClient() {
+        document.getElementById('vue-inscription-client').style.display = 'none';
+        document.getElementById('vue-login').style.display = 'block';
+        document.getElementById('form-inscription-client').reset();
+        document.getElementById('inscription-client-erreur').style.display = 'none';
     }
 
     // [DONNÉES/ÉTAT]
@@ -1692,6 +1877,7 @@
         event.preventDefault();
         const erreurEl = document.getElementById('login-erreur');
         erreurEl.style.display = 'none';
+        erreurEl.style.color = ''; // reinitialise une eventuelle couleur verte laissee par le message de succes d'inscription
         try {
             const resp = await fetch('/api/connexion', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -1711,6 +1897,7 @@
         event.preventDefault();
         const erreurEl = document.getElementById('login-erreur');
         erreurEl.style.display = 'none';
+        erreurEl.style.color = ''; // reinitialise une eventuelle couleur verte laissee par le message de succes d'inscription
         try {
             const resp = await fetch('/api/staff/connexion', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -1730,6 +1917,7 @@
         event.preventDefault();
         const erreurEl = document.getElementById('login-erreur');
         erreurEl.style.display = 'none';
+        erreurEl.style.color = ''; // reinitialise une eventuelle couleur verte laissee par le message de succes d'inscription
         try {
             const resp = await fetch('/api/partenaire/connexion', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -1743,6 +1931,56 @@
             if (data.code_requis) { afficherBlocCode('partenaire', data.id_compte, '/api/partenaire/connexion/verifier-code', data.email_masque, data.telephone_masque); return; }
             verifierSessions();
         } catch (err) { console.error(err); erreurEl.textContent = 'Erreur réseau.'; erreurEl.style.display = 'block'; }
+    });
+
+    // Inscription Client (09/09/2026) -- porte le contrat déjà en place et
+    // vérifié en conditions réelles ce soir (POST /api/inscription, mêmes
+    // 4 champs que l'ancien formulaire d'index.html). "L'inscription ne
+    // connecte pas automatiquement" (choix backend déjà existant) -- on
+    // revient donc sur la connexion avec l'email pré-rempli, comme le
+    // faisait l'ancien formulaire.
+    document.getElementById('form-inscription-client').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const erreurEl = document.getElementById('inscription-client-erreur');
+        erreurEl.style.display = 'none';
+
+        const email = document.getElementById('inscription-client-email').value.trim();
+        const telephone = document.getElementById('inscription-client-telephone').value.trim();
+        const mot_de_passe = document.getElementById('inscription-client-password').value;
+        const mot_de_passe_confirmation = document.getElementById('inscription-client-password-confirm').value;
+
+        if (mot_de_passe !== mot_de_passe_confirmation) {
+            erreurEl.textContent = 'La confirmation du mot de passe ne correspond pas.';
+            erreurEl.style.display = 'block';
+            return;
+        }
+
+        const bouton = event.target.querySelector('button[type="submit"]');
+        bouton.disabled = true;
+        try {
+            const resp = await fetch('/api/inscription', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ email, telephone, mot_de_passe, mot_de_passe_confirmation }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                erreurEl.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur lors de la création du compte.';
+                erreurEl.style.display = 'block';
+                return;
+            }
+            fermerVueInscriptionClient();
+            document.getElementById('client-identifiant').value = email;
+            const erreurLogin = document.getElementById('login-erreur');
+            erreurLogin.textContent = 'Compte créé — vous pouvez vous connecter dès maintenant.';
+            erreurLogin.style.color = '#16a34a';
+            erreurLogin.style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            erreurEl.textContent = 'Erreur réseau.';
+            erreurEl.style.display = 'block';
+        } finally {
+            bouton.disabled = false;
+        }
     });
 
     // [DONNÉES/ÉTAT]
@@ -2590,11 +2828,12 @@
     ];
 
     function genererLignesProspects(page) {
+        const peutEditer = sessionStaff && (sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin');
         return page.map((p) => {
             const dateStr = new Date(p.date_maj).toLocaleDateString('fr-FR');
             return `<tr>
-                <td><input type="checkbox" class="prospect-select" value="${p.id_prospect}"></td>
-                <td><strong>${nomAffiche(p) || p.email || '—'}</strong></td>
+                <td><input type="checkbox" class="prospect-select" value="${p.id_prospect}" data-nom="${(nomAffiche(p) || p.email || ('#' + p.id_prospect)).replace(/"/g, '&quot;')}"></td>
+                <td><strong>${nomAffiche(p) || p.email || '—'}</strong>${peutEditer ? ` <button type="button" onclick="ouvrirEditionProspect(${p.id_prospect})" title="Corriger le nom, l'email ou le téléphone de ce prospect" style="border:none; background:none; cursor:pointer; font-size:11px; padding:0 2px;">✏️</button>` : ''}</td>
                 <td style="font-size:11px;">${p.email || '—'}</td>
                 <td style="font-size:11px;">${p.telephone || '—'}</td>
                 <td style="font-size:11px; color:var(--gray);">Prospect</td>
@@ -2603,6 +2842,71 @@
                 <td>${p.staff_assigne_nom || '—'}</td><td>${dateStr}</td>
             </tr>`;
         }).join('');
+    }
+
+    // Édition des coordonnées d'un prospect (09/09/2026, demandée par
+    // Roger -- réservée administrateur/superadmin côté serveur ; le
+    // bouton lui-même n'est déjà rendu que pour ces deux rôles
+    // (genererLignesProspects ci-dessus), la garde serveur reste
+    // l'autorité réelle si jamais les deux divergeaient.
+    function ouvrirEditionProspect(idProspect) {
+        const p = prospectsCourants.find((x) => x.id_prospect === idProspect);
+        if (!p) return;
+        const ancien = document.getElementById('edition-prospect-modal');
+        if (ancien) ancien.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'edition-prospect-modal';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:2000; display:flex; align-items:center; justify-content:center;';
+        modal.innerHTML = `
+            <div style="background:white; border-radius:12px; padding:20px; max-width:360px; width:90%;">
+                <h3 style="font-size:14px; margin:0 0 12px;">Corriger le prospect</h3>
+                <label style="font-size:10px; color:var(--gray); display:block; margin-bottom:2px;">Nom *</label>
+                <input id="edition-prospect-nom" value="${(p.nom || '').replace(/"/g, '&quot;')}" style="width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; margin-bottom:8px;">
+                <label style="font-size:10px; color:var(--gray); display:block; margin-bottom:2px;">Prénom</label>
+                <input id="edition-prospect-prenom" value="${(p.prenom || '').replace(/"/g, '&quot;')}" style="width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; margin-bottom:8px;">
+                <label style="font-size:10px; color:var(--gray); display:block; margin-bottom:2px;">Email</label>
+                <input id="edition-prospect-email" value="${(p.email || '').replace(/"/g, '&quot;')}" style="width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; margin-bottom:8px;">
+                <label style="font-size:10px; color:var(--gray); display:block; margin-bottom:2px;">Téléphone</label>
+                <input id="edition-prospect-telephone" value="${(p.telephone || '').replace(/"/g, '&quot;')}" style="width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; margin-bottom:4px;">
+                <p style="font-size:9px; color:var(--gray); margin:0 0 12px;">Au moins un email ou un téléphone est requis.</p>
+                <div id="edition-prospect-erreur" style="font-size:10px; color:#dc2626; margin-bottom:8px; display:none;"></div>
+                <div style="display:flex; gap:6px; justify-content:flex-end;">
+                    <button onclick="document.getElementById('edition-prospect-modal').remove()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">Annuler</button>
+                    <button onclick="enregistrerEditionProspect(${idProspect})" style="font-size:11px; padding:6px 12px; border:none; border-radius:6px; background:var(--purple); color:white; cursor:pointer;">Enregistrer</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+
+    async function enregistrerEditionProspect(idProspect) {
+        const nom = document.getElementById('edition-prospect-nom').value.trim();
+        const prenom = document.getElementById('edition-prospect-prenom').value.trim();
+        const email = document.getElementById('edition-prospect-email').value.trim();
+        const telephone = document.getElementById('edition-prospect-telephone').value.trim();
+        const zoneErreur = document.getElementById('edition-prospect-erreur');
+        zoneErreur.style.display = 'none';
+
+        if (!nom) { zoneErreur.textContent = 'le nom est obligatoire'; zoneErreur.style.display = 'block'; return; }
+        if (!email && !telephone) { zoneErreur.textContent = 'au moins un email ou un téléphone est requis'; zoneErreur.style.display = 'block'; return; }
+
+        try {
+            const resp = await fetch(`/api/staff/prospects/${idProspect}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ nom, prenom: prenom || null, email: email || null, telephone: telephone || null }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                zoneErreur.textContent = (data.erreurs && data.erreurs[0]) || 'erreur serveur';
+                zoneErreur.style.display = 'block';
+                return;
+            }
+            document.getElementById('edition-prospect-modal').remove();
+            chargerProspects();
+        } catch (err) {
+            zoneErreur.textContent = 'requête réseau échouée';
+            zoneErreur.style.display = 'block';
+        }
     }
 
     function donneesProspectsAffichables() {
@@ -2654,6 +2958,35 @@
     // moteur générique (ouvrirImportGenerique('prospects', ...)).
 
     // [PRÉSENTATION-PERSONNEL]
+    // Panneau de résultat détaillé pour la promotion groupée (09/09/2026,
+    // signalé par Roger -- "processus de création pas très bavard").
+    // Même habillage visuel que la modale du moteur d'import
+    // (position:fixed, overlay sombre, z-index:2000), construit
+    // entièrement en JS plutôt qu'un bloc HTML statique de plus, puisque
+    // son contenu est intégralement dynamique.
+    function afficherResultatPromotionGroupee(crees, reutilises, echecs) {
+        const ancien = document.getElementById('resultat-promotion-modal');
+        if (ancien) ancien.remove();
+
+        const ligneEchecs = echecs.length === 0 ? '' : `
+            <p style="font-size:11px; font-weight:700; color:#dc2626; margin:10px 0 4px;">${echecs.length} échec(s) :</p>
+            <ul style="font-size:11px; color:var(--navy); margin:0; padding-left:18px; max-height:200px; overflow-y:auto;">
+                ${echecs.map((e) => `<li><strong>${e.nom}</strong> — ${e.motif}</li>`).join('')}
+            </ul>`;
+
+        const modal = document.createElement('div');
+        modal.id = 'resultat-promotion-modal';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:2000; display:flex; align-items:center; justify-content:center;';
+        modal.innerHTML = `
+            <div style="background:white; border-radius:12px; padding:20px; max-width:440px; width:90%; max-height:80vh; overflow-y:auto;">
+                <h3 style="font-size:14px; margin:0 0 10px;">Résultat de la promotion</h3>
+                <p style="font-size:12px; color:var(--navy); margin:0;">${crees} compte(s) créé(s), ${reutilises} lié(s) à un compte existant.</p>
+                ${ligneEchecs}
+                <button onclick="document.getElementById('resultat-promotion-modal').remove()" style="margin-top:14px; font-size:11px; padding:6px 14px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">Fermer</button>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+
     async function actionGroupeeProspects(action) {
         const coches = Array.from(document.querySelectorAll('.prospect-select:checked'));
         if (coches.length === 0) { alert('Sélectionnez au moins un prospect.'); return; }
@@ -2669,16 +3002,28 @@
             // / "Supprimer" déjà présentes ici, plutôt qu'une action isolée
             // occupant sa propre colonne (signalé par Roger).
             if (!window.confirm(`Créer un compte Client pour ${coches.length} prospect(s) sélectionné(s) ? Un email d'activation sera envoyé à chaque nouvelle adresse.`)) return;
-            let crees = 0, reutilises = 0, erreurs = 0;
+            let crees = 0, reutilises = 0;
+            // Traçabilité complète (09/09/2026, signalé par Roger --
+            // "processus de création pas très bavard") : le détail
+            // exact de chaque échec est désormais conservé et affiché,
+            // pas seulement compté. data.erreurs était déjà renvoyée
+            // par le serveur, jamais lue jusqu'ici.
+            const echecs = [];
             for (const c of coches) {
+                const nomProspect = c.dataset.nom || `#${c.value}`;
                 try {
                     const resp = await fetch(`/api/staff/prospects/${c.value}/promouvoir-client`, { method: 'POST', credentials: 'include' });
                     const data = await resp.json();
-                    if (!data.succes) { erreurs++; continue; }
+                    if (!data.succes) {
+                        echecs.push({ nom: nomProspect, motif: (data.erreurs && data.erreurs[0]) || `erreur HTTP ${resp.status}` });
+                        continue;
+                    }
                     if (data.compte_reutilise) reutilises++; else crees++;
-                } catch (err) { erreurs++; }
+                } catch (err) {
+                    echecs.push({ nom: nomProspect, motif: 'requête réseau échouée (serveur injoignable ?)' });
+                }
             }
-            alert(`${crees} compte(s) créé(s), ${reutilises} lié(s) à un compte existant${erreurs ? `, ${erreurs} erreur(s)` : ''}.`);
+            afficherResultatPromotionGroupee(crees, reutilises, echecs);
         } else {
             for (const c of coches) {
                 await fetch(`/api/staff/prospects/${c.value}/statut`, {
@@ -2819,6 +3164,7 @@
         document.getElementById('dashboard-personnel-bloc').style.display = sessionStaff ? 'block' : 'none';
         document.getElementById('dashboard-partenaire-bloc').style.display = sessionPartenaire ? 'block' : 'none';
         document.getElementById('dashboard-entete-modele').style.display = sessionStaff ? 'flex' : 'none';
+        document.getElementById('dashboard-entete-comparaison').style.display = sessionStaff ? 'flex' : 'none';
         if (sessionClient) chargerDashboardClient();
         if (sessionStaff) chargerDashboardPersonnel();
         if (sessionPartenaire) chargerDashboardPartenaire();
@@ -3202,6 +3548,90 @@
     // ne recharge JAMAIS depuis le réseau, seulement le rendu à partir de la
     // dernière réponse déjà en mémoire. Reprend le même patron que le
     // sélecteur de période (boutons .btn-periode réutilisés).
+
+    // [PRÉSENTATION-PERSONNEL] Mode comparaison (09/09/2026, reconception
+    // demandée par Roger après le premier essai en widget séparé -- celui-ci
+    // DUPLIQUAIT des cartes déjà affichées ailleurs). Bascule globale plutôt
+    // que 7ᵉ widget : "Vue d'ensemble" et "Flux" se redéclinent EN PLACE en
+    // mode comparaison (mêmes cartes, contenu différent) -- Graphiques et
+    // Bientôt disponible restent inchangés, aucun mode comparatif pertinent
+    // pour un camembert. Les vues nommées de la personnalisation restent
+    // volontairement PURES (ordre + visibilité seulement) -- le mode
+    // comparatif n'y ajoute aucun champ, pour ne pas réviser ce sous-système.
+    let modeComparaisonActif = false;
+    let granulariteComparaisonActive = 'semaine';
+    let dernierePayloadComparatif = null;
+
+    // Carte à 4 éléments simultanés (conception explicite de Roger,
+    // 09/09/2026) -- la valeur N-1 et l'écart absolu doivent être VISIBLES,
+    // pas seulement le badge % (distinct du badge compact utilisé ailleurs
+    // dans le dashboard, ex. flux 7j en mode normal).
+    function construireCarteComparatif(libelle, evolution) {
+        if (!evolution) return '';
+        const fmt = (v) => (v === null || v === undefined ? '—' : v);
+        const ecartAbsolu = evolution.variation_absolue;
+        const signe = ecartAbsolu !== null && ecartAbsolu > 0 ? '+' : '';
+        return `
+            <div class="carte-dashboard carte-comparative">
+                <div class="carte-dashboard-libelle">${libelle}</div>
+                <div class="carte-comparative-valeurs">
+                    <div class="carte-comparative-colonne">
+                        <div class="carte-dashboard-chiffre carte-comparative-chiffre">${fmt(evolution.actuelle)}</div>
+                        <div class="carte-comparative-etiquette">Période N</div>
+                    </div>
+                    <div class="carte-comparative-colonne carte-comparative-colonne-n1">
+                        <div class="carte-comparative-chiffre-n1">${fmt(evolution.precedente)}</div>
+                        <div class="carte-comparative-etiquette">Période N-1</div>
+                    </div>
+                </div>
+                <div class="carte-comparative-ecarts">
+                    <span title="Écart en valeur absolue (N - N-1)">${ecartAbsolu === null ? 'Écart : —' : `Écart : ${signe}${ecartAbsolu}`}</span>
+                    ${construireBadgeEvolution(evolution)}
+                </div>
+            </div>
+        `;
+    }
+
+    async function chargerDonneesComparatif() {
+        try {
+            const resp = await fetch(`/api/staff/kpis?comparatif=${encodeURIComponent(granulariteComparaisonActive)}`, { credentials: 'include' });
+            const data = await resp.json();
+            dernierePayloadComparatif = (data.succes && data.comparatif) ? data.comparatif : null;
+        } catch (err) { console.error(err); dernierePayloadComparatif = null; }
+    }
+
+    async function basculerModeComparaison() {
+        modeComparaisonActif = !modeComparaisonActif;
+        document.getElementById('btn-mode-comparaison').classList.toggle('actif', modeComparaisonActif);
+        document.getElementById('comparaison-granularite-selecteur').style.display = modeComparaisonActif ? 'inline-flex' : 'none';
+        if (modeComparaisonActif) {
+            document.querySelectorAll('#comparaison-granularite-selecteur .btn-periode').forEach((b) => {
+                b.classList.toggle('actif', b.dataset.granularite === granulariteComparaisonActive);
+            });
+        }
+        // Le sélecteur de période (?periode=, fenêtre glissante) n'a pas de
+        // sens simultanément avec le mode comparaison (bornes calendaires
+        // strictes) -- masqué tant que le mode est actif, jamais les deux
+        // affichés en même temps pour éviter toute confusion sur ce qui
+        // pilote réellement les cartes à l'écran.
+        document.getElementById('dashboard-personnel-periode').style.display = (modeComparaisonActif || modeleDashboardPersonnelActif !== 'support') ? 'none' : 'flex';
+        if (modeComparaisonActif && !dernierePayloadComparatif) {
+            document.getElementById('dashboard-personnel-cartes').innerHTML = '<p class="vide">Chargement…</p>';
+            await chargerDonneesComparatif();
+        }
+        if (dernierePayloadKpisPersonnel) rendreModeleDashboardPersonnel(dernierePayloadKpisPersonnel);
+    }
+
+    async function changerGranulariteComparaison(granularite) {
+        granulariteComparaisonActive = granularite;
+        document.querySelectorAll('#comparaison-granularite-selecteur .btn-periode').forEach((b) => {
+            b.classList.toggle('actif', b.dataset.granularite === granularite);
+        });
+        document.getElementById('dashboard-personnel-cartes').innerHTML = '<p class="vide">Chargement…</p>';
+        await chargerDonneesComparatif();
+        if (dernierePayloadKpisPersonnel) rendreModeleDashboardPersonnel(dernierePayloadKpisPersonnel);
+    }
+
     let modeleDashboardPersonnelActif = 'support';
     let dernierePayloadKpisPersonnel = null;
 
@@ -3300,6 +3730,14 @@
 
     async function supprimerVueDashboard(espace) {
         const etat = etatDashboardPersonnalisable[espace];
+        // Ajouté le 09/09/2026, suite au test manuel B8 -- vérification
+        // immédiate côté client, cohérente avec la garde ajoutée côté
+        // serveur (route DELETE) -- "Défaut" ne doit jamais être
+        // supprimable, indépendamment du nombre de vues restantes.
+        if (etat.vueActive === 'Défaut') {
+            window.alert('La vue « Défaut » ne peut pas être supprimée.');
+            return;
+        }
         if (etat.vues.length <= 1) {
             window.alert('Impossible de supprimer la dernière vue restante.');
             return;
@@ -3413,6 +3851,10 @@
         // WIDGETS reste toujours visible (c'est lui qui porte les zones de
         // contenu partagées) -- seul l'HABILLAGE glisser-déposer se masque.
         document.getElementById('dashboard-personnel-widgets').classList.toggle('widgets-glissables', modele === 'support');
+        // Le bouton "Mode comparaison" et son sélecteur de granularité n'ont
+        // de sens que pour Support (seul modèle où kpi-principaux/flux-hebdo
+        // existent) -- même règle que le sélecteur de période.
+        document.getElementById('dashboard-entete-comparaison').style.display = (modele === 'support') ? 'flex' : 'none';
         if (modele === 'support') {
             chargerPreferencesDashboard('staff');
         }
@@ -3489,19 +3931,44 @@
     function rendreModelePersonnelSupport(data) {
         document.getElementById('dashboard-personnel-kanban-bloc').style.display = 'none';
 
-        document.getElementById('dashboard-personnel-cartes').innerHTML = `
-            <div class="carte-dashboard" title="Tickets qui n'ont pas encore de responsable désigné — état à l'instant présent, indépendant de la période choisie"><div class="carte-dashboard-chiffre">${data.tickets_non_assignes}${construireBadgeEvolution(data.evolution_tickets_non_assignes)}</div><div class="carte-dashboard-libelle">Tickets non assignés${data.date_dernier_snapshot ? ' (vs hier)' : ''}</div></div>
-            <div class="carte-dashboard" title="Tâches à faire ou en cours — état à l'instant présent, indépendant de la période choisie"><div class="carte-dashboard-chiffre">${data.taches_en_attente}${construireBadgeEvolution(data.evolution_taches_en_attente)}</div><div class="carte-dashboard-libelle">Tâches en attente${data.date_dernier_snapshot ? ' (vs hier)' : ''}</div></div>
-            <div class="carte-dashboard" title="Tâches non closes dont l'échéance est dépassée${data.seuil_retard_jours_applique ? ` (seuil personnalisé : ${data.seuil_retard_jours_applique > 0 ? '+' : ''}${data.seuil_retard_jours_applique} jour(s) de marge)` : ' (seuil par défaut : échéance dépassée)'} — état à l'instant présent"><div class="carte-dashboard-chiffre">${data.taches_en_retard}${construireBadgeEvolution(data.evolution_taches_en_retard)}</div><div class="carte-dashboard-libelle">Tâches en retard${data.seuil_retard_jours_applique ? ` (seuil : ${data.seuil_retard_jours_applique > 0 ? '+' : ''}${data.seuil_retard_jours_applique}j)` : ''}</div></div>
-            <div class="carte-dashboard" title="Durée moyenne entre la création et la clôture d'une tâche, ${texteLibellePeriode(periodeDashboardPersonnelActive)}"><div class="carte-dashboard-chiffre">${data.temps_traitement_moyen_jours ?? '—'}</div><div class="carte-dashboard-libelle">Jours de traitement (moyenne)</div></div>
-        `;
+        // Mode comparaison (09/09/2026) -- SEULES ces deux zones basculent.
+        // Graphiques (camembert/courbe) et Bientôt disponible restent au
+        // rendu normal quel que soit le mode : pas de comparaison
+        // pertinente pour un camembert, décision actée avec Roger.
+        if (modeComparaisonActif) {
+            const c = dernierePayloadComparatif;
+            const conteneurFlux = document.getElementById('dashboard-personnel-flux');
+            conteneurFlux.style.display = '';
+            if (!c) {
+                document.getElementById('dashboard-personnel-cartes').innerHTML = '<p class="vide">Erreur de chargement du comparatif.</p>';
+                conteneurFlux.innerHTML = '';
+            } else {
+                document.getElementById('dashboard-personnel-cartes').innerHTML =
+                    (c.etat.historique_suffisant
+                        ? construireCarteComparatif('Tickets non assignés', c.etat.tickets_non_assignes)
+                        + construireCarteComparatif('Tâches en attente', c.etat.taches_en_attente)
+                        + construireCarteComparatif('Tâches en retard', c.etat.taches_en_retard)
+                        : '<p class="vide" style="grid-column:1/-1; font-size:9px;">Historique insuffisant pour les indicateurs d\'état sur cette période — se résorbe automatiquement avec le temps.</p>')
+                    + construireCarteComparatif('Traitement moyen (j)', c.flux.temps_traitement_moyen_jours);
+                conteneurFlux.innerHTML =
+                    construireCarteComparatif('Tickets créés', c.flux.tickets_crees)
+                    + construireCarteComparatif('Tickets résolus', c.flux.tickets_resolus);
+            }
+        } else {
+            document.getElementById('dashboard-personnel-cartes').innerHTML = `
+                <div class="carte-dashboard" title="Tickets qui n'ont pas encore de responsable désigné — état à l'instant présent, indépendant de la période choisie"><div class="carte-dashboard-chiffre">${data.tickets_non_assignes}${construireBadgeEvolution(data.evolution_tickets_non_assignes)}</div><div class="carte-dashboard-libelle">Tickets non assignés${data.date_dernier_snapshot ? ' (vs hier)' : ''}</div></div>
+                <div class="carte-dashboard" title="Tâches à faire ou en cours — état à l'instant présent, indépendant de la période choisie"><div class="carte-dashboard-chiffre">${data.taches_en_attente}${construireBadgeEvolution(data.evolution_taches_en_attente)}</div><div class="carte-dashboard-libelle">Tâches en attente${data.date_dernier_snapshot ? ' (vs hier)' : ''}</div></div>
+                <div class="carte-dashboard" title="Tâches non closes dont l'échéance est dépassée${data.seuil_retard_jours_applique ? ` (seuil personnalisé : ${data.seuil_retard_jours_applique > 0 ? '+' : ''}${data.seuil_retard_jours_applique} jour(s) de marge)` : ' (seuil par défaut : échéance dépassée)'} — état à l'instant présent"><div class="carte-dashboard-chiffre">${data.taches_en_retard}${construireBadgeEvolution(data.evolution_taches_en_retard)}</div><div class="carte-dashboard-libelle">Tâches en retard${data.seuil_retard_jours_applique ? ` (seuil : ${data.seuil_retard_jours_applique > 0 ? '+' : ''}${data.seuil_retard_jours_applique}j)` : ''}</div></div>
+                <div class="carte-dashboard" title="Durée moyenne entre la création et la clôture d'une tâche, ${texteLibellePeriode(periodeDashboardPersonnelActive)}"><div class="carte-dashboard-chiffre">${data.temps_traitement_moyen_jours ?? '—'}</div><div class="carte-dashboard-libelle">Jours de traitement (moyenne)</div></div>
+            `;
 
-        const conteneurFlux = document.getElementById('dashboard-personnel-flux');
-        conteneurFlux.style.display = '';
-        conteneurFlux.innerHTML = `
-            <div class="carte-dashboard" title="Nombre de tickets ouverts au cours des 7 derniers jours, comparé aux 7 jours précédents — indépendant du sélecteur de période"><div class="carte-dashboard-chiffre">${data.evolution_tickets_crees.actuelle}${construireBadgeEvolution(data.evolution_tickets_crees)}</div><div class="carte-dashboard-libelle">Tickets créés (7 derniers jours)</div></div>
-            <div class="carte-dashboard" title="Nombre de tickets passés au statut Résolu au cours des 7 derniers jours, comparé aux 7 jours précédents — indépendant du sélecteur de période"><div class="carte-dashboard-chiffre">${data.evolution_tickets_resolus.actuelle}${construireBadgeEvolution(data.evolution_tickets_resolus)}</div><div class="carte-dashboard-libelle">Tickets résolus (7 derniers jours)</div></div>
-        `;
+            const conteneurFlux = document.getElementById('dashboard-personnel-flux');
+            conteneurFlux.style.display = '';
+            conteneurFlux.innerHTML = `
+                <div class="carte-dashboard" title="Nombre de tickets ouverts au cours des 7 derniers jours, comparé aux 7 jours précédents — indépendant du sélecteur de période"><div class="carte-dashboard-chiffre">${data.evolution_tickets_crees.actuelle}${construireBadgeEvolution(data.evolution_tickets_crees)}</div><div class="carte-dashboard-libelle">Tickets créés (7 derniers jours)</div></div>
+                <div class="carte-dashboard" title="Nombre de tickets passés au statut Résolu au cours des 7 derniers jours, comparé aux 7 jours précédents — indépendant du sélecteur de période"><div class="carte-dashboard-chiffre">${data.evolution_tickets_resolus.actuelle}${construireBadgeEvolution(data.evolution_tickets_resolus)}</div><div class="carte-dashboard-libelle">Tickets résolus (7 derniers jours)</div></div>
+            `;
+        }
 
         // CORRECTIF 04/09/2026 -- sur une période courte (ex. Semaine),
         // tickets_par_statut peut revenir vide (aucun ticket créé sur la

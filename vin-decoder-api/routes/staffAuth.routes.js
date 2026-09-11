@@ -248,15 +248,28 @@ module.exports = function (pool) {
         });
     });
 
-    router.get('/session', (req, res) => {
+    router.get('/session', async (req, res) => {
         if (!req.session || !req.session.id_staff) {
             return res.status(401).json({ succes: false, connecte: false });
+        }
+        // Ajouté le 09/09/2026 (signalé par Roger -- seul le rôle était
+        // affiché après connexion, jamais le nom de la personne). Une
+        // requête de plus, mais uniquement à la vérification de session,
+        // pas à chaque action -- coût négligeable.
+        let nom = null, prenom = null;
+        try {
+            const resultat = await pool.query('SELECT nom, prenom FROM site.staff WHERE id_staff = $1', [req.session.id_staff]);
+            if (resultat.rowCount > 0) { nom = resultat.rows[0].nom; prenom = resultat.rows[0].prenom; }
+        } catch (err) {
+            console.error('[GET /api/staff/session] Erreur lecture nom/prénom (ignorée) :', err);
         }
         return res.status(200).json({
             succes: true,
             connecte: true,
             id_staff: req.session.id_staff,
-            code_role: req.session.code_role
+            code_role: req.session.code_role,
+            nom,
+            prenom
         });
     });
 
