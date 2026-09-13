@@ -14,29 +14,29 @@ Deux natures de tâches, jamais confondues dans cette matrice :
 
 | Domaine | Gestionnaire | Administrateur | Superadmin |
 |---|---|---|---|
-| **Tickets, Messagerie, Tâches** | ✅ Complet | ✅ Complet | ✅ Complet |
-| **Tableau de bord** (personnalisation) | ✅ Complet | ✅ Complet | ✅ Complet |
-| **Prospects** — créer, lister, changer statut, interactions | ✅ | ✅ | ✅ |
-| **Prospects** — promouvoir en Client | ✅ | ✅ | ✅ |
-| **Prospects** — éditer une fiche complète | ❌ | ✅ | ✅ |
-| **Prospects** — supprimer, importer en masse | ❌ | ✅ | ✅ |
-| **Partenaires** — consulter la liste | ✅ | ✅ | ✅ |
-| **Partenaires** — assigner un ticket | ✅ | ✅ | ✅ |
-| **Partenaires** — créer, éditer, supprimer, suspendre, boîte mail, importer | ❌ | ✅ | ✅ |
-| **Pilotage & KPIs** — consulter, exporter | ✅ | ✅ | ✅ |
-| **Clients** — consulter, éditer statut | ❌ | ✅ | ✅ |
-| **Personnel** — tout (créer, éditer, supprimer, boîte mail) | ❌ | ✅ | ✅ |
-| **Journal no-reply** — consulter | ❌ | ✅ | ✅ |
+| **Tickets, Messagerie, Tâches** | Complet | Complet | Complet |
+| **Tableau de bord** (personnalisation) | Complet | Complet | Complet |
+| **Prospects** — créer, lister, changer statut, interactions | Oui | Oui | Oui |
+| **Prospects** — promouvoir en Client | Oui | Oui | Oui |
+| **Prospects** — éditer une fiche complète | Non | Oui | Oui |
+| **Prospects** — supprimer, importer en masse | Non | Oui | Oui |
+| **Partenaires** — consulter la liste | Oui | Oui | Oui |
+| **Partenaires** — assigner un ticket | Oui | Oui | Oui |
+| **Partenaires** — créer, éditer, supprimer, suspendre, boîte mail, importer | Non | Oui | Oui |
+| **Pilotage & KPIs** — consulter, exporter | Oui | Oui | Oui |
+| **Clients** — consulter, éditer statut | Non | Oui | Oui |
+| **Personnel** — tout (créer, éditer, supprimer, boîte mail) | Non | Oui | Oui |
+| **Journal no-reply** — consulter | Non | Oui | Oui |
 
 ## Comptes externes (portée strictement limitée à leurs propres données)
 
 | Domaine | Client | Partenaire |
 |---|---|---|
-| Ses propres demandes/dossiers | ✅ | ✅ |
-| Messagerie | ✅ | ✅ |
-| Personnalisation de son propre tableau de bord | ✅ | ✅ |
-| Toute donnée d'un autre compte | ❌ | ❌ |
-| Toute fonction d'Administration | ❌ | ❌ |
+| Ses propres demandes/dossiers | Oui | Oui |
+| Messagerie | Oui | Oui |
+| Personnalisation de son propre tableau de bord | Oui | Oui |
+| Toute donnée d'un autre compte | Non | Non |
+| Toute fonction d'Administration | Non | Non |
 
 ## Écarts corrigés le 12/09/2026
 
