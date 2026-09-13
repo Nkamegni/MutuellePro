@@ -29,12 +29,25 @@ async function envoyerLienReinitialisation({ pool, mailTransporter, typeCompte, 
     const lienType = typeCompte === 'partenaire' ? 'partenaire' : 'staff';
     const lien = `https://mutuelleproassurances.com/myspace.html?reinit_token=${token}&reinit_type=${lienType}`;
 
-    await mailTransporter.sendMail({
+    const infoEnvoi = await mailTransporter.sendMail({
         from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
         to: email,
         subject: 'Mutuelle Pro Assurances — Réinitialisation de votre mot de passe',
         html: gabaritEmail('Réinitialisation de votre mot de passe', corpsReinitialisation({ nomComplet, typeCompte, lien })),
     });
+
+    // Journal no-reply (11/09/2026, demandé par la session Messagerie) --
+    // non-bloquant, un échec ne doit jamais empêcher l'utilisateur de
+    // recevoir son lien de réinitialisation.
+    try {
+        await pool.query(
+            `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+             VALUES ($1, $2, $3, $4)`,
+            [infoEnvoi.messageId, email, `reinitialisation_mdp_${typeCompte}`, String(idCompte)]
+        );
+    } catch (err) {
+        console.error('[envoyerLienReinitialisation] Erreur journalisation no-reply (ignorée) :', err);
+    }
 }
 
 // Verifie le jeton et applique le nouveau mot de passe. tableCompte et

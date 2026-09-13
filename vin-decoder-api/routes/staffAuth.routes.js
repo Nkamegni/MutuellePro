@@ -213,6 +213,12 @@ module.exports = function (pool) {
                         navigateur: analyserNavigateur(req.headers['user-agent']),
                         systeme: analyserSysteme(req.headers['user-agent']),
                     })),
+                }).then((info) => {
+                    pool.query(
+                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                         VALUES ($1, $2, $3, $4)`,
+                        [info.messageId, staff.email_validation || staff.email, 'notification_connexion_staff', staff.matricule]
+                    ).catch((err) => console.error('[POST /api/staff/connexion/verifier-code] Erreur journalisation no-reply (ignorée) :', err));
                 }).catch(err => console.error('[POST /api/staff/connexion/verifier-code] Erreur envoi notification connexion :', err));
 
                 return res.status(200).json({

@@ -23,15 +23,27 @@ const mailTransporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
 });
 
-async function envoyerEmailActivationPartenaire(emailNotification, nomComplet, token) {
+async function envoyerEmailActivationPartenaire(pool, idPartenaire, emailNotification, nomComplet, token) {
     const lien = `https://mutuelleproassurances.com/activation-partenaire.html?token=${token}`;
     try {
-        await mailTransporter.sendMail({
+        const infoEnvoi = await mailTransporter.sendMail({
             from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailNotification,
             subject: 'Mutuelle Pro Assurances — Activez votre compte partenaire',
             html: gabaritEmail('Activez votre compte partenaire', corpsActivation({ nomComplet, typeCompte: 'partenaire', lien })),
         });
+        // Journal no-reply (11/09/2026, demandé par la session
+        // Messagerie) -- non-bloquant, propre try/catch séparé de
+        // l'envoi lui-même.
+        try {
+            await pool.query(
+                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                 VALUES ($1, $2, $3, $4)`,
+                [infoEnvoi.messageId, emailNotification, 'activation_compte_partenaire', String(idPartenaire)]
+            );
+        } catch (err) {
+            console.error('[envoyerEmailActivationPartenaire] Erreur journalisation no-reply (ignorée) :', err);
+        }
     } catch (err) {
         console.error('[envoyerEmailActivationPartenaire] Erreur envoi email :', err);
     }
@@ -88,7 +100,7 @@ async function renvoyerActivation(pool, idPartenaire) {
     const token = crypto.randomBytes(32).toString('hex');
     await pool.query('INSERT INTO site.activation_partenaire_tokens (token, id_partenaire) VALUES ($1, $2)', [token, idPartenaire]);
     const nomAffiche = infos.rows[0].prenom ? `${infos.rows[0].prenom} ${infos.rows[0].nom}` : infos.rows[0].nom;
-    await envoyerEmailActivationPartenaire(infos.rows[0].email_notification, nomAffiche, token);
+    await envoyerEmailActivationPartenaire(pool, idPartenaire, infos.rows[0].email_notification, nomAffiche, token);
     return { succes: true };
 }
 
@@ -140,7 +152,7 @@ module.exports = function (pool) {
             const { partenaire, token } = await creerPartenaireEtActiver(client, { email, email_notification, nom, prenom, telephone, id_types_partenaire, contacts });
             await client.query('COMMIT');
 
-            envoyerEmailActivationPartenaire(email_notification, nomComplet, token);
+            envoyerEmailActivationPartenaire(pool, partenaire.id_partenaire, email_notification, nomComplet, token);
 
             // Création de boîte mail — APRÈS le commit, volontairement non
             // bloquante, même patron que côté Personnel (28/08/2026).
@@ -570,7 +582,7 @@ module.exports = function (pool) {
                 });
                 await client.query('COMMIT');
 
-                envoyerEmailActivationPartenaire(email_notification, nomAffiche, token);
+                envoyerEmailActivationPartenaire(pool, partenaire.id_partenaire, email_notification, nomAffiche, token);
                 resultats.crees.push({ email, nom: nomAffiche });
             } catch (err) {
                 await client.query('ROLLBACK');

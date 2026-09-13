@@ -68,7 +68,7 @@ function validerPayload(body) {
     return erreurs;
 }
 
-async function envoyerEmailBienvenueEtVerification(email, token) {
+async function envoyerEmailBienvenueEtVerification(pool, email, token, idUtilisateur) {
     const lienVerification = `https://mutuelleproassurances.com/api/verifier-email/${token}`;
     const html = `
         <p>Bienvenue chez Mutuelle Pro Assurances !</p>
@@ -76,12 +76,24 @@ async function envoyerEmailBienvenueEtVerification(email, token) {
         <p><a href="${lienVerification}">${lienVerification}</a></p>
         <p>Si vous n'êtes pas à l'origine de cette création de compte, vous pouvez ignorer ce message.</p>
     `;
-    await mailTransporter.sendMail({
+    const infoEnvoi = await mailTransporter.sendMail({
         from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
         to: email,
         subject: 'Bienvenue chez Mutuelle Pro Assurances — Confirmez votre email',
         html,
     });
+    // Journal no-reply (11/09/2026, demandé par la session Messagerie) --
+    // non-bloquant, un échec ne doit jamais remonter jusqu'à l'appelant
+    // (déjà lui-même non-bloquant côté route, voir plus bas).
+    try {
+        await pool.query(
+            `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+             VALUES ($1, $2, $3, $4)`,
+            [infoEnvoi.messageId, email, 'confirmation_email', String(idUtilisateur)]
+        );
+    } catch (err) {
+        console.error('[envoyerEmailBienvenueEtVerification] Erreur journalisation no-reply (ignorée) :', err);
+    }
 }
 
 module.exports = function (pool) {
@@ -150,7 +162,7 @@ module.exports = function (pool) {
             // échouer l'inscription : le compte existe, l'utilisateur peut
             // toujours se connecter, seule la vérification email est
             // différée (à ré-implémenter : bouton "renvoyer l'email").
-            envoyerEmailBienvenueEtVerification(email, token).catch((err) => {
+            envoyerEmailBienvenueEtVerification(pool, email, token, compte.id_utilisateur).catch((err) => {
                 console.error('[POST /api/inscription] Erreur envoi email de bienvenue :', err);
             });
 

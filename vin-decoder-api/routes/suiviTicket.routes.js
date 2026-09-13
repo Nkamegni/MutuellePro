@@ -31,9 +31,9 @@ function estUnEmail(identifiant) {
     return /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(identifiant);
 }
 
-async function envoyerCodeParEmail(email, code) {
+async function envoyerCodeParEmail(pool, email, code) {
     try {
-        await mailTransporter.sendMail({
+        const infoEnvoi = await mailTransporter.sendMail({
             from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: email,
             subject: `Code de suivi du statut de votre demande : ${code}`,
@@ -43,6 +43,17 @@ async function envoyerCodeParEmail(email, code) {
                 <p style="font-size:24px; font-weight:bold; letter-spacing:4px;">${code}</p>
             `,
         });
+        // Pas de compte réel associé (suivi anonyme par email/téléphone) --
+        // l'identifiant lui-même sert de référence.
+        try {
+            await pool.query(
+                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                 VALUES ($1, $2, $3, $4)`,
+                [infoEnvoi.messageId, email, 'code_suivi_ticket', email]
+            );
+        } catch (err) {
+            console.error('[envoyerCodeParEmail] Erreur journalisation no-reply (ignorée) :', err);
+        }
         return true;
     } catch (err) {
         console.error('[envoyerCodeParEmail] Erreur envoi :', err);
@@ -89,7 +100,7 @@ module.exports = function (pool) {
 
             let canalDisponible;
             if (estUnEmail(identifiant)) {
-                canalDisponible = await envoyerCodeParEmail(identifiant, code);
+                canalDisponible = await envoyerCodeParEmail(pool, identifiant, code);
             } else {
                 const resultatEnvoi = await envoyerCodeSuivi(identifiant, code);
                 canalDisponible = resultatEnvoi.envoye;

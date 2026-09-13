@@ -4,6 +4,20 @@ Convention de version : `AAAA.MM.JJ-lettre` (lettre incrémentée à chaque dép
 
 ---
 
+## 2026.09.11-a
+- **Journal des envois no-reply@** — nouvelle page Admin/Superadmin (lecture seule), demandée par la session "Création d'un serveur de messagerie" pour la visibilité du staff. Alimentée par `lib/verificationConnexion.js`, qui journalise désormais chaque code de connexion envoyé (`message_id`, destinataire, type, référence compte) dans `site.no_reply_messages_envoyes` — table déjà créée par leur session pour leurs propres tests, réutilisée telle quelle. Journalisation non-bloquante : un échec n'empêche jamais l'envoi du code lui-même
+- Périmètre couvert : uniquement les codes de connexion (`verificationConnexion.js`) — 12 autres fichiers envoient aussi via `no-reply@`, extension laissée à une décision explicite plutôt qu'étendue silencieusement cette nuit
+
+## 2026.09.09-n
+- Message "mot de passe oublié" reformulé, plus affirmatif ("Si cet identifiant correspond à un compte, vous recevrez un lien de réinitialisation dans quelques instants. Vérifiez aussi vos indésirables.") — même principe de sécurité conservé (jamais confirmer/infirmer l'existence d'un compte, contre l'énumération de comptes), approuvé par Roger
+
+## 2026.09.09-m
+- **Correctif de largeur** (signalé par Roger — "extrêmement désagréable sur laptop") : `#vue-inscription-client` n'avait aucune contrainte de largeur propre, contrairement à `#vue-login` (`max-width:820px`) — une seule carte avec `flex:1`, sans plafond de conteneur, s'étirait jusqu'au bord de l'écran. Classe partagée `.conteneur-vue-connexion` introduite, appliquée aux 3 vues du bloc (Connexion, Nouveau mot de passe, Inscription) — **le même défaut existait déjà sur "Nouveau mot de passe"**, jamais remarqué faute de test visuel régulier (déclenchée uniquement par lien email). Styles des titres/sous-titres et marge mobile réduite consolidés dans la même classe au passage, plus de duplication entre les 3 vues
+
+## 2026.09.09-l
+- **Refonte de l'inscription Client, à la demande de Roger** : la modale (09.09-j/k) remplacée par une vraie vue sœur de `#vue-login` (`#vue-inscription-client`), sur le motif déjà établi par `#vue-nouveau-mdp` — argument de Roger : une modale, avec son fond assombri, suggère une urgence/un stress mal adaptés à un acte aussi tranquille que créer un compte. Résout la même contrainte de hauteur qu'avant, mais plus proprement : quand cette vue s'affiche, "Connexion" et "Suivre ma demande" sont tous deux masqués, leur équilibre mutuel n'a plus à être maintenu à ce moment précis
+- Nettoyage : l'enveloppe `DOMContentLoaded` ajoutée en 09.09-k pour contourner le problème d'ordre d'exécution de la modale n'est plus nécessaire — le formulaire vit désormais juste après `#vue-login`, bien avant l'exécution du script, retirée
+
 ## 2026.09.09-k
 - **Correctif critique, régression introduite par 09.09-j** : `Uncaught TypeError: Cannot read properties of null` au chargement de **toute** page (signalé par Roger) — le déplacement du formulaire d'inscription en modale (fin de `<body>`) laissait `document.getElementById('form-inscription-client').addEventListener(...)` s'exécuter avant que le navigateur n'ait analysé jusque-là. Liaison différée jusqu'à `DOMContentLoaded` ; les 3 formulaires de connexion, plus haut dans le document, n'étaient pas affectés
 

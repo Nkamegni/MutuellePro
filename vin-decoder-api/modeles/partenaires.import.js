@@ -38,6 +38,8 @@ module.exports = {
             contacts: valeurs.contacts,
         });
         contexte.envoyerEmailActivationPartenaire(
+            contexte.pool,
+            partenaire.id_partenaire,
             partenaire.email_notification,
             [partenaire.prenom, partenaire.nom].filter(Boolean).join(' '),
             token

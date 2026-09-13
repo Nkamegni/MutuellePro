@@ -71,6 +71,12 @@ module.exports = function (pool) {
                     <p>Ce lien est valable 1 heure : <a href="${lien}">${lien}</a></p>
                     <p>Si vous n'êtes pas à l'origine de cette demande, ignorez ce message — votre mot de passe actuel reste inchangé.</p>
                 `,
+            }).then((info) => {
+                pool.query(
+                    `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                     VALUES ($1, $2, $3, $4)`,
+                    [info.messageId, compte.email, 'reinitialisation_mdp_client', String(compte.id_utilisateur)]
+                ).catch((err) => console.error('[POST /api/mot-de-passe-oublie] Erreur journalisation no-reply (ignorée) :', err));
             }).catch((err) => console.error('[POST /api/mot-de-passe-oublie] Erreur envoi email :', err));
 
             return res.status(200).json({ succes: true, message: 'si un compte correspond, un email a été envoyé' });

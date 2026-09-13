@@ -45,9 +45,35 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.09.09-m
-    Dernière modification : 09/09/2026
+    Version actuelle    : 2026.09.12-b
+    Dernière modification : 12/09/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
+
+    Résumé de cette version :
+      - Scission du menu Administration en "Prospection & Suivi"
+        (Gestionnaire+) et "Administration" (Admin/Superadmin) —
+        analyse de fond demandée par Roger, fondée sur les
+        restrictions réelles déjà en place côté routes
+      - Actions structurantes de Partenaires (créer/éditer/supprimer/
+        suspendre/importer) masquées pour un Gestionnaire, qui n'a que
+        la consultation sur cette page
+
+    Résumé de cette version :
+      - B6 — validation explicite de la disposition du tableau de bord
+        (Client/Personnel/Partenaire) : glisser-déposer et masquage ne
+        sauvegardent plus automatiquement, bouton "Valider" requis,
+        avertissement si abandon (changement de vue, suppression de
+        vue, fermeture/rechargement de page)
+
+    Résumé de cette version :
+      - Nouvelle page "Journal no-reply" (Admin/Superadmin), demandée
+        par la session Messagerie — consultation des envois no-reply@,
+        alimente leur filtre Sieve conditionnel
+
+    Résumé de cette version :
+      - Message "mot de passe oublié" reformulé (plus affirmatif), même
+        principe de sécurité conservé (ne révèle jamais si un compte
+        existe)
 
     Résumé de cette version :
       - Nouvelle vue d'inscription Client corrigée (signalé par Roger) :
@@ -663,6 +689,19 @@
                             <button type="button" class="btn-reinitialiser-dashboard" onclick="supprimerVueDashboard('client')" title="Supprimer la vue sélectionnée">🗑 Supprimer</button>
                             <button type="button" class="btn-reinitialiser-dashboard" onclick="reinitialiserDashboard('client')" title="Rétablir l'ordre et l'affichage par défaut des blocs ci-dessous">↺ Réinitialiser</button>
                         </div>
+                        <!-- Validation explicite (12/09/2026, exigence de Roger) --
+                             "Créer une vue est un acte délibéré. L'utilisateur doit
+                             confirmer... S'il veut abandonner les modifications, il
+                             est libre mais doit en être averti." Masquée par défaut,
+                             affichée dès qu'un glisser-déposer ou un masquage modifie
+                             la disposition -- reinitialiserDashboard() reste, lui,
+                             immédiat (déjà lui-même un geste explicite unique, pas
+                             une session d'édition à valider ensuite). -->
+                        <div id="dashboard-client-validation" style="display:none; align-items:center; gap:6px; margin:0 0 8px; padding:6px 8px; background:#fef3c7; border:1px solid #fbbf24; border-radius:6px; font-size:10px; color:#78350f;">
+                            <span>Modifications non enregistrées</span>
+                            <button type="button" onclick="validerDispositionDashboard('client')" style="margin-left:auto; font-size:10px; padding:3px 10px; border:none; border-radius:4px; background:#16a34a; color:white; cursor:pointer;">Valider</button>
+                            <button type="button" onclick="annulerModificationsDashboard('client')" style="font-size:10px; padding:3px 10px; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer;">Annuler</button>
+                        </div>
                         <div id="dashboard-client-widgets">
                             <div class="widget-dashboard" data-widget-id="kpi-principaux">
                                 <div class="widget-entete"><span class="widget-poignee" title="Glissez pour réordonner ce bloc">⠿</span><span class="widget-titre">Vue d'ensemble</span><button type="button" class="widget-toggle-visibilite" title="Afficher ou masquer ce bloc" onclick="basculerVisibiliteWidget('client', 'kpi-principaux')">👁️</button></div>
@@ -702,6 +741,11 @@
                         <button type="button" class="btn-periode" data-periode="trimestre" onclick="changerPeriodeDashboardPersonnel('trimestre')" title="Afficher les KPI sur les 90 derniers jours">Trimestre</button>
                         <button type="button" class="btn-periode" data-periode="annee" onclick="changerPeriodeDashboardPersonnel('annee')" title="Afficher les KPI sur les 365 derniers jours">Année</button>
                         <button type="button" class="btn-reinitialiser-dashboard" onclick="reinitialiserDashboard('staff')" title="Rétablir l'ordre et l'affichage par défaut des blocs ci-dessous">↺ Réinitialiser la disposition</button>
+                    </div>
+                    <div id="dashboard-personnel-validation" style="display:none; align-items:center; gap:6px; margin:0 0 8px; padding:6px 8px; background:#fef3c7; border:1px solid #fbbf24; border-radius:6px; font-size:10px; color:#78350f;">
+                        <span>Modifications non enregistrées</span>
+                        <button type="button" onclick="validerDispositionDashboard('staff')" style="margin-left:auto; font-size:10px; padding:3px 10px; border:none; border-radius:4px; background:#16a34a; color:white; cursor:pointer;">Valider</button>
+                        <button type="button" onclick="annulerModificationsDashboard('staff')" style="font-size:10px; padding:3px 10px; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer;">Annuler</button>
                     </div>
                     <div id="dashboard-personnel-widgets">
                         <div class="widget-dashboard" data-widget-id="kpi-principaux">
@@ -747,6 +791,11 @@
                             <button type="button" class="btn-reinitialiser-dashboard" onclick="creerNouvelleVueDashboard('partenaire')" title="Créer une nouvelle vue à partir de la disposition actuelle">+ Nouvelle</button>
                             <button type="button" class="btn-reinitialiser-dashboard" onclick="supprimerVueDashboard('partenaire')" title="Supprimer la vue sélectionnée">🗑 Supprimer</button>
                             <button type="button" class="btn-reinitialiser-dashboard" onclick="reinitialiserDashboard('partenaire')" title="Rétablir l'ordre et l'affichage par défaut des blocs ci-dessous">↺ Réinitialiser</button>
+                        </div>
+                        <div id="dashboard-partenaire-validation" style="display:none; align-items:center; gap:6px; margin:0 0 8px; padding:6px 8px; background:#fef3c7; border:1px solid #fbbf24; border-radius:6px; font-size:10px; color:#78350f;">
+                            <span>Modifications non enregistrées</span>
+                            <button type="button" onclick="validerDispositionDashboard('partenaire')" style="margin-left:auto; font-size:10px; padding:3px 10px; border:none; border-radius:4px; background:#16a34a; color:white; cursor:pointer;">Valider</button>
+                            <button type="button" onclick="annulerModificationsDashboard('partenaire')" style="font-size:10px; padding:3px 10px; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer;">Annuler</button>
                         </div>
                         <div id="dashboard-partenaire-widgets">
                             <div class="widget-dashboard" data-widget-id="kpi-principaux">
@@ -918,13 +967,13 @@
                         Chaque ligne doit avoir un nom, et au moins un email <strong>ou</strong> un téléphone. Séparateur : point-virgule.
                     </p>
                     <button type="button" onclick="telechargerModeleProspectsCsv()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; margin-bottom:10px;">📄 Télécharger un modèle</button>
-                    <button type="button" class="principal" onclick="ouvrirImportGenerique('prospects', 'Importer des Prospects', chargerProspects)">Importer</button>
+                    <button type="button" id="bouton-importer-prospects" class="principal" onclick="ouvrirImportGenerique('prospects', 'Importer des Prospects', chargerProspects)">Importer</button>
                 </div>
 
                 <div class="filtres">
                     <button onclick="actionGroupeeProspects('promouvoir')" title="Créer un compte Client pour le(s) prospect(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">→ Promouvoir en Client</button>
                     <button onclick="actionGroupeeProspects('perdu')" title="Marque le(s) prospect(s) sélectionné(s) comme perdu(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">✖️ Marquer perdu</button>
-                    <button onclick="actionGroupeeProspects('supprimer')" title="Supprime définitivement le(s) prospect(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
+                    <button id="bouton-supprimer-prospects" onclick="actionGroupeeProspects('supprimer')" title="Supprime définitivement le(s) prospect(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
                     <input type="text" id="recherche-prospects" placeholder="Rechercher (nom, branche…)" oninput="afficherTableauProspects()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
                 </div>
                 <div id="prospects-conteneur"></div>
@@ -970,6 +1019,7 @@
                 <h2>Gérer les Partenaires</h2>
 
                 <div class="filtres">
+                    <span id="bloc-actions-partenaires-admin">
                     <button onclick="annulerEditionPartenaire(); document.getElementById('cp-form-titre').scrollIntoView({behavior:'smooth'});" title="Créer un nouveau partenaire" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">➕ Nouveau</button>
                     <button onclick="dupliquerPartenaireSelectionne()" title="Créer un nouveau partenaire en reprenant les informations de celui sélectionné" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">📋 Dupliquer</button>
                     <button onclick="actionGroupeePartenaires('suspendu')" title="Bloque l'accès du/des partenaire(s) sélectionné(s) — ils ne pourront plus se connecter tant qu'ils ne sont pas réactivés" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⏸️ Suspendre</button>
@@ -977,11 +1027,12 @@
                     <button onclick="actionGroupeePartenaires('supprimer')" title="Supprime définitivement le(s) partenaire(s) sélectionné(s) — action irréversible" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
                     <button id="btn-renvoyer-activation" onclick="renvoyerActivationGroupee()" disabled title="Sélectionnez uniquement des comptes « En attente d'activation »" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;">✉️ Renvoyer le lien d'activation</button>
                     <button id="btn-provisionner-boite-partenaire" onclick="provisionnerBoiteMailGroupeePartenaires()" disabled title="Sélectionnez uniquement des partenaires sans boîte mail configurée" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9; color:var(--gray); cursor:not-allowed;">🔧 Provisionner la boîte mail</button>
+                    </span>
                     <input type="text" id="recherche-partenaires" placeholder="Rechercher (nom, email, type…)" oninput="afficherTableauPartenaires()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
                 </div>
                 <div id="cp-liste-conteneur" style="margin-bottom:24px;"></div>
 
-                <div style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:24px; background:#fafafa;">
+                <div id="bloc-import-partenaires" style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:24px; background:#fafafa;">
                     <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 8px;">Importer une liste (CSV)</p>
                     <p style="font-size:11px; color:var(--gray); margin:0 0 10px;">
                         En-tête attendu : <code>NOM;PRENOM;EMAIL;EMAIL_NOTIFICATION;TELEPHONE;CODES_TYPES;CONTACTS</code><br>
@@ -993,6 +1044,7 @@
                     <button type="button" class="principal" onclick="ouvrirImportGenerique('partenaires', 'Importer des Partenaires', chargerListePartenaires)">Importer</button>
                 </div>
 
+                <div id="bloc-formulaire-partenaire-admin">
                 <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 14px;" id="cp-form-titre">Créer un nouveau partenaire</p>
                 <form id="form-creer-partenaire">
                     <input type="hidden" id="cp-id-edition" value="">
@@ -1048,6 +1100,7 @@
                     <button type="submit" class="principal" style="margin-top:14px;">Créer le compte</button>
                     <button type="button" onclick="annulerEditionPartenaire()" id="cp-annuler-btn" style="display:none; width:100%; margin-top:8px; background:#f1f5f9; color:#475569; border:none; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;">Annuler la modification</button>
                 </form>
+                </div>
                 <div id="cp-resultat" style="display:none; margin-top:16px; padding:14px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0;">
                     <p id="cp-resultat-texte" style="font-size:12px; font-weight:700; color:#047857; margin:0;"></p>
                 </div>
@@ -1069,6 +1122,20 @@
                     <input type="text" id="recherche-clients" placeholder="Rechercher (nom, email, téléphone…)" oninput="afficherTableauClients()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
                 </div>
                 <div id="clients-liste-conteneur"></div>
+            </section>
+
+            <!-- [PRÉSENTATION-PERSONNEL] Journal des envois no-reply@ (11/09/2026,
+                 demandé par la session Messagerie) -- lecture seule, alimente
+                 uniquement la visibilité du staff. Le filtre Sieve conditionnel
+                 qu'ils construisent interroge directement la table en base,
+                 jamais cette page. -->
+            <section id="page-journal-no-reply" class="page">
+                <h2>Journal des envois no-reply@</h2>
+                <p class="sous-titre">Historique des emails envoyés depuis no-reply@mutuelleproassurances.com — consultation seule.</p>
+                <div class="filtres">
+                    <input type="text" id="recherche-journal-no-reply" placeholder="Rechercher (destinataire, type, référence…)" oninput="afficherTableauJournalNoReply()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
+                </div>
+                <div id="journal-no-reply-conteneur"></div>
             </section>
 
             <!-- [PRÉSENTATION-PERSONNEL] Administration du Personnel -->
@@ -1190,7 +1257,7 @@
             // jamais si un compte existe) -- le message affiché ici reste
             // le même quel que soit le résultat réel.
             messageEl.style.color = '#047857';
-            messageEl.textContent = 'Si un compte correspond à cet identifiant, un lien de réinitialisation vient d\'être envoyé.';
+            messageEl.textContent = 'Si cet identifiant correspond à un compte, vous recevrez un lien de réinitialisation dans quelques instants. Vérifiez aussi vos indésirables.';
         } catch (err) {
             console.error(err);
             messageEl.style.color = '#dc2626';
@@ -1804,13 +1871,31 @@
             html += `<button class="menu-item" data-page="tickets" onclick="afficherPage('tickets')">Tickets</button>`;
             html += `<button class="menu-item" data-page="messagerie" onclick="afficherPage('messagerie'); chargerMessagerie('staff');">Messagerie</button>`;
             html += `<button class="menu-item" data-page="taches" onclick="afficherPage('taches'); chargerTaches();">Tâches</button>`;
-            if (sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
-                html += '<div class="menu-groupe-titre">Administration</div>';
+            // Scindé le 12/09/2026 (analyse de fond demandée par Roger) --
+            // un seul groupe "Administration", verrouillé Admin/Superadmin,
+            // masquait des pages que le Gestionnaire a pourtant déjà le
+            // droit d'utiliser au niveau des routes (Prospects, Partenaires
+            // en consultation, Pilotage & KPIs n'ont aucune restriction de
+            // rôle backend au-delà de requireStaffAuth). Distinction
+            // reprise de Roger : "administration des données" (le
+            // quotidien d'un commercial/rédacteur) vs "administration de
+            // la base" (comptes, structure -- impact réel sur
+            // l'intégrité du système). Les boutons proprement
+            // structurants À L'INTÉRIEUR de ces pages (éditer une fiche
+            // complète, supprimer, importer en masse) restent, eux,
+            // réservés en interne -- même motif que le bouton ✏️ déjà
+            // construit sur Prospects.
+            if (sessionStaff.code_role === 'gestionnaire' || sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
+                html += '<div class="menu-groupe-titre">Prospection & Suivi</div>';
                 html += `<button class="menu-item" data-page="prospects" onclick="afficherPage('prospects')">Prospects</button>`;
-                html += `<button class="menu-item" data-page="clients" onclick="afficherPage('clients'); chargerListeClients();">Clients</button>`;
-                html += `<button class="menu-item" data-page="personnel" onclick="afficherPage('personnel'); chargerListePersonnel();">Personnel</button>`;
                 html += `<button class="menu-item" data-page="creer-partenaire" onclick="afficherPage('creer-partenaire')">Partenaires</button>`;
                 html += `<button class="menu-item" data-page="pilotage" onclick="afficherPage('pilotage'); chargerKpis();">Pilotage & KPIs</button>`;
+            }
+            if (sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
+                html += '<div class="menu-groupe-titre">Administration</div>';
+                html += `<button class="menu-item" data-page="clients" onclick="afficherPage('clients'); chargerListeClients();">Clients</button>`;
+                html += `<button class="menu-item" data-page="personnel" onclick="afficherPage('personnel'); chargerListePersonnel();">Personnel</button>`;
+                html += `<button class="menu-item" data-page="journal-no-reply" onclick="afficherPage('journal-no-reply'); chargerJournalNoReply();">Journal no-reply</button>`;
             }
         }
         if (sessionPartenaire) {
@@ -1832,6 +1917,23 @@
         });
 
         menu.innerHTML = html;
+
+        // Masquage des actions structurantes (12/09/2026, même analyse que
+        // la scission du menu ci-dessus) -- un Gestionnaire voit désormais
+        // les pages Prospects/Partenaires, mais ces boutons précis restent
+        // strictement Admin/Superadmin au niveau des routes ; sans ce
+        // masquage, il les verrait sans jamais pouvoir s'en servir (403
+        // silencieux au clic). "display" choisi selon la balise
+        // (affichage en ligne pour l'élément span, en bloc pour les divs).
+        const estGestionnaireSeul = sessionStaff && sessionStaff.code_role === 'gestionnaire';
+        ['bouton-importer-prospects', 'bouton-supprimer-prospects'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = estGestionnaireSeul ? 'none' : '';
+        });
+        ['bloc-actions-partenaires-admin', 'bloc-formulaire-partenaire-admin', 'bloc-import-partenaires'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = estGestionnaireSeul ? 'none' : '';
+        });
     }
 
     // [PRÉSENTATION-COMMUNE]
@@ -3652,9 +3754,9 @@
         partenaire: '/api/partenaire/dashboard-preferences',
     };
     const etatDashboardPersonnalisable = {
-        staff: { preferences: null, chargees: false, sortable: null, minuteur: null, vues: [], vueActive: 'Défaut' },
-        client: { preferences: null, chargees: false, sortable: null, minuteur: null, vues: [], vueActive: 'Défaut' },
-        partenaire: { preferences: null, chargees: false, sortable: null, minuteur: null, vues: [], vueActive: 'Défaut' },
+        staff: { preferences: null, chargees: false, sortable: null, minuteur: null, vues: [], vueActive: 'Défaut', modifie: false, preferencesSauvegardees: null },
+        client: { preferences: null, chargees: false, sortable: null, minuteur: null, vues: [], vueActive: 'Défaut', modifie: false, preferencesSauvegardees: null },
+        partenaire: { preferences: null, chargees: false, sortable: null, minuteur: null, vues: [], vueActive: 'Défaut', modifie: false, preferencesSauvegardees: null },
     };
 
     function dispositionParDefautDashboard(espace) {
@@ -3679,6 +3781,12 @@
             etat.vues = ['Défaut'];
             etat.vueActive = 'Défaut';
         }
+        // Validation explicite (12/09/2026) -- instantané pris juste après
+        // chargement, sert de base pour "Annuler" tant qu'aucune nouvelle
+        // sauvegarde validée n'a eu lieu.
+        etat.preferencesSauvegardees = JSON.parse(JSON.stringify(etat.preferences));
+        etat.modifie = false;
+        mettreAJourValidationDashboard(espace);
         remplirSelecteurVues(espace);
         appliquerPreferencesDashboard(espace);
         initSortableDashboard(espace);
@@ -3696,6 +3804,13 @@
     async function changerVueDashboard(espace, nomVue) {
         const etat = etatDashboardPersonnalisable[espace];
         if (!nomVue || nomVue === etat.vueActive) return;
+        // Validation explicite (12/09/2026) -- changer de vue avec des
+        // modifications non validées les perdrait silencieusement sans
+        // cet avertissement.
+        if (etat.modifie && !window.confirm('Des modifications de cette vue ne sont pas enregistrées. Les abandonner et changer de vue ?')) {
+            remplirSelecteurVues(espace);
+            return;
+        }
         try {
             const resp = await fetch(`${URL_DASHBOARD_PREFERENCES[espace]}/activer`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -3725,6 +3840,11 @@
             const data = await resp.json();
             if (!data.succes) { console.error(data.erreurs); return; }
         } catch (err) { console.error(err); return; }
+        // La disposition actuelle (modifiée ou non) devient le point de
+        // départ de la nouvelle vue -- rien n'est abandonné, donc pas
+        // d'avertissement à déclencher dans changerVueDashboard() ci-après.
+        etat.modifie = false;
+        mettreAJourValidationDashboard(espace);
         await changerVueDashboard(espace, nomPropre);
     }
 
@@ -3742,7 +3862,10 @@
             window.alert('Impossible de supprimer la dernière vue restante.');
             return;
         }
-        if (!window.confirm(`Supprimer la vue « ${etat.vueActive} » ?`)) return;
+        const messageConfirmation = etat.modifie
+            ? `Supprimer la vue « ${etat.vueActive} » ? Les modifications non enregistrées seront perdues.`
+            : `Supprimer la vue « ${etat.vueActive} » ?`;
+        if (!window.confirm(messageConfirmation)) return;
         try {
             const resp = await fetch(`${URL_DASHBOARD_PREFERENCES[espace]}?nom_vue=${encodeURIComponent(etat.vueActive)}`, {
                 method: 'DELETE', credentials: 'include',
@@ -3791,7 +3914,8 @@
         if (!pref) return;
         pref.visible = !pref.visible;
         appliquerPreferencesDashboard(espace);
-        sauvegarderPreferencesDashboard(espace);
+        etat.modifie = true;
+        mettreAJourValidationDashboard(espace);
     }
 
     function initSortableDashboard(espace) {
@@ -3804,7 +3928,8 @@
             onEnd: function () {
                 const nouvelOrdre = Array.from(conteneur.querySelectorAll('.widget-dashboard')).map((el) => el.dataset.widgetId);
                 etat.preferences.sort((a, b) => nouvelOrdre.indexOf(a.id) - nouvelOrdre.indexOf(b.id));
-                sauvegarderPreferencesDashboard(espace);
+                etat.modifie = true;
+                mettreAJourValidationDashboard(espace);
             },
         });
     }
@@ -3822,6 +3947,55 @@
         }, 500);
     }
 
+    // Validation explicite (12/09/2026, exigence de Roger) -- affiche/masque
+    // la barre "Modifications non enregistrées" selon etat.modifie. Simple
+    // bascule, aucune logique métier ici.
+    function mettreAJourValidationDashboard(espace) {
+        const etat = etatDashboardPersonnalisable[espace];
+        const barre = document.getElementById(`dashboard-${prefixeDomDashboard(espace)}-validation`);
+        if (barre) barre.style.display = etat.modifie ? 'flex' : 'none';
+    }
+
+    // Sauvegarde réelle, déclenchée uniquement par un clic explicite sur
+    // "Valider" -- plus de délai de 500ms nécessaire (déjà un geste
+    // délibéré, pas une rafale d'actions à regrouper).
+    async function validerDispositionDashboard(espace) {
+        const etat = etatDashboardPersonnalisable[espace];
+        try {
+            await fetch(URL_DASHBOARD_PREFERENCES[espace], {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ disposition: etat.preferences, nom_vue: etat.vueActive }),
+            });
+        } catch (err) { console.error(err); return; }
+        etat.preferencesSauvegardees = JSON.parse(JSON.stringify(etat.preferences));
+        etat.modifie = false;
+        mettreAJourValidationDashboard(espace);
+    }
+
+    // Abandon des modifications -- revient au dernier état réellement
+    // enregistré (pas nécessairement celui du chargement de la page, si
+    // "Valider" a déjà été cliqué une première fois entre-temps).
+    function annulerModificationsDashboard(espace) {
+        const etat = etatDashboardPersonnalisable[espace];
+        etat.preferences = JSON.parse(JSON.stringify(etat.preferencesSauvegardees));
+        appliquerPreferencesDashboard(espace);
+        etat.modifie = false;
+        mettreAJourValidationDashboard(espace);
+    }
+
+    // Avertissement à la fermeture/rechargement de page (12/09/2026) --
+    // couvre "abandon" au sens large, pas seulement le changement de vue
+    // à l'intérieur de la même page. Le message personnalisé n'est plus
+    // affiché par les navigateurs modernes (texte générique imposé), mais
+    // preventDefault()/returnValue reste nécessaire pour déclencher
+    // l'invite native.
+    window.addEventListener('beforeunload', (event) => {
+        const unModifie = Object.values(etatDashboardPersonnalisable).some((etat) => etat.modifie);
+        if (!unModifie) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
     // Reconfigurabilité -- retour à la disposition par défaut, en un
     // geste, sans devoir démasquer/réordonner chaque widget à la main.
     function reinitialiserDashboard(espace) {
@@ -3829,6 +4003,11 @@
         etat.preferences = dispositionParDefautDashboard(espace);
         appliquerPreferencesDashboard(espace);
         sauvegarderPreferencesDashboard(espace);
+        // Geste déjà explicite en lui-même -- considéré immédiatement
+        // enregistré, pas de session d'édition à valider après coup.
+        etat.preferencesSauvegardees = JSON.parse(JSON.stringify(etat.preferences));
+        etat.modifie = false;
+        mettreAJourValidationDashboard(espace);
     }
 
     function changerModeleDashboardPersonnel(modele) {
@@ -4315,6 +4494,60 @@
             if (!data.succes) { conteneur.innerHTML = '<p class="vide">Erreur de chargement.</p>'; return; }
             clientsCourants = data.clients;
             afficherTableauClients();
+        } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
+    }
+
+    // Journal des envois no-reply@ (11/09/2026, demandé par la session
+    // Messagerie) -- lecture seule, même motif que Clients mais sans
+    // case à cocher ni action groupée, rien à faire depuis cette page.
+    let journalNoReplyCourant = [];
+
+    const colonnesJournalNoReply = [
+        { cle: 'date', libelle: 'Date d\'envoi', trier: (j) => new Date(j.date_envoi).getTime() },
+        { cle: 'destinataire', libelle: 'Destinataire', trier: (j) => j.destinataire || '' },
+        { cle: 'type', libelle: 'Type', trier: (j) => j.type_message || '' },
+        { cle: 'reference', libelle: 'Référence compte', trier: (j) => j.reference_compte || '' },
+    ];
+
+    function genererLignesJournalNoReply(page) {
+        return page.map((j) => {
+            const dateStr = new Date(j.date_envoi).toLocaleString('fr-FR');
+            return `<tr>
+                <td style="font-size:11px;">${dateStr}</td>
+                <td>${j.destinataire}</td>
+                <td style="font-size:11px; color:var(--gray);">${j.type_message}</td>
+                <td>${j.reference_compte || '—'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function donneesJournalNoReplyAffichables() {
+        const recherche = (document.getElementById('recherche-journal-no-reply')?.value || '').toLowerCase();
+        if (!recherche) return journalNoReplyCourant;
+        return journalNoReplyCourant.filter((j) =>
+            (j.destinataire || '').toLowerCase().includes(recherche) ||
+            (j.type_message || '').toLowerCase().includes(recherche) ||
+            (j.reference_compte || '').toLowerCase().includes(recherche)
+        );
+    }
+
+    const afficherTableauJournalNoReply = creerRenduTableau('journal-no-reply', {
+        obtenirDonnees: donneesJournalNoReplyAffichables,
+        colonnes: colonnesJournalNoReply,
+        genererLignes: genererLignesJournalNoReply,
+        idConteneur: 'journal-no-reply-conteneur',
+        messageVide: 'Aucun envoi enregistré.',
+    });
+
+    async function chargerJournalNoReply() {
+        const conteneur = document.getElementById('journal-no-reply-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/journal-no-reply', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { conteneur.innerHTML = '<p class="vide">Erreur de chargement.</p>'; return; }
+            journalNoReplyCourant = data.envois;
+            afficherTableauJournalNoReply();
         } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
     }
 

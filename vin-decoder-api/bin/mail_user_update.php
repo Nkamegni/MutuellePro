@@ -2,17 +2,20 @@
 /**
  * mail_user_update.php — Pont CLI vers l'API SOAP ISPConfig (mail_user_update)
  *
- * Complète mail_user_add.php / mail_user_delete.php — même logique, même
- * contrat de sortie.
- *
  * INVOCATION :
  *   php mail_user_update.php '{"email":"...","champs":{"quota":500,"purge_trash_days":30}}'
  *
  * "champs" ne contient que les valeurs à changer — le script récupère
- * d'abord l'enregistrement complet existant (mail_user_get, autorisé pour
- * ce Remote User) et fusionne par-dessus, avant d'appeler mail_user_update.
- * Ça évite de retomber sur les erreurs ENUM/INT vides déjà rencontrées avec
- * mail_user_add si on envoyait un tableau partiel.
+ * d'abord l'enregistrement complet existant (mail_user_get) et fusionne
+ * par-dessus, avant d'appeler mail_user_update.
+ *
+ * ATTENTION SÉCURITÉ (corrigé le 11/09/2026 suite à un incident) : le champ
+ * 'password' renvoyé par mail_user_get est déjà un HASH. ISPConfig hache
+ * automatiquement (encryption CRYPTMAIL) tout ce qui est soumis dans ce
+ * champ à chaque update — si on repasse le hash existant, ISPConfig le
+ * re-hache, corrompant le mot de passe. Ce script retire donc TOUJOURS
+ * 'password' du tableau fusionné, sauf si l'appelant l'a explicitement
+ * fourni dans "champs" (un vrai nouveau mot de passe en clair).
  *
  * SORTIE (toujours sur STDOUT, toujours du JSON, jamais d'exception affichée) :
  *   {"succes": true, "mailuser_id": 24, "champs_modifies": {...}}
@@ -123,7 +126,6 @@ try {
         erreur('Login ISPConfig : session_id vide retourné sans exception.');
     }
 
-    // Retrouver mailuser_id à partir de l'email (mail_user_get_by_email non autorisé).
     try {
         $boites = $client->mail_user_get_all_by_client($session_id, $client_id);
     } catch (Throwable $e) {
@@ -147,9 +149,6 @@ try {
         erreur("Aucune boîte mail trouvée pour l'email : {$email}");
     }
 
-    // Récupérer l'enregistrement complet existant, pour fusionner plutôt
-    // que d'envoyer un tableau partiel à mail_user_update (même prudence
-    // que pour mail_user_add : ISPConfig rejette les ENUM/INT vides).
     try {
         $enregistrementActuel = $client->mail_user_get($session_id, $mailuser_id);
     } catch (Throwable $e) {
@@ -162,13 +161,13 @@ try {
 
     $enregistrementActuel = (array) $enregistrementActuel;
 
-    // Fusion : les champs demandés écrasent les valeurs existantes, tout le
-    // reste de l'enregistrement est renvoyé tel quel.
     $params = array_merge($enregistrementActuel, $champsAModifier);
 
-    // Quelques clés techniques renvoyées par mail_user_get ne doivent pas
-    // être renvoyées telles quelles dans l'update (identifiants système) —
-    // on les retire par précaution si présentes.
+    // CRITIQUE (voir en-tête) : ne jamais repasser le hash existant.
+    if (!array_key_exists('password', $champsAModifier)) {
+        unset($params['password']);
+    }
+
     unset($params['mailuser_id']);
 
     try {
@@ -179,7 +178,7 @@ try {
 
     repondre_et_quitter(true, [
         'mailuser_id' => (int) $mailuser_id,
-        'champs_modifies' => $champsAModifier,
+        'champs_modifies' => array_keys($champsAModifier),
     ]);
 
 } finally {

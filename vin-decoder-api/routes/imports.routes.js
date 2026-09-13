@@ -135,7 +135,7 @@ module.exports = function (pool, modeles) {
             let contexte = { id_staff: req.session.id_staff };
             if (session.type === 'partenaires') {
                 const typeParCode = await chargerTypeParCode(pool);
-                contexte = { ...contexte, creerPartenaireEtActiver, resoudreCodesTypes, envoyerEmailActivationPartenaire, typeParCode };
+                contexte = { ...contexte, pool, creerPartenaireEtActiver, resoudreCodesTypes, envoyerEmailActivationPartenaire, typeParCode };
             }
             const resultats = await importerReellement(
                 lignesAImporter, modele, client, contexte,

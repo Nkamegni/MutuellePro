@@ -115,6 +115,15 @@ module.exports = function (pool) {
                         <p><a href="${lien}">${lien}</a></p>
                         <p>Passé ce délai, utilisez "Mot de passe oublié" sur l'espace Client pour recevoir un nouveau lien.</p>
                     `,
+                }).then((info) => {
+                    // pool, pas client -- l'envoi est asynchrone et peut
+                    // se résoudre après la libération de la connexion
+                    // transactionnelle (COMMIT/release juste après ici).
+                    pool.query(
+                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                         VALUES ($1, $2, $3, $4)`,
+                        [info.messageId, prospect.email, 'bienvenue_promotion', String(idUtilisateur)]
+                    ).catch((err) => console.error('[promouvoir-client] Erreur journalisation no-reply (ignorée) :', err));
                 }).catch((err) => console.error('[promouvoir-client] Erreur envoi email :', err));
                 lienEnvoye = true;
             }

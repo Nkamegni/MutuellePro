@@ -25,15 +25,24 @@ const mailTransporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
 });
 
-async function envoyerEmailActivationStaff(emailValidation, nomComplet, token) {
+async function envoyerEmailActivationStaff(pool, idStaff, emailValidation, nomComplet, token) {
     const lien = `https://mutuelleproassurances.com/activation-staff.html?token=${token}`;
     try {
-        await mailTransporter.sendMail({
+        const infoEnvoi = await mailTransporter.sendMail({
             from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailValidation,
             subject: 'Mutuelle Pro Assurances — Activez votre compte Personnel',
             html: gabaritEmail('Activez votre compte Personnel', corpsActivation({ nomComplet, typeCompte: 'staff', lien })),
         });
+        try {
+            await pool.query(
+                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                 VALUES ($1, $2, $3, $4)`,
+                [infoEnvoi.messageId, emailValidation, 'activation_personnel', String(idStaff)]
+            );
+        } catch (err) {
+            console.error('[envoyerEmailActivationStaff] Erreur journalisation no-reply (ignorée) :', err);
+        }
     } catch (err) {
         console.error('[envoyerEmailActivationStaff] Erreur envoi email :', err);
     }
@@ -141,7 +150,7 @@ module.exports = function (pool) {
 
             await client.query('COMMIT');
 
-            envoyerEmailActivationStaff(email_validation, nomComplet, token);
+            envoyerEmailActivationStaff(pool, nouveauStaff.id_staff, email_validation, nomComplet, token);
 
             // Création de boîte mail — APRÈS le commit, volontairement non
             // bloquante : un échec ici ne doit jamais annuler la création

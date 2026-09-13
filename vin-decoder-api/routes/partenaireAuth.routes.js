@@ -226,6 +226,12 @@ module.exports = function (pool) {
                         navigateur: analyserNavigateur(req.headers['user-agent']),
                         systeme: analyserSysteme(req.headers['user-agent']),
                     })),
+                }).then((info) => {
+                    pool.query(
+                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                         VALUES ($1, $2, $3, $4)`,
+                        [info.messageId, partenaire.email_notification || partenaire.email, 'notification_connexion_partenaire', partenaire.matricule]
+                    ).catch((err) => console.error('[POST /api/partenaire/connexion/verifier-code] Erreur journalisation no-reply (ignorée) :', err));
                 }).catch(err => console.error('[POST /api/partenaire/connexion/verifier-code] Erreur envoi notification connexion :', err));
 
                 return res.status(200).json({
@@ -497,6 +503,12 @@ module.exports = function (pool) {
                 to: email_notification,
                 subject: 'Mutuelle Pro Assurances — Nouveau lien d\'activation',
                 html: gabaritEmail('Activez votre compte partenaire', corpsActivation({ nomComplet, typeCompte: 'partenaire', lien })),
+            }).then((info) => {
+                pool.query(
+                    `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                     VALUES ($1, $2, $3, $4)`,
+                    [info.messageId, email_notification, 'activation_partenaire', String(id_partenaire)]
+                ).catch((err) => console.error('[POST /api/partenaire/renvoyer-activation] Erreur journalisation no-reply (ignorée) :', err));
             }).catch((err) => console.error('[POST /api/partenaire/renvoyer-activation] Erreur envoi email :', err));
 
             return res.status(200).json({ succes: true });

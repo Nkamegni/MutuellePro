@@ -33,10 +33,10 @@ const mailTransporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
 });
 
-async function notifierClientChangementStatut(emailClient, codeTicket, nouveauStatut) {
+async function notifierClientChangementStatut(pool, emailClient, codeTicket, nouveauStatut) {
     if (!emailClient) return;
     try {
-        await mailTransporter.sendMail({
+        const infoEnvoi = await mailTransporter.sendMail({
             from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailClient,
             subject: `Mutuelle Pro Assurances — Mise à jour de votre demande ${codeTicket}`,
@@ -47,6 +47,15 @@ async function notifierClientChangementStatut(emailClient, codeTicket, nouveauSt
                 <p>Vous pouvez suivre l'avancement de vos demandes depuis votre Espace Client sur notre site.</p>
             `,
         });
+        try {
+            await pool.query(
+                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                 VALUES ($1, $2, $3, $4)`,
+                [infoEnvoi.messageId, emailClient, 'mise_a_jour_ticket', codeTicket]
+            );
+        } catch (err) {
+            console.error('[notifierClientChangementStatut] Erreur journalisation no-reply (ignorée) :', err);
+        }
     } catch (err) {
         // Une notification échouée ne doit jamais faire échouer le
         // changement de statut lui-même — l'action métier prime.
@@ -177,7 +186,7 @@ module.exports = function (pool) {
             await client.query('COMMIT');
 
             if (statutAvant !== code_statut_ticket) {
-                notifierClientChangementStatut(emailClient, codeTicket, code_statut_ticket);
+                notifierClientChangementStatut(pool, emailClient, codeTicket, code_statut_ticket);
             }
 
             return res.status(200).json({ succes: true, ticket: resultat.rows[0] });

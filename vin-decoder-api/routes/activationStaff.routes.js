@@ -77,6 +77,15 @@ module.exports = function (pool) {
                 to: email_validation,
                 subject: 'Mutuelle Pro Assurances — Nouveau lien d\'activation',
                 html: gabaritEmail('Activez votre compte Personnel', corpsActivation({ nomComplet, typeCompte: 'staff', lien })),
+            }).then((info) => {
+                // Journal no-reply (11/09/2026, demandé par la session
+                // Messagerie) -- même motif non-bloquant que l'envoi
+                // lui-même, jamais d'impact sur la réponse HTTP.
+                pool.query(
+                    `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                     VALUES ($1, $2, $3, $4)`,
+                    [info.messageId, email_validation, 'activation_staff', String(id_staff)]
+                ).catch((err) => console.error('[POST /api/staff/renvoyer-activation] Erreur journalisation no-reply (ignorée) :', err));
             }).catch((err) => console.error('[POST /api/staff/renvoyer-activation] Erreur envoi email :', err));
 
             return res.status(200).json({ succes: true });

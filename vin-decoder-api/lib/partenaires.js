@@ -17,15 +17,24 @@ const mailTransporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
 });
 
-async function envoyerEmailActivationPartenaire(emailNotification, nomComplet, token) {
+async function envoyerEmailActivationPartenaire(pool, idPartenaire, emailNotification, nomComplet, token) {
     const lien = `https://mutuelleproassurances.com/activation-partenaire.html?token=${token}`;
     try {
-        await mailTransporter.sendMail({
+        const infoEnvoi = await mailTransporter.sendMail({
             from: '"Mutuelle Pro Assurances" <no-reply@mutuelleproassurances.com>',
             to: emailNotification,
             subject: 'Mutuelle Pro Assurances — Activez votre compte partenaire',
             html: gabaritEmail('Activez votre compte partenaire', corpsActivation({ nomComplet, typeCompte: 'partenaire', lien })),
         });
+        try {
+            await pool.query(
+                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                 VALUES ($1, $2, $3, $4)`,
+                [infoEnvoi.messageId, emailNotification, 'activation_compte_partenaire', String(idPartenaire)]
+            );
+        } catch (err) {
+            console.error('[envoyerEmailActivationPartenaire] Erreur journalisation no-reply (ignorée) :', err);
+        }
     } catch (err) {
         console.error('[envoyerEmailActivationPartenaire] Erreur envoi email :', err);
     }
