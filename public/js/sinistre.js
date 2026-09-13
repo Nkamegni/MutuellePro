@@ -88,6 +88,8 @@
         const date = document.getElementById('sinistre-date').value;
         const description = document.getElementById('sinistre-description').value.trim();
         const nom = document.getElementById('sinistre-nom').value.trim();
+        const prenom = document.getElementById('sinistre-prenom').value.trim();
+        const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
         const email = document.getElementById('sinistre-email').value.trim();
         const prefix = document.getElementById('sinistre-phone-prefix').value;
         const phone = document.getElementById('sinistre-phone').value.trim();
@@ -126,7 +128,7 @@
                     type: 'sinistre',
                     email: email,
                     telephone: telephone,
-                    contenu: { branche: brancheLabel, police: police || null, date, description, nom },
+                    contenu: { branche: brancheLabel, police: police || null, date, description, nom, prenom: prenom || null },
                 }),
             });
             const dataTicket = await respTicket.json();
@@ -147,7 +149,7 @@
             `${t.waBranche} ${brancheLabel}`,
         ];
         if (police) lignesWa.push(`${t.waPolice} ${police}`);
-        lignesWa.push(`${t.waDate} ${date}`, '', t.waDesc, description, '', t.waClient, nom, `${t.waPhone} ${telephone}`, '');
+        lignesWa.push(`${t.waDate} ${date}`, '', t.waDesc, description, '', t.waClient, nomAffiche, `${t.waPhone} ${telephone}`, '');
         // Le rappel "créez un compte avec ce même e-mail/téléphone pour le
         // suivi" n'a de sens que si la référence vient vraiment du système
         // de tickets -- pas pour une référence de repli purement locale.
@@ -165,7 +167,7 @@
             police ? `${t.waPolice} ${police}<br>` : '',
             `${t.waDate} ${date}<br><br>`,
             `${t.waDesc}<br>${description.replace(/\n/g, '<br>')}<br><br>`,
-            `${t.waClient}<br>${nom}<br>${email}<br>${t.waPhone} ${telephone}`,
+            `${t.waClient}<br>${nomAffiche}<br>${email}<br>${t.waPhone} ${telephone}`,
             refEstTraçable ? `<br><br>${t.emailSuivi}` : '',
         ].join('');
 

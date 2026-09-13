@@ -475,7 +475,7 @@
 
         const lines = [
             'NOUVEAU MESSAGE — Formulaire de contact du site', '',
-            `Nom : ${get('user_name')}`,
+            `Nom : ${[get('user_prenom'), get('user_nom')].filter(Boolean).join(' ')}`,
             `Email : ${get('user_email')}`,
             `Téléphone : ${prefix} ${get('user_phone')}`,
             `Ville : ${get('user_city')}`,

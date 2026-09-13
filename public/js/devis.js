@@ -704,7 +704,7 @@
     // Navigation manuelle du devis, étape 2 (détails du risque -- la
     // cascade Carrosserie/Genre/État/Usage pour l'Auto).
     function goToStep2() {
-        const name = document.getElementById('modal_user_name').value.trim();
+        const name = document.getElementById('modal_user_nom').value.trim();
         const phone = document.getElementById('modal_user_phone').value.trim();
         const insurance = document.getElementById('insurance_type').value;
 
@@ -1441,7 +1441,7 @@
             ? insuranceSelect.options[insuranceSelect.selectedIndex].text.replace(/^\d+\.\s*/, '')
             : t.defaultInsurance;
 
-        const nom = get('modal_user_name') || t.defaultName;
+        const nom = [get('modal_user_prenom'), get('modal_user_nom')].filter(Boolean).join(' ') || t.defaultName;
         const telephone = `${get('modal_phone_prefix')}${get('modal_user_phone')}`;
 
         const now = new Date();
@@ -1552,7 +1552,7 @@
             : t.defaultInsuranceCap;
         const insuranceValue = insuranceSelect ? insuranceSelect.value : '';
 
-        const nom = get('modal_user_name') || '-';
+        const nom = [get('modal_user_prenom'), get('modal_user_nom')].filter(Boolean).join(' ') || '-';
         const telephone = `${get('modal_phone_prefix')}${get('modal_user_phone')}`;
         const notes = get('modal_message');
         const docs = getSelectedDocuments();
