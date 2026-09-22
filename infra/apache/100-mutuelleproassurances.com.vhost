@@ -122,6 +122,12 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
 RewriteCond %{REQUEST_URI} !^/webmail
 RewriteCond %{REQUEST_URI} !^/error/
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteRule ^/(.*)$ ws://localhost:3000/$1 [P,L]
+
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteCond %{REQUEST_URI} !^/webmail
+RewriteCond %{REQUEST_URI} !^/error/
 RewriteRule ^/(.*)$ http://localhost:3000/$1 [P,L]
 
 Alias /webmail /var/lib/roundcube/public_html
@@ -189,8 +195,8 @@ ProxyPassReverse / http://localhost:3000/
     # Apache) -- indispensable pour que les cookies de session "Secure"
     # soient emis. Bloc CSP unique conserve (l'ancien bloc obsolete avec
     # cdn.tailwindcss.com a ete retire de ce champ).
-    # NNR - 22/08/2026 - GEM : Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
+    # NNR - 22/08/2026 - GEM : Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
     RequestHeader set X-Forwarded-Proto "https"
 
 </IfModule>
@@ -337,6 +343,12 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
 RewriteCond %{REQUEST_URI} !^/webmail
 RewriteCond %{REQUEST_URI} !^/error/
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteRule ^/(.*)$ ws://localhost:3000/$1 [P,L]
+
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteCond %{REQUEST_URI} !^/webmail
+RewriteCond %{REQUEST_URI} !^/error/
 RewriteRule ^/(.*)$ http://localhost:3000/$1 [P,L]
 
 Alias /webmail /var/lib/roundcube/public_html
@@ -407,7 +419,7 @@ RequestHeader set X-Forwarded-Proto "https"
     # Apache) -- indispensable pour que les cookies de session "Secure"
     # soient emis. Bloc CSP unique conserve (l'ancien bloc obsolete avec
     # cdn.tailwindcss.com a ete retire de ce champ).
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; connect-src 'self' https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://www.google-analytics.com https://region1.google-analytics.com https://*.kaspersky-labs.com https://www.googletagmanager.com; frame-ancestors 'self';"
 
     RequestHeader set X-Forwarded-Proto "https"
 
