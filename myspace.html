@@ -45,9 +45,384 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.09.12-b
-    Dernière modification : 12/09/2026
+    Version actuelle    : 2026.09.19-ad
+    Dernière modification : 19/09/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
+
+    Résumé de cette version :
+      - Registre système : gras sur le texte de la colonne de clé,
+        largeur réduite au minimum requis par le contenu (width:1%)
+        pour la colonne numérique (listes) -- dernière retouche avant
+        clôture du chantier "Paramètres"
+
+    Résumé de cette version :
+      - Registre système : couleur de la cellule de clé inversée --
+        fond légèrement grisé, texte foncé (navy) plutôt que texte
+        gris peu lisible sur fond blanc
+
+    Résumé de cette version :
+      - Registre système : vraie cause du décalage permanent trouvée --
+        une règle générale "input, textarea { margin-bottom:14px; }"
+        (tout en haut du fichier, hors de ce tableau) s'appliquait
+        quand même, notre propre règle ne déclarant jamais de marge.
+        margin:0 ajouté, retour à 80%/10% (confirmé fonctionner
+        maintenant que la vraie cause est corrigée)
+
+    Résumé de cette version :
+      - Registre système : bordure retirée sur les champs de saisie de
+        la grille (proposition de Roger) -- la cellule a déjà la
+        sienne, plus simple sans la doubler
+
+    Résumé de cette version :
+      - Registre système : retour à 60% de hauteur / 20% de marge pour
+        le champ de la grille -- combinaison déjà confirmée sans
+        chevauchement, contrairement à 90%/10% qui laissait le bord
+        supérieur du champ avalé par la cellule du dessus
+
+    Résumé de cette version :
+      - Registre système : vrai conflit trouvé pour le chevauchement
+        sur la ligne du dessus -- vertical-align:middle sur la cellule
+        entrait en conflit avec le positionnement géré entièrement en
+        JS (hauteur + marge) de l'enveloppe du champ. Ciblé précisément
+        via :has() -- top pour les cellules avec enveloppe JS, middle
+        conservé pour la cellule de clé (qui en dépendait)
+
+    Résumé de cette version :
+      - Registre système : essai 90% hauteur / 10% marge haute --
+        tient exactement (100%), mais n'est plus symétriquement centré,
+        toute la marge en haut, aucune en bas
+
+    Résumé de cette version :
+      - Registre système : champ de la grille agrandi -- 90% de
+        hauteur, 5% de marge haute (et basse), toujours centré, champ
+        presque aussi grand que la cellule
+
+    Résumé de cette version :
+      - Registre système : décalage vertical de centrage doublé --
+        hauteur 80%→60%, marge 10%→20% en haut (et donc en bas), même
+        logique de centrage mais un effet visible en pixels réels à
+        l'échelle resserrée du tableau (10% ne représentait que 2-3px)
+
+    Résumé de cette version :
+      - Registre système : enveloppe du champ de la grille vraiment
+        centrée -- marge haute de 10% ajoutée (en plus des 80% de
+        hauteur déjà en place), vertical-align:middle sur la cellule
+        ne suffisant pas pour positionner un bloc dont la hauteur est
+        fixée dynamiquement en JS (restait collé en haut)
+
+    Résumé de cette version :
+      - Registre système : chevauchement de lignes de la grille corrigé
+        -- min-height:22px sur l'enveloppe du champ entrait en conflit
+        avec la hauteur calculée dynamiquement (80% de la cellule), la
+        faisant déborder sur la ligne suivante dès que cette valeur
+        tombait sous 22px, créant un décalage cumulatif vers le bas.
+        Retiré, overflow:hidden ajouté en filet de sécurité
+
+    Résumé de cette version :
+      - Registre système : hauteur des champs de saisie de la grille
+        fixée dynamiquement à 80% de la hauteur réelle mesurée de leur
+        cellule (ajusterHauteurChampsGrille(), appelée après chaque
+        rendu du tableau) -- pas possible en CSS pur, la hauteur d'une
+        cellule de tableau dépendant de son contenu
+
+    Résumé de cette version :
+      - Registre système : centrage vertical réel des champs du
+        tableau (input, case à cocher) via une enveloppe flex par
+        cellule -- vertical-align sur la cellule seule ne suffisait
+        pas, comportement incohérent selon le type d'élément de
+        formulaire
+
+    Résumé de cette version :
+      - Registre système : centrage vertical déplacé sur la cellule
+        (vertical-align:middle sur input n'a quasiment aucun effet
+        réel), height:100% retiré (peu fiable sur un input dans une
+        cellule) ; text-align:center retiré (régression signalée) --
+        texte à gauche par défaut, nombres à droite (input[type=number])
+
+    Résumé de cette version :
+      - Registre système : clé numérique (listes) alignée à droite
+        avec une marge, texte inchangé à gauche (dictionnaires) ;
+        champs de saisie remplissant toute la hauteur de la cellule
+        (comme déjà en largeur), centrés verticalement et
+        horizontalement
+
+    Résumé de cette version :
+      - Registre système : interlignage du tableau (volet droit)
+        resserré plus franchement (padding cellule 2px→1px, padding
+        champ 3px→1px, line-height 1.3→1.15) -- balisage entièrement
+        maison ici, pas de bibliothèque tierce à décortiquer
+
+    Résumé de cette version :
+      - Registre système : .je-object__controls masqué entièrement --
+        élément toujours inséré par json-editor à côté de chaque
+        titre (vérifié dans le vrai code source), même avec
+        disable_edit_json/disable_properties actifs -- ces options ne
+        masquent que ses boutons, pas l'élément lui-même, qui restait
+        dans le flux et contribuait de l'espace résiduel
+
+    Résumé de cette version :
+      - Registre système : vraie cause trouvée pour la régression de
+        mise en forme — .je-header et .je-object__title sont en
+        réalité le même élément (vérifié dans le vrai code source),
+        le sélecteur ".je-object__title .je-header" ne correspondait
+        donc à rien. Corrigé pour cibler le vrai span de texte, enfant
+        direct de .je-object__title. Icône et type restent dans le
+        titre (texte unique), approche confirmée plus fiable que
+        l'injection CSS pure tentée précédemment
+
+    Résumé de cette version :
+      - Registre système : 2 régressions corrigées (Roger) -- icône
+        de retour dans le titre (l'injection CSS pure via attributs
+        posés après coup s'est révélée peu fiable, icônes disparues) ;
+        gap/line-height retirés du titre de l'arborescence (désignés
+        comme cause probable d'un espacement encore trop généreux)
+
+    Résumé de cette version :
+      - Registre système : icône et type de collection réellement
+        isolés du titre (vérifié dans le vrai code source que
+        json-editor ne permet aucun élément DOM séparé via son API
+        publique -- injectés en CSS pur via ::before/::after et des
+        attributs posés après coup, le titre reste une pure donnée) ;
+        correction du texte qui restait navy au lieu de blanc sur un
+        nœud actif (le titre fixait sa propre couleur, l'emportant sur
+        l'héritage)
+
+    Résumé de cette version :
+      - Registre système : retrait en drapeau sur les titres de
+        l'arborescence (icône en marge, texte qui passe à la ligne
+        indenté sous le texte, pas sous l'icône) ; double rembourrage
+        cellule+champ dans le tableau du volet droit supprimé (source
+        identifiée de lignes deux fois trop hautes) ; hauteur de ligne
+        resserrée sur les titres de l'arbre ; "Référentiel système"
+        renommé "Référentiel central" (tautologie avec "Registre
+        système")
+
+    Résumé de cette version :
+      - Registre système : espacement resserré (les valeurs d'origine
+        de json-editor, 10px/5px par niveau, s'accumulaient trop à
+        cette profondeur — confirmé par les styles calculés relevés à
+        l'inspecteur), valeur intermédiaire appliquée ; .je-child-editor-holder
+        (8px de marge basse par enfant, jamais traitée jusqu'ici)
+        resserrée aussi
+
+    Résumé de cette version :
+      - Registre système : icônes 📁/🍃 et type de collection entre
+        crochets ("[dictionnaire]"/"[liste]") de retour dans
+        l'arborescence, boutons ▾/▸ resserrés (rembourrage/bordure
+        natifs du navigateur neutralisés, vraies valeurs relevées à
+        l'inspecteur par Roger), bouton ▾/▸ masqué sur les feuilles
+        (rien à replier sur un nœud vide)
+
+    Résumé de cette version :
+      - Registre système : ascenseur superflu dans le volet gauche
+        corrigé (hauteur naturelle des volets, max-height en filet de
+        sécurité seulement) ; interlignage des nœuds non forcé, laissé
+        aux valeurs d'origine de json-editor (seule la bordure retirée) ;
+        "Navigation" renommé "Référentiel système"
+
+    Résumé de cette version :
+      - Registre système : interlignage des nœuds restauré (resserré
+        par erreur au tour précédent), hauteur plein écran repensée en
+        pur CSS flex (plus de mesure JS), séparateur sur toute la
+        hauteur, une seule paire Copier/Coller par sélection de ligne
+        au lieu d'une paire par ligne
+
+    Résumé de cette version :
+      - Registre système : 5 retours de mise en forme (Roger) --
+        texte sous les icônes ▾/▸ corrigé (structure DOM réelle
+        vérifiée), hauteur des volets mesurée en JS plutôt que
+        devinée, titre "Navigation" ajouté au volet gauche, bouton
+        "Annuler" (retour instantané, sans requête réseau), séparateur
+        redimensionnable par glissement entre les 2 volets
+
+    Résumé de cette version :
+      - Registre système : mise en forme revue (retour de Roger) --
+        icônes ▾/▸ au lieu de "Réduire"/"Développer" répétés, cadres
+        json-editor (.je-indented-panel) remplacés par des lignes
+        d'indentation, valeurs du volet droit allégées (bordure
+        inférieure plutôt qu'encadrement complet), disposition plein
+        volume avec ascenseur indépendant par volet, bouton
+        "Enregistrer" déplacé à côté du titre et visible uniquement
+        quand une modification réelle existe
+
+    Résumé de cette version :
+      - Registre système : détection de clic sur le volet gauche
+        remplacée par data-schemapath (mécanisme interne réel de
+        @json-editor/json-editor, vérifié directement dans le code
+        source du projet par la session CC, et re-vérifié ici de la
+        même façon avant intégration) -- remplace la correspondance de
+        texte incertaine du 2026.09.19-b
+
+    Résumé de cette version :
+      - Registre système : volet gauche reconstruit avec
+        @json-editor/json-editor (navigation pure, valeurs masquées),
+        demande explicite de Roger -- remplace la liste <ul>/<li> maison
+        du 2026.09.19-a. Détection de clic par correspondance de titre :
+        POINT NON VÉRIFIABLE sans navigateur, à tester avec précaution
+
+    Résumé de cette version :
+      - Registre système (v5) — disposition à 2 volets, façon éditeur
+        de registre Windows : arborescence générée depuis le schéma
+        (gauche), formulaire ou tableau selon le type de feuille
+        (droite). Copier/Coller inter-nœuds, Dupliquer par colonne
+        (généralisé, plus de branche nommée en dur). Responsive
+        mobile/desktop (768/769px, motif repris du Lot E)
+
+    Résumé de cette version :
+      - Registre système : traduction française des boutons de
+        json-editor (Réduire/Développer/Ajouter/Supprimer...)
+
+    Résumé de cette version :
+      - Registre système : changement d'éditeur — @json-editor/
+        json-editor remplace jsoneditor. Formulaire généré à partir du
+        schéma (libellés français par champ, plus de clés brutes ni de
+        légende statique à entretenir). Aucun changement backend/API
+
+    Résumé de cette version :
+      - Correctif T4.5 : protection contre la perte de modifications
+        non enregistrées sur la page Paramètres, désormais réellement
+        interceptée au changement de page interne (beforeunload seul
+        ne couvrait que la fermeture/rechargement du navigateur)
+
+    Résumé de cette version :
+      - Registre système : couleur du menu jsoneditor corrigée
+        (var(--navy) était quasiment noir), français activé
+        (language:'fr-FR', jamais utilisé jusqu'ici)
+      - Indicateur par ticket/dossier (point rouge) sur les 3 listes
+        (Mes demandes, Tickets, Mes dossiers) quand un message n'a pas
+        été lu — corrige l'absence totale de repère signalée par Roger
+        malgré le badge de menu correct
+
+    Résumé de cette version :
+      - Registre système (v4) — section "Paramètres" (jsoneditor),
+        remplace l'ancien bloc "Péremption des mots de passe" de la
+        page Personnel. Arbre JSON extensible, sécurité + contacts
+        téléphoniques publics + villes de formulaire
+
+    Résumé de cette version :
+      - Système de listes entièrement repris : 5 jeux fixes selon le
+        point d'entrée (arabe/alpha maj/romain maj/alpha min/puce),
+        5 niveaux chacun, 2 styles de puce distincts. Remplace
+        l'ancienne logique d'alternance calculée
+
+    Résumé de cette version :
+      - Correction d'un vrai bug : la numérotation restait bloquée à
+        "1." au lieu de s'incrémenter — corrigé
+      - Système de listes réécrit : 5 styles (arabe, alpha bas/haut,
+        romain bas/haut) + puce, alternance arabe/alphabétique avec
+        historique sur 3 niveaux, styles romains/majuscules réservés
+        au choix manuel
+      - Zone de saisie s'agrandit au-delà de 3 lignes (max 10),
+        restaurée après envoi
+      - Auteur identifié par email réel plutôt que par rôle générique
+        (jointure ajoutée sur les 3 routes GET du fil)
+      - Retrait de la mention d'aide permanente sur les listes
+
+    Résumé de cette version :
+      - "Corriger" disparaît en temps réel dès expiration du délai de
+        grâce, sans attendre un rechargement (minuteur programmé)
+      - En-tête du fil redessiné : Type/Référence côte à côte, "Retour"
+        à droite avec les couleurs des boutons de messagerie
+      - Listes : continuation automatique sur Entrée, indentation avec
+        alternance puce/numéro sur Tab/Maj+Tab (3 niveaux), texte
+        d'aide permanent remplacé par une info-bulle
+
+    Résumé de cette version :
+      - Fil de messages, 3e passe de mise en page : hauteur réellement
+        bornée à l'écran (calc(100vh)), seul le fil défile, "Retour" et
+        le titre sur une seule ligne, boutons Envoyer/Note interne
+        regroupés et alignés sur la hauteur de la zone de texte
+
+    Résumé de cette version :
+      - Débordement horizontal du tableau Prospects corrigé (repli des
+        textes longs sans espace, comme les emails — règle globale,
+        toutes les pages en bénéficient)
+      - Zone d'import Prospects réorganisée : texte contextuel et
+        bouton "Télécharger un modèle" côte à côte quand la largeur
+        le permet
+
+    Résumé de cette version :
+      - Mes demandes/Mes dossiers Partenaire : largeur pleine (retrait
+        définitif de .page-etroite, pas seulement pendant la lecture)
+      - Fil de messages : ascenseur interne restauré (isolé du reste de
+        la page), boutons Premier/Dernier discrets, retour au dernier
+        message fonctionnel de nouveau
+      - Listes à puces/numérotées dans les messages, un niveau
+        d'indentation, analyseur sûr (texte toujours échappé)
+      - Fenêtre de correction de message : largeur symétrique garantie,
+        boutons alignés côte à côte, "Corriger" capitalisé
+
+    Résumé de cette version :
+      - Clavier inversé : Entrée = nouvelle ligne, Ctrl+Entrée = envoyer
+      - Mise en page revue : barre de saisie collée au bas de l'écran
+        (sticky), largeur fluide pendant la lecture d'un fil, bouton
+        aligné en haut de la zone de texte
+      - Délai de grâce de 30s après lecture avant blocage définitif de
+        la correction (horodatage réel, pas juste un booléen)
+      - Correctif : les 3 routes GET du fil ne renvoyaient pas
+        modifie/date_modification de façon cohérente
+
+    Résumé de cette version :
+      - Mise en page du fil de messages (Mes demandes/Tickets/Mes
+        dossiers) — la colonne occupe toute la hauteur disponible,
+        seule la liste de messages défile, l'en-tête et la barre de
+        saisie ("Envoyer"/"Note interne") restent toujours visibles
+
+    Résumé de cette version :
+      - Correction de message bloquée dès qu'il a été lu par son/ses
+        destinataire(s) réel(s) — exigence de Roger contre toute
+        contestation a posteriori. Non lu ou non délivré : correction
+        possible. Lu : définitivement impossible
+
+    Résumé de cette version :
+      - Correction de message (Lot E) — l'auteur peut corriger son
+        propre message après envoi, étiquette "modifié" affichée,
+        temps réel via socket comme le reste du fil
+      - Retrait des traces de diagnostic temporaires (id_ticket)
+
+    Résumé de cette version :
+      - Correctif Lot E : retour à la liste (Mes demandes/Tickets/Mes
+        dossiers) forcé à chaque rechargement, même depuis l'intérieur
+        d'un fil de lecture (afficherPage() ignorait la bascule interne
+        liste/détail)
+
+    Résumé de cette version :
+      - Correctifs Lot E, suite aux tests réels de Roger : clic sur les
+        3 items de menu concernés (Mes demandes/Tickets/Mes dossiers)
+        recharge maintenant la liste (manquait à la livraison initiale)
+
+    Résumé de cette version :
+      - Lot E — messagerie fil-par-dossier (Client/Personnel/Partenaire),
+        temps réel via Socket.io. Construit par la session déléguée
+        "Travaux sur interface Espace collaboratif intranet/extranet",
+        vérifié et intégré par myspace.html
+
+    Résumé de cette version :
+      - Reconfiguration de boîte mail (Option 3) — corrigée : vraie règle
+        de complexité (10 caractères, lettre/chiffre/spécial, au lieu de
+        8 caractères), barres de force/correspondance réutilisées,
+        repli automatique après succès, message réinitialisé entre 2
+        tentatives, ton du message de succès amélioré
+
+    Résumé de cette version :
+      - Péremption des mots de passe — Personnel, Partenaire, Client
+        (n'expire jamais = vrai par défaut pour Client, inversé) :
+        contrôle à la connexion, cases/icônes par compte, réglage de
+        durée site-wide (page Personnel)
+
+    Résumé de cette version :
+      - Option 2 — envoi d'un lien de réinitialisation de boîte mail au
+        titulaire du compte (Personnel et Partenaire), réutilise l'écran
+        "Nouveau mot de passe" existant avec libellés adaptés
+      - Même correctif Option 3 (reconfiguration directe par l'admin)
+        étendu à Partenaires, en plus de Personnel
+
+    Résumé de cette version :
+      - Reconfiguration de boîte mail Personnel en mode édition (Option 3) :
+        un administrateur peut désormais fixer explicitement un nouveau
+        mot de passe pour une boîte existante, contournant le blocage
+        409 — répare le cas où le mot de passe a été changé directement
+        dans ISPConfig sans que myspace.html le sache
 
     Résumé de cette version :
       - Scission du menu Administration en "Prospection & Suivi"
@@ -182,39 +557,9 @@
 <title>Mon Espace — Mutuelle Pro Assurances</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
-        @font-face {
-      font-display: swap;
-      font-family: 'Roboto Condensed';
-      font-style: normal;
-      font-weight: 400;
-      src: url('/fonts/roboto-condensed-v31-latin-regular.woff2') format('woff2');
-    }
-    @font-face {
-      font-display: swap;
-      font-family: 'Roboto Condensed';
-      font-style: normal;
-      font-weight: 500;
-      src: url('/fonts/roboto-condensed-v31-latin-500.woff2') format('woff2');
-    }
-    @font-face {
-      font-display: swap;
-      font-family: 'Roboto Condensed';
-      font-style: normal;
-      font-weight: 600;
-      src: url('/fonts/roboto-condensed-v31-latin-600.woff2') format('woff2');
-    }
-    @font-face {
-      font-display: swap;
-      font-family: 'Roboto Condensed';
-      font-style: normal;
-      font-weight: 700;
-      src: url('/fonts/roboto-condensed-v31-latin-700.woff2') format('woff2');
-    }
     :root { --navy:#0f172a; --purple:#7c3aed; --border:#e5e7eb; --gray:#94a3b8; }
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; background:#f8fafc; color:var(--navy); }
-    .carte-fiche-libelle { font-family: 'Roboto Condensed', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.75rem; font-weight: 700; color: #4b5563; text-transform: uppercase; }
-    .carte-fiche-valeur { font-size: 0.875rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-align: right; color: #111827; }
     header { background:var(--navy); color:white; padding:10px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; position:sticky; top:0; z-index:1000; }
     header h1 { font-size:15px; margin:0; font-weight:800; display:flex; align-items:center; gap:10px; }
     header img.logo { height:32px; width:auto; background:white; border-radius:6px; padding:2px 6px; }
@@ -282,7 +627,7 @@
     .separateur-grise { border-top:1px dashed var(--border); margin-top:20px; padding-top:16px; }
 
     table { width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
-    th, td { text-align:left; padding:10px 14px; font-size:13px; border-bottom:1px solid var(--border); }
+    th, td { text-align:left; padding:10px 14px; font-size:13px; border-bottom:1px solid var(--border); word-break:break-word; }
     th { background:#f1f5f9; font-weight:700; color:#475569; font-size:11px; text-transform:uppercase; }
     th.th-triable { cursor:pointer; user-select:none; }
     th.th-triable:hover { background:#e2e8f0; }
@@ -463,6 +808,9 @@
 <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<!-- Lot E (16/09/2026) -- messagerie fil-par-dossier, temps réel -->
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4/dist/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
 </head>
 <body>
 
@@ -959,30 +1307,42 @@
             </section>
 
             <!-- [PRÉSENTATION-CLIENT] Suivi des tickets du Client connecté -->
-            <section id="page-mes-demandes" class="page page-etroite">
+            <section id="page-mes-demandes" class="page">
                 <h2>Mes demandes</h2>
-                <div id="mes-demandes-liste"></div>
+                <!-- Lot E (16/09/2026) -- bascule liste/détail, motif repris de #messagerie-liste-vue/#messagerie-detail-vue -->
+                <div id="mes-demandes-liste-vue">
+                    <div id="mes-demandes-liste"></div>
+                </div>
+                <div id="mes-demandes-detail-vue" style="display:none; flex-direction:column; height:calc(100vh - 160px);">
+                    <div id="mes-demandes-detail-conteneur" style="flex:1; min-height:0; display:flex; flex-direction:column; background:white; border:1px solid var(--border); border-radius:12px; padding:16px; overflow:hidden;"></div>
+                </div>
             </section>
 
             <!-- [PRÉSENTATION-PERSONNEL] Gestion des tickets (tous) -->
             <section id="page-tickets" class="page">
                 <h2>Tickets</h2>
-                <div class="filtres">
-                    <select class="filtre" id="filtre-statut" onchange="chargerTicketsStaff()">
-                        <option value="">Tous les statuts</option>
-                        <option value="recu">Reçu</option>
-                        <option value="en_cours">En cours</option>
-                        <option value="resolu">Résolu</option>
-                    </select>
-                    <select class="filtre" id="filtre-type" onchange="chargerTicketsStaff()">
-                        <option value="">Tous les types</option>
-                        <option value="info">Information</option>
-                        <option value="devis">Devis</option>
-                        <option value="sinistre">Sinistre</option>
-                    </select>
-                    <input type="text" id="recherche-tickets" placeholder="Rechercher (référence, email, téléphone…)" oninput="afficherTableauTickets()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
+                <!-- Lot E (16/09/2026) -- bascule liste/détail -->
+                <div id="tickets-liste-vue">
+                    <div class="filtres">
+                        <select class="filtre" id="filtre-statut" onchange="chargerTicketsStaff()">
+                            <option value="">Tous les statuts</option>
+                            <option value="recu">Reçu</option>
+                            <option value="en_cours">En cours</option>
+                            <option value="resolu">Résolu</option>
+                        </select>
+                        <select class="filtre" id="filtre-type" onchange="chargerTicketsStaff()">
+                            <option value="">Tous les types</option>
+                            <option value="info">Information</option>
+                            <option value="devis">Devis</option>
+                            <option value="sinistre">Sinistre</option>
+                        </select>
+                        <input type="text" id="recherche-tickets" placeholder="Rechercher (référence, email, téléphone…)" oninput="afficherTableauTickets()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
+                    </div>
+                    <div id="tickets-staff-conteneur"></div>
                 </div>
-                <div id="tickets-staff-conteneur"></div>
+                <div id="tickets-detail-vue" style="display:none; flex-direction:column; height:calc(100vh - 160px);">
+                    <div id="tickets-detail-conteneur" style="flex:1; min-height:0; display:flex; flex-direction:column; background:white; border:1px solid var(--border); border-radius:12px; padding:16px; overflow:hidden;"></div>
+                </div>
             </section>
 
             <!-- [PRÉSENTATION-PERSONNEL] CRM Prospects -->
@@ -992,11 +1352,13 @@
 
                 <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:14px; margin-bottom:16px;">
                     <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 8px;">Importer une liste (CSV)</p>
-                    <p style="font-size:11px; color:var(--gray); margin:0 0 10px;">
-                        En-tête attendu : <code>NOM;PRENOM;EMAIL;TELEPHONE;BRANCHE_INTERET</code><br>
-                        Chaque ligne doit avoir un nom, et au moins un email <strong>ou</strong> un téléphone. Séparateur : point-virgule.
-                    </p>
-                    <button type="button" onclick="telechargerModeleProspectsCsv()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; margin-bottom:10px;">📄 Télécharger un modèle</button>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                        <p style="flex:1; min-width:220px; font-size:11px; color:var(--gray); margin:0;">
+                            En-tête attendu : <code>NOM;PRENOM;EMAIL;TELEPHONE;BRANCHE_INTERET</code><br>
+                            Chaque ligne doit avoir un nom, et au moins un email <strong>ou</strong> un téléphone. Séparateur : point-virgule.
+                        </p>
+                        <button type="button" onclick="telechargerModeleProspectsCsv()" style="flex-shrink:0; font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; white-space:nowrap;">📄 Télécharger un modèle</button>
+                    </div>
                     <button type="button" id="bouton-importer-prospects" class="principal" onclick="ouvrirImportGenerique('prospects', 'Importer des Prospects', chargerProspects)">Importer</button>
                 </div>
 
@@ -1006,14 +1368,21 @@
                     <button id="bouton-supprimer-prospects" onclick="actionGroupeeProspects('supprimer')" title="Supprime définitivement le(s) prospect(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
                     <input type="text" id="recherche-prospects" placeholder="Rechercher (nom, branche…)" oninput="afficherTableauProspects()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
                 </div>
-                <div id="prospects-conteneur"></div>
+                <div id="prospects-conteneur" style="font-size:12px;"></div>
+                <style>#prospects-conteneur th, #prospects-conteneur td { padding:8px 8px; }</style>
             </section>
 
             <!-- [PRÉSENTATION-PARTENAIRE] Dossiers assignés à ce partenaire -->
-            <section id="page-mes-dossiers-partenaire" class="page page-etroite">
+            <section id="page-mes-dossiers-partenaire" class="page">
                 <h2>Mes dossiers</h2>
-                <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">Vous ne voyez que les dossiers qui vous ont été assignés.</p>
-                <div id="dossiers-partenaire-conteneur"></div>
+                <!-- Lot E (16/09/2026) -- bascule liste/détail -->
+                <div id="mes-dossiers-partenaire-liste-vue">
+                    <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">Vous ne voyez que les dossiers qui vous ont été assignés.</p>
+                    <div id="dossiers-partenaire-conteneur"></div>
+                </div>
+                <div id="mes-dossiers-partenaire-detail-vue" style="display:none; flex-direction:column; height:calc(100vh - 160px);">
+                    <div id="mes-dossiers-partenaire-detail-conteneur" style="flex:1; min-height:0; display:flex; flex-direction:column; background:white; border:1px solid var(--border); border-radius:12px; padding:16px; overflow:hidden;"></div>
+                </div>
             </section>
 
             <!-- [PRÉSENTATION-COMMUNE] Messagerie — Personnel ET Partenaire, contenu conditionnel -->
@@ -1093,10 +1462,42 @@
 
                     <label style="margin-top:10px;">Mot de passe de la boîte mail <span style="font-weight:400; color:var(--gray);">(déjà créée dans ISPConfig, même adresse que l'email ci-dessus)</span></label>
                     <input type="text" id="cp-boite-mail-mdp" placeholder="Laisser vide pour ne pas modifier">
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin:10px 0 14px;">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:8px;">
+                        <input type="checkbox" id="cp-mdp-jamais-expire" style="width:auto; margin:0;">
+                        Le mot de passe n'expire jamais
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:14px;">
+                        <input type="checkbox" id="cp-mdp-changer-prochaine-connexion" style="width:auto; margin:0;">
+                        L'utilisateur devra changer le mot de passe à la prochaine connexion
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin:10px 0 14px;" id="cp-creer-boite-mail-label">
                         <input type="checkbox" id="cp-creer-boite-mail" checked style="width:auto; margin:0;">
                         Créer automatiquement la boîte mail professionnelle si elle n'existe pas encore
                     </label>
+                    <!-- Reconfiguration de boîte mail existante (14/09/2026,
+                         même motif que Personnel) -- distincte du champ
+                         "Mot de passe de la boîte mail" ci-dessus, qui ne
+                         fait qu'enregistrer un mot de passe dans notre base
+                         sans jamais le pousser vers ISPConfig. Celle-ci
+                         modifie réellement la boîte mail côté serveur. -->
+                    <div id="cp-boite-mail-edition" style="display:none; margin-bottom:14px; padding:12px; border:1px solid var(--border); border-radius:8px; background:#fafafa;">
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button type="button" onclick="basculerReconfigurationBoiteMailPartenaire()" style="font-size:12px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔧 Reconfigurer la boîte mail</button>
+                            <button type="button" onclick="envoyerLienReinitBoiteMailPartenaire()" style="font-size:12px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">✉️ Envoyer un lien de réinitialisation</button>
+                        </div>
+                        <p style="font-size:10px; color:var(--gray); margin:6px 0 0;">« Reconfigurer » : vous fixez vous-même le mot de passe. « Envoyer un lien » : le titulaire du compte le choisit lui-même, par email (valable 1 heure).</p>
+                        <p id="cp-boite-mail-msg" style="font-size:11px; margin:6px 0 0; display:none;"></p>
+                        <div id="cp-boite-mail-champs" style="display:none; margin-top:10px;">
+                            <label>Nouveau mot de passe</label>
+                            <input type="password" id="cp-boite-mail-mdp-reconfig" autocomplete="new-password" minlength="10">
+                            <div class="barre-conteneur"><div id="barre-force-cp-boite-mail" class="barre" style="background-color:#f87171;"></div></div>
+                            <label style="margin-top:8px;">Confirmer le mot de passe</label>
+                            <input type="password" id="cp-boite-mail-mdp-reconfig-confirme" autocomplete="new-password">
+                            <div class="barre-conteneur"><div id="barre-correspondance-cp-boite-mail" class="barre" style="background-color:#d1d5db;"></div></div>
+                            <p style="font-size:10px; color:var(--gray); margin:4px 0 0;">Au moins 10 caractères, avec une lettre, un chiffre et un caractère spécial.</p>
+                            <button type="button" onclick="appliquerReconfigurationBoiteMailPartenaire()" class="principal" style="margin-top:10px; width:100%;">Appliquer ce mot de passe</button>
+                        </div>
+                    </div>
 
                     <label style="margin-top:10px;">Types de partenaire (un ou plusieurs)</label>
                     <div id="cp-types-conteneur" style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:14px; max-height:220px; overflow-y:auto; font-size:12px;"></div>
@@ -1204,15 +1605,306 @@
                     </div>
                     <label style="margin-top:10px;">Rôle</label>
                     <select id="pers-role" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; font-size:14px;"></select>
+                    <!-- Péremption des mots de passe (14/09/2026) -- visibles
+                         création ET édition, contrairement au bloc boîte
+                         mail ci-dessous qui reste édition seulement. -->
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:8px;">
+                        <input type="checkbox" id="pers-mdp-jamais-expire" style="width:auto; margin:0;">
+                        Le mot de passe n'expire jamais
+                    </label>
                     <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:14px;">
+                        <input type="checkbox" id="pers-mdp-changer-prochaine-connexion" style="width:auto; margin:0;">
+                        L'utilisateur devra changer le mot de passe à la prochaine connexion
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; margin-bottom:14px;" id="pers-creer-boite-mail-label">
                         <input type="checkbox" id="pers-creer-boite-mail" checked style="width:auto; margin:0;">
                         Créer automatiquement la boîte mail professionnelle si elle n'existe pas encore
                     </label>
+                    <!-- Reconfiguration de boîte mail existante (14/09/2026) --
+                         Option 3 : root peut changer un mot de passe
+                         directement dans ISPConfig sans que notre base le
+                         sache -- ce bloc permet à un administrateur de fixer
+                         explicitement un nouveau mot de passe, en édition
+                         seulement (jamais affiché à la création, la case
+                         ci-dessus suffit dans ce cas). Masqué par défaut. -->
+                    <div id="pers-boite-mail-edition" style="display:none; margin-bottom:14px; padding:12px; border:1px solid var(--border); border-radius:8px; background:#fafafa;">
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button type="button" onclick="basculerReconfigurationBoiteMail()" id="pers-boite-mail-toggle-btn" style="font-size:12px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔧 Reconfigurer la boîte mail</button>
+                            <button type="button" onclick="envoyerLienReinitBoiteMailPersonnel()" id="pers-boite-mail-envoyer-btn" style="font-size:12px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">✉️ Envoyer un lien de réinitialisation</button>
+                        </div>
+                        <p style="font-size:10px; color:var(--gray); margin:6px 0 0;">« Reconfigurer » : vous fixez vous-même le mot de passe. « Envoyer un lien » : le titulaire du compte le choisit lui-même, par email (valable 1 heure).</p>
+                        <p id="pers-boite-mail-msg" style="font-size:11px; margin:6px 0 0; display:none;"></p>
+                        <div id="pers-boite-mail-champs" style="display:none; margin-top:10px;">
+                            <label>Nouveau mot de passe</label>
+                            <input type="password" id="pers-boite-mail-mdp" autocomplete="new-password" minlength="10">
+                            <div class="barre-conteneur"><div id="barre-force-pers-boite-mail" class="barre" style="background-color:#f87171;"></div></div>
+                            <label style="margin-top:8px;">Confirmer le mot de passe</label>
+                            <input type="password" id="pers-boite-mail-mdp-confirme" autocomplete="new-password">
+                            <div class="barre-conteneur"><div id="barre-correspondance-pers-boite-mail" class="barre" style="background-color:#d1d5db;"></div></div>
+                            <p style="font-size:10px; color:var(--gray); margin:4px 0 0;">Au moins 10 caractères, avec une lettre, un chiffre et un caractère spécial.</p>
+                            <button type="button" onclick="appliquerReconfigurationBoiteMail()" class="principal" style="margin-top:10px; width:100%;">Appliquer ce mot de passe</button>
+                        </div>
+                    </div>
                     <button type="submit" class="principal">Créer le compte</button>
                     <button type="button" onclick="annulerEditionPersonnel()" id="pers-annuler-btn" style="display:none; width:100%; margin-top:8px; background:#f1f5f9; color:#475569; border:none; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;">Annuler la modification</button>
                 </form>
                 <div id="pers-resultat" style="display:none; margin-top:16px; padding:14px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0;">
                     <p id="pers-resultat-texte" style="font-size:12px; font-weight:700; color:#047857; margin:0;"></p>
+                </div>
+            </section>
+
+            <!-- [PRÉSENTATION-PERSONNEL] Registre système (18/09/2026,
+                 révisé le même jour -- @json-editor/json-editor remplace
+                 jsoneditor : formulaire généré à partir du schéma
+                 (titres/descriptions en français), plus de légende
+                 statique séparée à entretenir -- les libellés vivent
+                 désormais dans le schéma backend, la même source que la
+                 validation Ajv.
+
+                 [MOTIF RÉUTILISABLE] (19/09/2026, demande de Roger en
+                 clôture du chantier) -- cette disposition (arborescence
+                 gauche générée depuis un schéma + volet droit qui
+                 s'adapte au type de nœud sélectionné, formulaire ou
+                 tableau) n'est pas spécifique aux Paramètres. Réutilisable
+                 pour toute future section ayant la même forme : une
+                 structure hiérarchique à naviguer, un détail à éditer.
+                 Pièces à reprendre : construireArborescence()/
+                 detecterCollectionHomogene()/estFormulaireSimple()
+                 (détection branche/feuille/collection, générique dès
+                 qu'on lui passe un schéma JSON), construireSchemaNavigation()
+                 (schéma "valeurs masquées" pour le volet gauche),
+                 data-schemapath (mécanisme de clic fiable, vérifié dans
+                 le code source de json-editor), le motif Copier/Coller
+                 par sélection de ligne. Voir aussi la fiche mémoire
+                 dédiée pour le contexte et les pièges déjà rencontrés. -->
+            <section id="page-parametres" class="page">
+                <style>
+                    /* Styles json-editor -- volet droit (formulaire simple). */
+                    #volet-droit-editeur { font-size:13px; }
+                    #volet-droit-editeur label { font-weight:600; color:var(--navy); font-size:12px; }
+                    #volet-droit-editeur input[type="text"], #volet-droit-editeur input[type="number"] {
+                        border:none; border-bottom:1px solid var(--border); border-radius:0; padding:4px 2px; font-size:13px; font-family:inherit; background:transparent;
+                    }
+                    #volet-droit-editeur input[type="text"]:focus, #volet-droit-editeur input[type="number"]:focus {
+                        border-bottom-color:var(--purple); outline:none;
+                    }
+                    #volet-droit-editeur input[type="checkbox"] { accent-color:var(--purple); width:16px; height:16px; }
+                    #volet-droit-editeur h3, #volet-droit-editeur h4 { color:var(--navy); }
+                    #volet-droit-editeur > div > h3 { border-bottom:2px solid var(--purple); padding-bottom:4px; }
+                    #volet-droit-editeur button { font-size:11px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; margin:2px 0; }
+                    #volet-droit-editeur p.je-object__description { font-size:11px; color:var(--gray); margin:2px 0 8px; }
+
+                    /* Arborescence, volet gauche -- @json-editor/json-editor
+                       pour la navigation, valeurs masquées (patch v6). */
+                    /* Le bouton ▾/▸ est inséré À L'INTÉRIEUR de
+                       .je-object__title (vérifié dans le vrai code
+                       source, editors/object.js) -- un élément span
+                       en flux inline par défaut, donc un titre qui
+                       passe à la ligne repart sous le bouton. Disposition flex
+                       pour que le texte enveloppe dans sa propre
+                       colonne (retour de Roger, 19/09/2026). gap/line-height
+                       retirés le même jour (retour de Roger : désignés
+                       comme cause probable d'un espacement encore trop
+                       généreux) -- pas remplacés par une autre valeur,
+                       laissés au calcul naturel du navigateur. */
+                    #arborescence-parametres .je-object__container > .je-object__title {
+                        display:flex; align-items:flex-start;
+                        color:var(--navy); font-weight:700; font-size:12px;
+                    }
+                    /* Correctif (19/09/2026) : .je-header et
+                       .je-object__title sont EN RÉALITÉ le même élément
+                       (2 classes posées sur le même élément span par
+                       object.js/theme.js, vérifié dans le vrai code
+                       source) -- ".je-object__title .je-header" ne
+                       correspondait donc à RIEN, ni pour l'indentation
+                       ni pour l'icône. Le vrai texte est un élément span
+                       sans classe, enfant direct de .je-object__title, aux
+                       côtés du bouton ▾/▸. */
+                    #arborescence-parametres .je-object__title > span {
+                        flex:1; min-width:0; word-break:break-word;
+                        padding-left:1.3em; text-indent:-1.3em; /* icône en marge, retrait à la ligne pour le texte */
+                    }
+                    #arborescence-parametres .je-object__title button { flex-shrink:0; }
+                    #arborescence-parametres [data-schemapath] { cursor:pointer; border-radius:4px; }
+                    #arborescence-parametres [data-schemapath]:hover { background:#f1f5f9; }
+                    #arborescence-parametres [data-schemapath].actif { background:var(--purple) !important; color:white !important; }
+                    /* .je-object__title fixe sa propre couleur (navy),
+                       ce qui l'emportait sur le blanc hérité de .actif
+                       -- corrigé en ciblant directement les éléments
+                       concernés plutôt que de compter sur l'héritage. */
+                    #arborescence-parametres [data-schemapath].actif .je-object__title,
+                    #arborescence-parametres [data-schemapath].actif .je-object__title > span { color:white !important; }
+                    #arborescence-parametres .form-control { display:none; } /* filet de sécurité -- ne devrait déjà générer aucune valeur */
+                    /* .je-object__controls (19/09/2026) -- élément
+                       toujours inséré par la bibliothèque (vérifié dans
+                       le vrai code source) à côté de .je-object__title,
+                       même quand disable_edit_json/disable_properties
+                       sont actifs : seuls ses BOUTONS deviennent
+                       invisibles, l'élément lui-même reste dans le flux,
+                       vide, avec sa propre taille de police héritée --
+                       source probable d'espace résiduel. Inutile ici
+                       (aucun de ses boutons n'est jamais activé), masqué
+                       entièrement plutôt que de chercher à le réduire. */
+                    #arborescence-parametres .je-object__controls { display:none; }
+                    #arborescence-parametres button { font-size:11px; }
+                    /* Bouton ▾/▸ resserré -- valeurs réelles relevées à
+                       l'inspecteur par Roger (19/09/2026) : le style
+                       natif du navigateur (padding-inline:6px,
+                       border-width:2px en relief) n'était neutralisé
+                       nulle part, et .json-editor-btntype-toggle ajoute
+                       10px de marge à droite par défaut. */
+                    #arborescence-parametres .json-editor-btntype-toggle {
+                        margin:0 2px 0 0; padding:0 2px; border:none; background:none; font-size:12px; line-height:1;
+                    }
+
+                    /* Cadres remplacés par des lignes de rappel
+                       d'indentation, sur les 2 volets -- ".je-indented-panel"
+                       encadre chaque niveau imbriqué par défaut dans
+                       json-editor. Les valeurs d'origine (10px/5px,
+                       vérifiées à l'inspecteur par Roger, 19/09/2026)
+                       s'accumulent à chaque niveau et finissent trop
+                       généreuses à cette profondeur -- resserré à une
+                       valeur intermédiaire, ni les 10px/5px d'origine
+                       ni le resserrement extrême d'un essai précédent.
+                       .je-child-editor-holder (8px de marge basse par
+                       enfant, jamais touchée jusqu'ici) s'ajoute au
+                       même cumul -- resserrée aussi. */
+                    #page-parametres .je-indented-panel,
+                    #page-parametres .je-indented-panel--top {
+                        border:none; border-left:2px solid var(--border); background:none;
+                        margin:4px 0 4px 6px; padding:2px 0 2px 8px;
+                    }
+                    #page-parametres .je-child-editor-holder { margin-bottom:2px; }
+
+                    /* Tableau de collection, volet droit (v5). Retour de
+                       Roger (19/09/2026, 2 passes) : la cellule ET le
+                       champ portaient chacun leur propre rembourrage,
+                       cumulés -- resserré une première fois, encore
+                       trop haut ensuite -- ici, contrairement à
+                       l'arborescence, tout le balisage est le nôtre
+                       (pas de bibliothèque tierce à décortiquer),
+                       resserré plus franchement. */
+                    .table-collection-parametres { width:100%; border-collapse:collapse; font-size:12px; }
+                    /* vertical-align:middle général, sauf pour les
+                       cellules contenant l'enveloppe gérée en JS
+                       (19/09/2026, retour de Roger : "middle" entrait
+                       en conflit avec le positionnement JS de
+                       .cellule-champ-centree, chevauchement sur la
+                       ligne du dessus). La cellule de clé (sans
+                       enveloppe) garde "middle", qui fonctionne bien
+                       pour elle. */
+                    .table-collection-parametres th, .table-collection-parametres td { border:1px solid var(--border); padding:1px 6px; text-align:left; vertical-align:middle; }
+                    .table-collection-parametres td:has(.cellule-champ-centree) { vertical-align:top; }
+                    .table-collection-parametres tr.actif { background:#faf5ff; }
+                    .table-collection-parametres tr.actif .cellule-selection-ligne { color:var(--purple); font-weight:700; }
+                    .table-collection-parametres .cellule-selection-ligne:hover { background:#e2e8f0; }
+                    /* Centrage vertical réel : vertical-align:middle sur
+                       LA CELLULE (déjà posé plus bas), pas sur l'input --
+                       cette propriété sur un input n'a quasiment aucun
+                       effet utile (elle joue sur l'alignement par
+                       rapport à la ligne de texte environnante, pas sur
+                       le centrage dans la hauteur de la cellule).
+                       text-align:center retiré (19/09/2026, régression
+                       signalée par Roger) -- texte à gauche par défaut,
+                       nombres à droite via la règle dédiée ci-dessous. */
+                    /* Bordure retirée (19/09/2026, proposition de Roger) --
+                       la cellule a déjà la sienne, plus simple sans la
+                       doubler, et ça réduit la sensation de décalage
+                       résiduel entre les deux bordures. Un focus reste
+                       visible (contour bleu natif du navigateur) pour
+                       repérer le champ actif au clavier. */
+                    /* margin:0 ajouté (19/09/2026) -- la vraie cause du
+                       "décalage permanent" trouvée : une règle générale
+                       "input, textarea { margin-bottom:14px; }" (tout en
+                       haut de ce fichier, hors de ce tableau) s'appliquait
+                       quand même, ma règle ne déclarant jamais de marge
+                       donc ne la remplaçait pas. Fixe, indépendante de
+                       tout calcul en pourcentage -- exactement ce que
+                       Roger décrivait. */
+                    .table-collection-parametres input { width:100%; box-sizing:border-box; border:none; background:transparent; margin:0; padding:1px 6px; font-size:12px; font-family:inherit; line-height:1.15; }
+                    .table-collection-parametres input[type="number"] { text-align:right; }
+                    /* Centrage vertical réel et fiable (19/09/2026) --
+                       vertical-align sur la cellule a des limites
+                       connues avec les éléments de formulaire (input,
+                       case à cocher se comportent différemment).
+                       Chaque champ est enveloppé dans ce petit
+                       conteneur flexible, qui centre son contenu
+                       correctement quel que soit son type. */
+                    /* min-height retiré (19/09/2026) -- entrait en
+                       conflit avec la hauteur calculée dynamiquement
+                       par JS (80% de la cellule) : dès que cette valeur
+                       était inférieure à 22px, l'enveloppe devenait
+                       plus haute que sa propre cellule et débordait sur
+                       la ligne suivante, créant un chevauchement qui se
+                       propageait vers le bas du tableau. */
+                    .cellule-champ-centree { display:flex; align-items:center; overflow:hidden; }
+                    .cellule-champ-centree input:not([type="checkbox"]) { flex:1; height:100%; box-sizing:border-box; }
+                    .table-collection-parametres input[type="checkbox"] { width:auto; accent-color:var(--purple); vertical-align:middle; }
+                    .bouton-mini-parametres { font-size:10px; padding:2px 6px; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer; white-space:nowrap; }
+                    .bouton-mini-parametres:disabled { opacity:0.35; cursor:not-allowed; }
+
+                    /* Plein écran, du haut au bas de la page -- 116px =
+                       60px d'en-tête (.layout, déjà dans ce fichier) +
+                       28px×2 de padding (main.contenu, déjà dans ce
+                       fichier) -- valeurs vérifiées dans le CSS réel,
+                       pas devinées. #page-parametres devient une colonne
+                       flex ; le conteneur des 2 volets prend le reste de
+                       l'espace (flex:1). Les volets eux-mêmes prennent
+                       leur hauteur NATURELLE (retour de Roger,
+                       19/09/2026 : forcer height:100% + overflow:auto
+                       créait un ascenseur même pour un contenu court,
+                       qui tient largement dans l'espace disponible) --
+                       max-height sert seulement de filet de sécurité si
+                       un futur lot rend le contenu réellement trop long.
+                       Points de rupture 768/769px déjà présents ailleurs
+                       dans ce fichier, pas un 3e introduit sans raison. */
+                    #page-parametres.visible { display:flex; flex-direction:column; height:calc(100vh - 116px); }
+                    #conteneur-2-volets-parametres { display:flex; gap:0; align-items:flex-start; flex:1; min-height:0; }
+                    #arborescence-parametres-vue, #volet-droit-parametres-vue {
+                        border:1px solid var(--border); border-radius:12px; background:white; padding:14px;
+                        box-sizing:border-box; max-height:100%; overflow-y:auto;
+                    }
+                    #redimensionneur-parametres {
+                        flex:0 0 10px; cursor:col-resize; position:relative; align-self:stretch;
+                    }
+                    #redimensionneur-parametres::after {
+                        content:''; position:absolute; left:50%; top:0; bottom:0; width:2px;
+                        transform:translateX(-50%); background:var(--border); border-radius:2px;
+                    }
+                    #redimensionneur-parametres:hover::after, #redimensionneur-parametres.actif::after { background:var(--purple); }
+                    @media (max-width: 768px) {
+                        #conteneur-2-volets-parametres { display:block; }
+                        #arborescence-parametres-vue, #volet-droit-parametres-vue { display:none; max-height:100%; }
+                        #arborescence-parametres-vue.actif, #volet-droit-parametres-vue.actif { display:block; }
+                        #redimensionneur-parametres { display:none; }
+                    }
+                    @media (min-width: 769px) {
+                        #arborescence-parametres-vue { flex:0 0 300px; }
+                        #volet-droit-parametres-vue { flex:1 1 auto; min-width:0; }
+                        #btn-retour-arborescence-mobile { display:none !important; }
+                    }
+                </style>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px; flex-shrink:0;">
+                    <h2 style="margin:0;">Paramètres</h2>
+                    <div>
+                        <button type="button" id="btn-annuler-parametres" onclick="annulerModificationsParametres()" style="display:none; width:auto; padding:8px 14px; font-size:13px; border:1px solid var(--border); border-radius:8px; background:white; color:var(--navy); cursor:pointer;">Annuler</button>
+                        <button type="button" id="btn-sauvegarder-parametres" onclick="enregistrerParametresSite()" class="principal" style="display:none; width:auto; padding:8px 16px; font-size:13px;">Enregistrer</button>
+                        <span id="indicateur-non-enregistre" style="display:none; color:#dc2626; margin-left:10px; font-size:12px;">● Modifications non enregistrées</span>
+                    </div>
+                </div>
+
+                <div id="conteneur-2-volets-parametres">
+                    <div id="arborescence-parametres-vue" class="actif">
+                        <h3 style="margin:0 0 10px; color:var(--navy); font-size:14px;">Référentiel central</h3>
+                        <div id="arborescence-parametres"></div>
+                    </div>
+                    <div id="redimensionneur-parametres" title="Glisser pour redimensionner"></div>
+                    <div id="volet-droit-parametres-vue">
+                        <button type="button" id="btn-retour-arborescence-mobile" onclick="retourArborescenceMobile()" style="display:none; font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; margin-bottom:10px;">← Retour</button>
+                        <h3 id="volet-droit-titre" style="margin:0 0 10px; color:var(--navy); font-size:14px;">Sélectionnez un élément dans l'arborescence</h3>
+                        <div id="volet-droit-contenu"></div>
+                    </div>
                 </div>
             </section>
 
@@ -1706,6 +2398,25 @@
                 erreurEl.style.display = 'block';
                 return;
             }
+            // Péremption (14/09/2026) -- identité prouvée (mot de passe +
+            // code), mais aucune session n'a été établie côté serveur tant
+            // que le mot de passe n'est pas changé. Réutilise l'écran
+            // "Nouveau mot de passe" existant, cible 'connexion'.
+            if (data.doit_changer_mdp) {
+                const typeCompte = connexion2faEnCours.typeCompte;
+                connexion2faEnCours = null;
+                document.getElementById('bloc-code-connexion').style.display = 'none';
+                document.getElementById('vue-login').style.display = 'none';
+                document.getElementById('vue-nouveau-mdp').style.display = 'block';
+                document.getElementById('vue-nouveau-mdp').dataset.token = data.token;
+                document.getElementById('vue-nouveau-mdp').dataset.type = typeCompte;
+                document.getElementById('vue-nouveau-mdp').dataset.cible = 'connexion';
+                document.querySelector('#vue-nouveau-mdp h2').textContent = 'Nouveau mot de passe requis';
+                document.querySelector('#vue-nouveau-mdp .sous-titre').textContent = data.motif === 'force'
+                    ? 'Un administrateur a demandé que vous changiez votre mot de passe avant de continuer.'
+                    : 'Votre mot de passe a expiré. Choisissez-en un nouveau pour continuer.';
+                return;
+            }
             connexion2faEnCours = null;
             if (data.derniere_connexion_precedente) {
                 derniereConnexionAAfficher = { precedente: data.derniere_connexion_precedente, ip_actuelle: data.adresse_ip_actuelle };
@@ -1838,6 +2549,772 @@
         return div.innerHTML;
     }
 
+    // =====================================================================
+    // Lot E (16/09/2026) -- messagerie fil-par-dossier, temps réel
+    // (Client/Personnel/Partenaire), cf. cahier des charges
+    // cahier_charges_frontend_lot_e_16092026.md. Backend déjà livré,
+    // rien à modifier ici côté serveur.
+    //
+    // Choix par rapport au cahier des charges d'origine, documentés à
+    // la restitution :
+    // - chargement/envoi/accusé de lecture/compteur : un seul jeu de
+    //   fonctions génériques paramétrées par rôle (CONFIG_MESSAGERIE)
+    //   plutôt que triplées -- seule construireBulleMessage(Client/
+    //   Staff/Partenaire) reste dupliquée par rôle explicitement,
+    //   comme demandé (section 4), la comparaison estMoi restant
+    //   écrite en clair dans chacune ; le rendu visuel commun (une fois
+    //   estMoi connu) est, lui, mutualisé dans construireMarquageBulle.
+    // - id du champ de saisie/indicateur de frappe/fil préfixés par
+    //   rôle (nouveau-message-{role}, etc.) -- les 3 vues détail
+    //   restent en permanence dans le DOM (juste masquées par
+    //   afficherPage), et un même utilisateur peut avoir les 3 rôles
+    //   actifs simultanément dans le même onglet (cookies distincts) ;
+    //   un id partagé aurait été ambigu, cf. section 6 du cahier des
+    //   charges qui laissait ce choix ouvert.
+    // - badge de menu tenu à jour même fil fermé : chaque liste
+    //   (chargerMesDemandes/chargerTicketsStaff/chargerMesDossiersPartenaire)
+    //   fait rejoindre la room socket de chaque ticket affiché (pas
+    //   seulement celle du ticket ouvert), le cahier des charges ne
+    //   précisant pas de room par utilisateur côté backend.
+    // =====================================================================
+
+    const CONFIG_MESSAGERIE = {
+        client: {
+            urlMessages: (id) => `/api/mes-tickets/${id}/messages`,
+            urlLu: (id) => `/api/mes-tickets/${id}/messages/lu`,
+            urlNonLus: '/api/mes-tickets/messages-non-lus',
+            prefixePage: 'mes-demandes',
+        },
+        staff: {
+            urlMessages: (id) => `/api/staff/tickets/${id}/messages`,
+            urlLu: (id) => `/api/staff/tickets/${id}/messages/lu`,
+            urlNonLus: '/api/staff/messages-clients-non-lus',
+            prefixePage: 'tickets',
+        },
+        partenaire: {
+            urlMessages: (id) => `/api/partenaire/mes-dossiers/${id}/messages`,
+            urlLu: (id) => `/api/partenaire/mes-dossiers/${id}/messages/lu`,
+            urlNonLus: '/api/partenaire/mes-dossiers/messages-non-lus',
+            prefixePage: 'mes-dossiers-partenaire',
+        },
+    };
+    const LIBELLE_AUTEUR = { client: 'Client', staff: 'Personnel', partenaire: 'Partenaire' };
+
+    let socketMessagerie = null;
+    let ticketOuvertActuellement = null; // { role, id }
+    let minuteurFrappe = null;
+    const ticketsRoomsRejointes = new Set();
+
+    // [PRÉSENTATION-COMMUNE]
+    function connecterSocketMessagerie() {
+        if (socketMessagerie) return;
+        socketMessagerie = io({ withCredentials: true });
+
+        // Une reconnexion (veille, coupure réseau) ne conserve pas les
+        // rooms côté serveur -- on les rejoint à nouveau pour ne pas
+        // perdre les mises à jour de badge en temps réel.
+        socketMessagerie.on('connect', () => {
+            ticketsRoomsRejointes.forEach((id) => socketMessagerie.emit('rejoindre-ticket', id));
+        });
+        socketMessagerie.on('message:nouveau', (message) => {
+            if (ticketOuvertActuellement && Number(message.id_ticket) === Number(ticketOuvertActuellement.id)) {
+                afficherNouveauMessage(ticketOuvertActuellement.role, message);
+                marquerMessagesLus(ticketOuvertActuellement.role, ticketOuvertActuellement.id);
+            }
+            rafraichirCompteursActifs();
+        });
+        // Correction de message (16/09/2026) -- même principe d'écho que
+        // l'envoi : l'auteur voit sa propre correction via ce même canal,
+        // pas d'affichage local dans envoyerCorrectionMessage().
+        socketMessagerie.on('message:modifie', (message) => {
+            if (ticketOuvertActuellement && Number(message.id_ticket) === Number(ticketOuvertActuellement.id)) {
+                mettreAJourMessageModifie(message);
+            }
+        });
+        socketMessagerie.on('message:lu', () => {
+            if (ticketOuvertActuellement) rafraichirAccusesLecture(ticketOuvertActuellement.role, ticketOuvertActuellement.id);
+            rafraichirCompteursActifs();
+        });
+        socketMessagerie.on('frappe:debut', () => { if (ticketOuvertActuellement) afficherIndicateurFrappe(ticketOuvertActuellement.role, true); });
+        socketMessagerie.on('frappe:fin', () => { if (ticketOuvertActuellement) afficherIndicateurFrappe(ticketOuvertActuellement.role, false); });
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function rejoindreRoomTicket(idTicket) {
+        if (!idTicket || ticketsRoomsRejointes.has(idTicket)) return;
+        connecterSocketMessagerie();
+        ticketsRoomsRejointes.add(idTicket);
+        socketMessagerie.emit('rejoindre-ticket', idTicket);
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function trouverMetaTicket(role, idTicket) {
+        const liste = role === 'client' ? mesTicketsClientCourants
+            : role === 'staff' ? ticketsStaffCourants
+            : mesDossiersPartenaireCourants;
+        const t = (liste || []).find((x) => x.id_ticket === idTicket);
+        return t ? { code_ticket: t.code_ticket, type_libelle_fr: t.type_libelle_fr } : {};
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function ouvrirFilMessages(role, idTicket) {
+        const cfg = CONFIG_MESSAGERIE[role];
+        const meta = trouverMetaTicket(role, idTicket);
+        ticketOuvertActuellement = { role, id: idTicket };
+        connecterSocketMessagerie();
+        rejoindreRoomTicket(idTicket);
+
+        document.getElementById(`${cfg.prefixePage}-liste-vue`).style.display = 'none';
+        document.getElementById(`${cfg.prefixePage}-detail-vue`).style.display = 'flex';
+        // Largeur (16/09/2026, demande de Roger) -- .page-etroite (600px)
+        // convient à la liste de cartes, mais une conversation doit
+        // profiter de toute la largeur (utile en orientation paysage sur
+        // mobile). On lève la limite le temps que le fil est ouvert,
+        // remise en place dans fermerFilMessages() ci-dessous. Seuls
+        // Client et Partenaire ont cette classe -- Tickets (Personnel)
+        // ne l'a jamais eue, rien à faire pour ce rôle.
+        const pageEl = document.getElementById(`page-${cfg.prefixePage}`);
+        if (pageEl) pageEl.style.maxWidth = 'none';
+
+        // Mise en page (16/09/2026, 3e passe, demande de Roger) --
+        // retour à une colonne réellement bornée à la hauteur de
+        // l'écran (calc(100vh)) : la 2e passe (position:sticky, sans
+        // hauteur fixée) laissait le total (en-tête + fil + saisie)
+        // dépasser l'écran même quand le menu lui-même ne débordait pas
+        // -- un ascenseur de PAGE apparaissait alors qu'aucune des deux
+        // zones n'en avait besoin. Ici, seul #fil-messages (flex:1)
+        // défile ; tout le reste (en-tête, saisie) garde sa taille
+        // naturelle et ne bouge jamais. "Retour" et le titre sur une
+        // seule ligne, pas deux.
+        const boutonNoteInterneCol = role !== 'client'
+            ? `<button onclick="envoyerMessage('${role}', true)" style="flex:1; font-size:11px; padding:6px 10px; border:1px solid var(--purple); border-radius:8px; background:#faf5ff; color:var(--purple); cursor:pointer; white-space:nowrap;">🔒 Note interne</button>`
+            : '';
+        // Client n'a qu'un seul bouton (Envoyer) -- pas de colonne à
+        // étirer, simple alignement en haut comme avant. Staff/Partenaire
+        // ont 2 boutons regroupés dans une colonne dont la hauteur (donc
+        // celle du textarea, étiré pour correspondre) reste cohérente
+        // même si "Note interne" passe à la ligne sur petit écran --
+        // c'est justement ce regroupement qui empêche ce repli de
+        // écraser la zone de texte.
+        const blocBoutons = role === 'client'
+            ? `<button onclick="envoyerMessage('${role}', false)" class="principal" style="width:auto; padding:10px 16px; align-self:flex-start;">Envoyer</button>`
+            : `<div style="display:flex; flex-direction:column; gap:4px; min-width:110px;">
+                   <button onclick="envoyerMessage('${role}', false)" class="principal" style="flex:1; width:auto; padding:6px 12px;">Envoyer</button>
+                   ${boutonNoteInterneCol}
+               </div>`;
+
+        const conteneur = document.getElementById(`${cfg.prefixePage}-detail-conteneur`);
+        conteneur.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-shrink:0;">
+                <div style="flex:1; min-width:0; display:flex; gap:14px; align-items:baseline;">
+                    <h3 style="margin:0; font-size:14px; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:1;">${echapperHtml(meta.type_libelle_fr || '')}</h3>
+                    <p style="margin:0; font-size:11px; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:1;">${echapperHtml(meta.code_ticket || '')}</p>
+                </div>
+                <button onclick="fermerFilMessages('${role}')" style="flex-shrink:0; font-size:12px; font-weight:600; padding:6px 14px; border:1px solid var(--purple); border-radius:8px; background:#faf5ff; color:var(--purple); cursor:pointer;">← Retour</button>
+            </div>
+            <div style="position:relative; flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div id="fil-messages-${role}" style="flex:1; min-height:0; overflow-y:auto; padding:8px; background:#f8fafc; border-radius:10px; margin-bottom:6px;">
+                    <p class="vide">Chargement…</p>
+                </div>
+                <div style="position:absolute; right:10px; bottom:14px; display:flex; flex-direction:column; gap:4px; opacity:0.3; transition:opacity 0.15s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.3'">
+                    <button onclick="document.getElementById('fil-messages-${role}').scrollTop = 0" title="Premier message" style="width:26px; height:26px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; font-size:11px; padding:0; box-shadow:0 1px 3px rgba(0,0,0,0.15);">▲</button>
+                    <button onclick="const f=document.getElementById('fil-messages-${role}'); f.scrollTop = f.scrollHeight" title="Dernier message" style="width:26px; height:26px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; font-size:11px; padding:0; box-shadow:0 1px 3px rgba(0,0,0,0.15);">▼</button>
+                </div>
+            </div>
+            <div id="indicateur-frappe-${role}" style="flex-shrink:0; display:none; font-size:11px; color:var(--gray); font-style:italic; margin:4px 0 0;">✏️ en train d'écrire…</div>
+            <div style="flex-shrink:0; padding-top:8px; border-top:1px solid var(--border);">
+                <div style="display:flex; gap:8px; align-items:${role === 'client' ? 'flex-start' : 'stretch'}; flex-wrap:wrap;">
+                    <textarea id="nouveau-message-${role}" placeholder="Écrire un message… (Entrée = nouvelle ligne, Ctrl+Entrée pour envoyer)" rows="2" style="flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
+                    ${blocBoutons}
+                </div>
+            </div>
+        `;
+
+        initialiserChampMessage(role);
+        chargerMessages(role, idTicket);
+        marquerMessagesLus(role, idTicket);
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function fermerFilMessages(role) {
+        const cfg = CONFIG_MESSAGERIE[role];
+        document.getElementById(`${cfg.prefixePage}-liste-vue`).style.display = 'block';
+        document.getElementById(`${cfg.prefixePage}-detail-vue`).style.display = 'none';
+        const pageEl = document.getElementById(`page-${cfg.prefixePage}`);
+        if (pageEl) pageEl.style.maxWidth = '';
+        ticketOuvertActuellement = null;
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    // Filet de sécurité côté frontend, en plus du filtrage déjà en
+    // place côté backend sur GET (section 0 du cahier des charges) :
+    // le canal socket diffuse par room de TICKET, pas par rôle -- si le
+    // socket Client venait à recevoir malgré tout un message:nouveau
+    // avec visible_client=false (ex. si le backend place tout le monde
+    // dans la même room sans filtrage par destinataire), cette note ne
+    // doit jamais s'afficher côté Client. Trouvé et corrigé lors des
+    // tests avant restitution (16/09/2026) -- à confirmer côté backend
+    // réel : les sockets Client sont-ils exclus de la diffusion des
+    // notes internes, ou seul ce filet frontend l'empêche ?
+    function messageVisiblePourRole(role, message) {
+        return !(role === 'client' && message.visible_client === false);
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    async function chargerMessages(role, idTicket) {
+        const cfg = CONFIG_MESSAGERIE[role];
+        const fil = document.getElementById(`fil-messages-${role}`);
+        try {
+            const resp = await fetch(cfg.urlMessages(idTicket), { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                fil.innerHTML = `<p class="vide">${echapperHtml((data.erreurs && data.erreurs[0]) || 'Erreur de chargement.')}</p>`;
+                return;
+            }
+            const messagesVisibles = data.messages.filter((m) => messageVisiblePourRole(role, m));
+            fil.innerHTML = messagesVisibles.length
+                ? messagesVisibles.map(CONSTRUCTEURS_BULLE[role]).join('')
+                : '<p class="vide">Aucun message pour ce dossier.</p>';
+            fil.scrollTop = fil.scrollHeight;
+        } catch (err) {
+            console.error(err);
+            fil.innerHTML = '<p class="vide">Erreur réseau.</p>';
+        }
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function afficherNouveauMessage(role, message) {
+        if (!messageVisiblePourRole(role, message)) return;
+        const fil = document.getElementById(`fil-messages-${role}`);
+        if (!fil) return;
+        if (fil.querySelector('.vide')) fil.innerHTML = '';
+        fil.insertAdjacentHTML('beforeend', CONSTRUCTEURS_BULLE[role](message));
+        fil.scrollTop = fil.scrollHeight;
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function rafraichirAccusesLecture(role, idTicket) {
+        chargerMessages(role, idTicket);
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    async function envoyerMessage(role, interne) {
+        if (!ticketOuvertActuellement) return;
+        const cfg = CONFIG_MESSAGERIE[role];
+        const champ = document.getElementById(`nouveau-message-${role}`);
+        const contenu = champ.value.trim();
+        if (!contenu) return;
+        champ.value = '';
+        champ.rows = 2;
+        clearTimeout(minuteurFrappe);
+        socketMessagerie?.emit('frappe:fin', ticketOuvertActuellement.id);
+        try {
+            const corps = interne ? { contenu, visible_client: false } : { contenu };
+            const resp = await fetch(cfg.urlMessages(ticketOuvertActuellement.id), {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify(corps),
+            });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur d\'envoi.'); champ.value = contenu; return; }
+            // Pas d'affichage local du message envoyé : le socket
+            // (message:nouveau) le fait déjà revenir via la room du
+            // ticket, y compris pour l'expéditeur.
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+            champ.value = contenu;
+        }
+    }
+
+    // [PRÉSENTATION-COMMUNE] Correction de message (16/09/2026)
+    function basculerEditionMessage(role, idMessage) {
+        const bulle = document.getElementById(`bulle-message-${idMessage}`);
+        if (!bulle) return;
+        const zone = bulle.querySelector('.zone-contenu-message');
+        if (zone.querySelector('textarea')) return; // déjà en cours d'édition
+        const contenuActuel = bulle.dataset.contenuBrut;
+        zone.dataset.contenuAffiche = zone.innerHTML;
+        // Design revu (16/09/2026, demande de Roger) -- display:block
+        // explicite (un textarea est inline-block par défaut dans
+        // certains navigateurs, source d'asymétrie de marge malgré
+        // width:100%) ; boutons alignés sur une seule ligne, à droite,
+        // écart constant entre eux plutôt qu'un empilement ou un grand
+        // vide.
+        zone.innerHTML = `
+            <textarea style="display:block; width:100%; min-width:180px; font-size:13px; font-family:inherit; padding:6px 8px; margin:0; border-radius:6px; border:1px solid rgba(255,255,255,0.5); color:#111; box-sizing:border-box;" rows="2">${echapperHtml(contenuActuel)}</textarea>
+            <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
+                <button onclick="annulerEditionMessage(${idMessage})" style="font-size:10px; padding:3px 10px; border:1px solid rgba(255,255,255,0.5); border-radius:4px; background:none; color:inherit; cursor:pointer;">Annuler</button>
+                <button onclick="envoyerCorrectionMessage('${role}', ${idMessage})" style="font-size:10px; padding:3px 10px; border:none; border-radius:4px; background:white; color:var(--purple); cursor:pointer; font-weight:700;">Enregistrer</button>
+            </div>
+        `;
+        const champEdition = zone.querySelector('textarea');
+        champEdition.focus();
+        // Même comportement clavier que la zone de saisie principale
+        // (16/09/2026) -- listes, Entrée = nouvelle ligne, Ctrl+Entrée =
+        // raccourci pour Enregistrer plutôt qu'Envoyer ici.
+        champEdition.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                envoyerCorrectionMessage(role, idMessage);
+                return;
+            }
+            if (event.key === 'Enter') { gererEntreeListe(champEdition, event); return; }
+            if (event.key === 'Tab') { gererTabListe(champEdition, event, !event.shiftKey); return; }
+        });
+    }
+
+    function annulerEditionMessage(idMessage) {
+        const bulle = document.getElementById(`bulle-message-${idMessage}`);
+        if (!bulle) return;
+        const zone = bulle.querySelector('.zone-contenu-message');
+        zone.innerHTML = zone.dataset.contenuAffiche;
+    }
+
+    async function envoyerCorrectionMessage(role, idMessage) {
+        if (!ticketOuvertActuellement) return;
+        const bulle = document.getElementById(`bulle-message-${idMessage}`);
+        const textarea = bulle.querySelector('.zone-contenu-message textarea');
+        const contenu = textarea.value.trim();
+        if (!contenu) return;
+        const cfg = CONFIG_MESSAGERIE[role];
+        try {
+            const resp = await fetch(`${cfg.urlMessages(ticketOuvertActuellement.id)}/${idMessage}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ contenu }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur de correction.'); return; }
+            // Pas d'affichage local : le socket (message:modifie) le fait
+            // revenir, même principe que l'envoi initial.
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+        }
+    }
+
+    // Met à jour une bulle existante suite à une correction reçue par
+    // socket -- reconstruit son contenu textuel et son étiquette
+    // "modifié", sans reconstruire toute la bulle (préserve la position
+    // de défilement et l'état des autres messages du fil).
+    function mettreAJourMessageModifie(message) {
+        const bulle = document.getElementById(`bulle-message-${message.id_message}`);
+        if (!bulle) return;
+        bulle.dataset.contenuBrut = message.contenu;
+        const zone = bulle.querySelector('.zone-contenu-message');
+        zone.innerHTML = rendreContenuMessage(message.contenu);
+        if (!bulle.querySelector('.etiquette-modifie')) {
+            const zoneDate = bulle.querySelector('.zone-contenu-message').nextElementSibling;
+            if (zoneDate) zoneDate.insertAdjacentHTML('beforeend', ' · <span class="etiquette-modifie" style="font-style:italic;">modifié</span>');
+        }
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    async function marquerMessagesLus(role, idTicket) {
+        const cfg = CONFIG_MESSAGERIE[role];
+        try { await fetch(cfg.urlLu(idTicket), { method: 'PATCH', credentials: 'include' }); }
+        catch (err) { console.error(err); }
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    async function mettreAJourCompteurMessages(role) {
+        const cfg = CONFIG_MESSAGERIE[role];
+        try {
+            const resp = await fetch(cfg.urlNonLus, { credentials: 'include' });
+            const data = await resp.json();
+            if (data.succes) mettreAJourBadgeMenu(data.total, cfg.prefixePage);
+        } catch (err) { console.error(err); }
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function rafraichirCompteursActifs() {
+        if (sessionClient) mettreAJourCompteurMessages('client');
+        if (sessionStaff) mettreAJourCompteurMessages('staff');
+        if (sessionPartenaire) mettreAJourCompteurMessages('partenaire');
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function mettreAJourBadgeMenu(total, dataPage) {
+        const bouton = document.querySelector(`[data-page="${dataPage}"]`);
+        const badge = bouton?.querySelector('.badge-notif');
+        if (!badge) return;
+        badge.textContent = total > 0 ? total : '';
+        badge.style.display = total > 0 ? 'inline-block' : 'none';
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    // Attaché à chaque ouverture de fil (le champ est régénéré en JS à
+    // chaque fois, cf. ouvrirFilMessages -- pas de HTML statique
+    // préexistant, comme demandé section 2 du cahier des charges).
+    // Listes en cours de saisie (16/09/2026, révisé après retour de
+    // Roger — bug corrigé : la numérotation restait bloquée à "1." au
+    // lieu de s'incrémenter). Système à 5 styles numériques (arabe,
+    // alpha bas/haut, romain bas/haut) + puce, conversion entière <->
+    // représentation propre à chaque style, pour incrémenter
+    // correctement quel que soit le style en cours -- y compris un
+    // style choisi manuellement par l'utilisateur (règle 5 de Roger),
+    // jamais seulement "1." réécrit tel quel.
+    function romainVersEntier(romain) {
+        const valeurs = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+        const s = romain.toUpperCase();
+        let total = 0;
+        for (let i = 0; i < s.length; i++) {
+            const v = valeurs[s[i]], suivant = valeurs[s[i + 1]];
+            total += (suivant && v < suivant) ? -v : v;
+        }
+        return total;
+    }
+    function entierVersRomain(n) {
+        const table = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+        let reste = n, resultat = '';
+        for (const [val, sym] of table) { while (reste >= val) { resultat += sym; reste -= val; } }
+        return resultat;
+    }
+    function entierVersAlpha(n) { // 1='a', 26='z', 27='aa'…
+        let n2 = n, s = '';
+        while (n2 > 0) { n2--; s = String.fromCharCode(97 + (n2 % 26)) + s; n2 = Math.floor(n2 / 26); }
+        return s;
+    }
+    function alphaVersEntier(s) {
+        let n = 0;
+        for (const c of s.toLowerCase()) n = n * 26 + (c.charCodeAt(0) - 96);
+        return n;
+    }
+    function rendreMarqueur(style, valeur) {
+        if (style === 'puce1') return '-';
+        if (style === 'puce2') return '*';
+        if (style === 'arabe') return `${valeur}.`;
+        if (style === 'alphaBas') return `${entierVersAlpha(valeur)}.`;
+        if (style === 'alphaHaut') return `${entierVersAlpha(valeur).toUpperCase()}.`;
+        if (style === 'romainBas') return `${entierVersRomain(valeur).toLowerCase()}.`;
+        if (style === 'romainHaut') return `${entierVersRomain(valeur)}.`;
+    }
+    // Un seul caractère ambigu (i/I/v/V/x/X/l/L/c/C/d/D/m/M) est traité
+    // comme alphabétique par défaut, pas romain -- seule une séquence
+    // de 2 caractères ou plus (ii, iv, XII…) est reconnue comme
+    // romaine, sans quoi une simple puce "b." serait mal interprétée.
+    // "-" et "*" sont maintenant 2 styles de puce DISTINCTS (Puce 1 /
+    // Puce 2 dans la table des jeux ci-dessous, 16/09/2026).
+    function classifierMarqueur(texteMarqueur) {
+        if (texteMarqueur === '-') return { style: 'puce1' };
+        if (texteMarqueur === '*') return { style: 'puce2' };
+        if (/^\d+$/.test(texteMarqueur)) return { style: 'arabe', valeur: parseInt(texteMarqueur, 10) };
+        if (/^[IVXLCDM]{2,}$/.test(texteMarqueur)) return { style: 'romainHaut', valeur: romainVersEntier(texteMarqueur) };
+        if (/^[ivxlcdm]{2,}$/.test(texteMarqueur)) return { style: 'romainBas', valeur: romainVersEntier(texteMarqueur) };
+        if (/^[A-Z]$/.test(texteMarqueur)) return { style: 'alphaHaut', valeur: alphaVersEntier(texteMarqueur.toLowerCase()) };
+        if (/^[a-z]$/.test(texteMarqueur)) return { style: 'alphaBas', valeur: alphaVersEntier(texteMarqueur) };
+        return null;
+    }
+    function analyserLigneListe(ligne) {
+        const m = ligne.match(/^(\s*)([-*]|[A-Za-z]+\.|\d+\.)\s+(.*)$/);
+        if (!m) return null;
+        const brut = m[2];
+        const texteMarqueur = (brut === '-' || brut === '*') ? brut : brut.slice(0, -1);
+        const classe = classifierMarqueur(texteMarqueur);
+        if (!classe) return null;
+        return { indentation: m[1], niveau: Math.floor(m[1].length / 2), contenu: m[3], ...classe };
+    }
+
+    // Entrée sur une ligne de liste -- incrémente réellement (règle
+    // explicite de Roger : "l'incrémentation doit être automatique"),
+    // quel que soit le style en cours, y compris un style choisi
+    // manuellement par l'utilisateur. Ligne vide -> sortie de liste.
+    function gererEntreeListe(champ, event) {
+        const debut = champ.selectionStart;
+        const valeur = champ.value;
+        const debutLigne = valeur.lastIndexOf('\n', debut - 1) + 1;
+        const ligneCourante = valeur.slice(debutLigne, debut);
+        const info = analyserLigneListe(ligneCourante);
+        if (!info) return;
+        event.preventDefault();
+        if (!info.contenu.trim()) {
+            champ.value = valeur.slice(0, debutLigne) + valeur.slice(debut);
+            champ.selectionStart = champ.selectionEnd = debutLigne;
+            return;
+        }
+        const estPuce = info.style === 'puce1' || info.style === 'puce2';
+        const nouveauMarqueur = estPuce ? rendreMarqueur(info.style) : rendreMarqueur(info.style, info.valeur + 1);
+        const inserer = `\n${info.indentation}${nouveauMarqueur} `;
+        champ.value = valeur.slice(0, debut) + inserer + valeur.slice(debut);
+        champ.selectionStart = champ.selectionEnd = debut + inserer.length;
+    }
+
+    // Table des 5 "jeux" (16/09/2026, remplace entièrement l'ancienne
+    // logique d'alternance calculée -- Roger a fourni une séquence FIXE
+    // à 5 niveaux pour chacun des 5 points d'entrée possibles). Indices
+    // 0 à 4 = "Niveau 1" à "Niveau 5" dans la formulation de Roger.
+    const JEUX_LISTE = {
+        arabe:      ['arabe',     'alphaBas', 'romainBas', 'puce1', 'puce2'],
+        alphaHaut:  ['alphaHaut', 'arabe',    'puce1',     'romainBas', 'puce2'],
+        romainHaut: ['romainHaut','arabe',    'alphaBas',  'puce1', 'puce2'],
+        alphaBas:   ['alphaBas',  'arabe',    'romainBas', 'puce1', 'puce2'],
+        puce1:      ['puce1',     'arabe',    'romainBas', 'puce2', 'alphaBas'],
+    };
+    const NIVEAU_MAX_LISTE = 4; // 5 niveaux, indices 0 à 4
+
+    // Retrouve le style du tout premier niveau (0) de la liste
+    // imbriquée courante -- le "point d'entrée" qui détermine quel jeu
+    // s'applique. Si la ligne courante EST déjà le niveau 0, c'est
+    // elle-même le point d'entrée.
+    function trouverStyleEntree(valeur, debutLigneActuelle, styleLigneActuelle, niveauLigneActuelle) {
+        if (niveauLigneActuelle === 0) return styleLigneActuelle;
+        const lignesAvant = valeur.slice(0, debutLigneActuelle).split('\n');
+        lignesAvant.pop();
+        for (let i = lignesAvant.length - 1; i >= 0; i--) {
+            const info = analyserLigneListe(lignesAvant[i]);
+            if (!info) break; // bloc de liste rompu, ne devrait pas arriver en pratique
+            if (info.niveau === 0) return info.style;
+        }
+        return styleLigneActuelle; // repli, ne devrait pas arriver
+    }
+
+    function gererTabListe(champ, event, indenter) {
+        const debut = champ.selectionStart;
+        const valeur = champ.value;
+        const debutLigne = valeur.lastIndexOf('\n', debut - 1) + 1;
+        let finLigne = valeur.indexOf('\n', debut);
+        if (finLigne === -1) finLigne = valeur.length;
+        const ligneCourante = valeur.slice(debutLigne, finLigne);
+        const info = analyserLigneListe(ligneCourante);
+        event.preventDefault(); // toujours -- Tab ne doit jamais faire sortir du champ
+        if (!info) return;
+        const nouveauNiveau = indenter ? Math.min(info.niveau + 1, NIVEAU_MAX_LISTE) : Math.max(info.niveau - 1, 0);
+        if (nouveauNiveau === info.niveau) return;
+
+        const styleEntree = trouverStyleEntree(valeur, debutLigne, info.style, info.niveau);
+        const jeu = JEUX_LISTE[styleEntree] || JEUX_LISTE.arabe; // repli si point d'entrée hors des 5 prévus (ex. puce2 ou romainBas en tout premier)
+        const nouveauStyle = jeu[nouveauNiveau];
+        const estPuce = nouveauStyle === 'puce1' || nouveauStyle === 'puce2';
+        const nouveauMarqueur = estPuce ? rendreMarqueur(nouveauStyle) : rendreMarqueur(nouveauStyle, 1);
+        const nouvelleLigne = `${'  '.repeat(nouveauNiveau)}${nouveauMarqueur} ${info.contenu}`;
+        const decalage = nouvelleLigne.length - ligneCourante.length;
+        champ.value = valeur.slice(0, debutLigne) + nouvelleLigne + valeur.slice(finLigne);
+        champ.selectionStart = champ.selectionEnd = Math.max(debutLigne, debut + decalage);
+    }
+
+    function initialiserChampMessage(role) {
+        const champ = document.getElementById(`nouveau-message-${role}`);
+        if (!champ) return;
+        champ.addEventListener('input', () => {
+            if (!ticketOuvertActuellement || !socketMessagerie) return;
+            socketMessagerie.emit('frappe:debut', ticketOuvertActuellement.id);
+            clearTimeout(minuteurFrappe);
+            minuteurFrappe = setTimeout(() => socketMessagerie.emit('frappe:fin', ticketOuvertActuellement.id), 2000);
+        });
+        // Agrandissement automatique (16/09/2026, demande de Roger) --
+        // 2 lignes par défaut, grandit au-delà de 3, plafonné à 10.
+        // Restauré à sa hauteur d'origine une fois le message envoyé
+        // (voir envoyerMessage()).
+        champ.addEventListener('input', () => {
+            const nombreLignes = champ.value.split('\n').length;
+            champ.rows = Math.min(Math.max(nombreLignes, 2), 10);
+        });
+        champ.addEventListener('keydown', (event) => {
+            // Convention inversée le 16/09/2026 (demande de Roger) : Entrée
+            // seule insère une ligne (comportement natif du textarea, rien
+            // à faire) ; Ctrl+Entrée envoie -- Cmd+Entrée aussi accepté
+            // pour Mac (event.metaKey).
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                envoyerMessage(role, false);
+                return;
+            }
+            if (event.key === 'Enter') {
+                gererEntreeListe(champ, event);
+                return;
+            }
+            if (event.key === 'Tab') {
+                gererTabListe(champ, event, !event.shiftKey);
+                return;
+            }
+        });
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    function afficherIndicateurFrappe(role, actif) {
+        const el = document.getElementById(`indicateur-frappe-${role}`);
+        if (el) el.style.display = actif ? 'block' : 'none';
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    // Rendu visuel partagé -- reçoit estMoi déjà déterminé par
+    // l'appelant, jamais calculé ici (voir les 3 fonctions par rôle
+    // juste en dessous, qui restent volontairement dupliquées : cahier
+    // des charges section 4, "doit être dupliquée par rôle, pas
+    // partagée telle quelle").
+    // Même règle que lib/blocageCorrectionMessage.js côté serveur (16/09/2026)
+    // -- ne montre le bouton "corriger" que si le serveur l'accepterait
+    // réellement, pour ne pas laisser l'utilisateur cliquer pour se faire
+    // recaler. Le serveur reste la seule autorité réelle (contrôle
+    // dupliqué là-bas), ceci n'est qu'un confort d'affichage.
+    // Même règle que lib/blocageCorrectionMessage.js côté serveur —
+    // délai de grâce de 30 secondes après lecture (16/09/2026, 2e
+    // demande de Roger).
+    const DELAI_GRACE_CORRECTION_MS = 30 * 1000;
+    function lectureExpiree(dateLecture) {
+        if (!dateLecture) return false;
+        return (Date.now() - new Date(dateLecture).getTime()) > DELAI_GRACE_CORRECTION_MS;
+    }
+    function messageBloqueCorrectionApresLecture(m) {
+        if (m.type_auteur === 'client') return lectureExpiree(m.date_lecture_staff) || lectureExpiree(m.date_lecture_partenaire);
+        if (m.type_auteur === 'staff') return m.visible_client ? (lectureExpiree(m.date_lecture_client) || lectureExpiree(m.date_lecture_partenaire)) : lectureExpiree(m.date_lecture_partenaire);
+        if (m.type_auteur === 'partenaire') return m.visible_client ? (lectureExpiree(m.date_lecture_client) || lectureExpiree(m.date_lecture_staff)) : lectureExpiree(m.date_lecture_staff);
+        return false;
+    }
+
+    // Listes à puces/numérotées, avec un niveau d'indentation (16/09/2026,
+    // demande de Roger) -- ANALYSE UNIQUEMENT LA STRUCTURE (marqueur de
+    // liste + indentation en tête de ligne) ; tout le texte réel passe
+    // systématiquement par echapperHtml(), jamais de HTML brut inséré --
+    // sûr même si l'analyseur se trompe sur la structure (au pire, un
+    // rendu visuel imparfait, jamais une faille d'injection).
+    // Syntaxe reconnue : "- item" ou "* item" (puce), "1. item" (numéroté),
+    // 2 espaces ou plus en tête de ligne = un niveau d'indentation.
+    function rendreContenuMessage(texteBrut) {
+        const lignes = texteBrut.split('\n');
+        let html = '';
+        const pile = []; // {type:'ul'|'ol', niveau:0|1}, extérieur -> intérieur
+
+        function fermerJusquauNiveau(niveauMin) {
+            while (pile.length && pile[pile.length - 1].niveau >= niveauMin) {
+                html += `</li></${pile.pop().type}>`;
+            }
+        }
+
+        lignes.forEach((ligne, i) => {
+            const m = ligne.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+            if (m) {
+                const niveauCible = m[1].length >= 2 ? 1 : 0;
+                const type = /^\d/.test(m[2]) ? 'ol' : 'ul';
+                const sommet = pile[pile.length - 1];
+                if (!sommet) {
+                    html += `<${type} style="margin:4px 0; padding-left:20px;"><li>`;
+                    pile.push({ type, niveau: 0 });
+                } else if (niveauCible > sommet.niveau) {
+                    html += `<${type} style="margin:4px 0; padding-left:20px;"><li>`;
+                    pile.push({ type, niveau: niveauCible });
+                } else if (niveauCible === sommet.niveau && sommet.type === type) {
+                    html += `</li><li>`;
+                } else {
+                    fermerJusquauNiveau(niveauCible);
+                    const nouveauSommet = pile[pile.length - 1];
+                    if (nouveauSommet && nouveauSommet.niveau === niveauCible && nouveauSommet.type === type) {
+                        html += `</li><li>`;
+                    } else {
+                        if (nouveauSommet && nouveauSommet.niveau === niveauCible) html += `</li></${pile.pop().type}>`;
+                        html += `<${type} style="margin:4px 0; padding-left:20px;"><li>`;
+                        pile.push({ type, niveau: niveauCible });
+                    }
+                }
+                html += echapperHtml(m[3]);
+            } else {
+                fermerJusquauNiveau(0);
+                html += echapperHtml(ligne);
+                if (i < lignes.length - 1) html += '<br>';
+            }
+        });
+        fermerJusquauNiveau(0);
+        return html;
+    }
+
+    // Calcule la prochaine expiration réelle (parmi les destinataires
+    // déjà lecteurs) et programme la disparition du bouton pile à ce
+    // moment-là -- sans ça, le bouton resterait visible jusqu'au
+    // prochain événement (nouveau message, réouverture), sollicitant le
+    // serveur pour rien si l'utilisateur clique entre-temps.
+    function programmerMasquageCorrection(m) {
+        const datesLecture = [];
+        if (m.type_auteur === 'client') {
+            if (m.date_lecture_staff) datesLecture.push(m.date_lecture_staff);
+            if (m.date_lecture_partenaire) datesLecture.push(m.date_lecture_partenaire);
+        } else if (m.type_auteur === 'staff') {
+            if (m.visible_client && m.date_lecture_client) datesLecture.push(m.date_lecture_client);
+            if (m.date_lecture_partenaire) datesLecture.push(m.date_lecture_partenaire);
+        } else if (m.type_auteur === 'partenaire') {
+            if (m.visible_client && m.date_lecture_client) datesLecture.push(m.date_lecture_client);
+            if (m.date_lecture_staff) datesLecture.push(m.date_lecture_staff);
+        }
+        if (!datesLecture.length) return; // jamais lu -- rien à programmer, le bouton reste tant que non lu
+        const prochaineExpiration = Math.min(...datesLecture.map((d) => new Date(d).getTime() + DELAI_GRACE_CORRECTION_MS));
+        const delai = prochaineExpiration - Date.now();
+        if (delai <= 0) return; // ne devrait pas arriver (le bouton n'aurait pas dû être affiché), sécurité silencieuse
+        setTimeout(() => {
+            const bloc = document.getElementById(`bloc-corriger-${m.id_message}`);
+            if (bloc) bloc.remove();
+        }, delai);
+    }
+
+    function construireMarquageBulle(m, estMoi, labelAuteur) {
+        const dateStr = new Date(m.date_creation).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+        const etiquetteNoteInterne = m.visible_client === false ? '🔒 Note interne · ' : '';
+        // Identification par email réel (16/09/2026, demande de Roger --
+        // "Client"/"Personnel" est trop générique, l'email est ce qui
+        // sert réellement à la connexion). Repli sur l'étiquette de rôle
+        // générique uniquement si l'email n'a pas pu être retrouvé
+        // (compte supprimé entre-temps, par exemple).
+        const identifiant = m.email_auteur || labelAuteur;
+        const etiquetteAuteur = !estMoi && identifiant ? `<div style="font-size:10px; font-weight:700; opacity:0.7; margin-bottom:2px;">${echapperHtml(identifiant)}</div>` : '';
+        // Correction de message (16/09/2026) -- bouton visible uniquement
+        // sur ses propres messages (estMoi). m.type_auteur sert de rôle
+        // pour router la requête -- si estMoi est vrai, m.type_auteur est
+        // nécessairement le rôle courant, pas besoin de le faire transiter
+        // séparément dans la signature de cette fonction.
+        const etiquetteModifie = m.modifie ? ' · <span style="font-style:italic;">modifié</span>' : '';
+        // Disparition en temps réel du bouton "Corriger" (16/09/2026,
+        // demande explicite de Roger : un lien visible mais qui échouerait
+        // au clic sollicite le serveur pour rien, mauvaise ergonomie).
+        // Enveloppé dans un span identifiable pour pouvoir le retirer
+        // proprement (séparateur " · " compris) quand le délai de grâce
+        // expire, sans attendre un rechargement.
+        const boutonCorriger = (estMoi && !messageBloqueCorrectionApresLecture(m))
+            ? ` <span id="bloc-corriger-${m.id_message}"> · <button onclick="basculerEditionMessage('${m.type_auteur}', ${m.id_message})" style="border:none; background:none; cursor:pointer; padding:0; color:inherit; text-decoration:underline; font-size:10px; opacity:0.85;">Corriger</button></span>`
+            : '';
+        if (estMoi && boutonCorriger) programmerMasquageCorrection(m);
+        return `<div id="bulle-message-${m.id_message}" data-contenu-brut="${echapperHtml(m.contenu)}" style="display:flex; justify-content:${estMoi ? 'flex-end' : 'flex-start'}; margin-bottom:8px;">
+            <div style="max-width:70%; background:${estMoi ? 'var(--purple)' : '#f1f5f9'}; color:${estMoi ? 'white' : 'var(--navy)'}; border-radius:12px; padding:8px 12px; font-size:13px;">
+                ${etiquetteAuteur}
+                <div class="zone-contenu-message" style="word-break:break-word;">${rendreContenuMessage(m.contenu)}</div>
+                <div style="font-size:10px; opacity:0.7; margin-top:4px;">${etiquetteNoteInterne}${dateStr}${etiquetteModifie}${boutonCorriger}${estMoi ? construireAccuseLecture(m) : ''}</div>
+            </div>
+        </div>`;
+    }
+
+    // [PRÉSENTATION-COMMUNE]
+    // Un message "de moi" affiche l'accusé de lecture des autres camps
+    // du dossier (jusqu'à 3 parties possibles -- Client/Personnel/
+    // Partenaire -- contrairement au modèle à 2 camps du cahier des
+    // charges d'origine).
+    function construireAccuseLecture(m) {
+        const lus = [];
+        if (m.lu_par_client && m.type_auteur !== 'client') lus.push('Client');
+        if (m.lu_par_staff && m.type_auteur !== 'staff') lus.push('Personnel');
+        if (m.lu_par_partenaire && m.type_auteur !== 'partenaire') lus.push('Partenaire');
+        return lus.length ? ` · Lu (${lus.join(', ')})` : '';
+    }
+
+    // [PRÉSENTATION-CLIENT]
+    function construireBulleMessageClient(m) {
+        const estMoi = m.type_auteur === 'client';
+        return construireMarquageBulle(m, estMoi, LIBELLE_AUTEUR[m.type_auteur]);
+    }
+
+    // [PRÉSENTATION-PERSONNEL]
+    function construireBulleMessageStaff(m) {
+        const estMoi = m.type_auteur === 'staff';
+        return construireMarquageBulle(m, estMoi, LIBELLE_AUTEUR[m.type_auteur]);
+    }
+
+    // [PRÉSENTATION-PARTENAIRE]
+    function construireBulleMessagePartenaire(m) {
+        const estMoi = m.type_auteur === 'partenaire';
+        return construireMarquageBulle(m, estMoi, LIBELLE_AUTEUR[m.type_auteur]);
+    }
+
+    const CONSTRUCTEURS_BULLE = {
+        client: construireBulleMessageClient,
+        staff: construireBulleMessageStaff,
+        partenaire: construireBulleMessagePartenaire,
+    };
+
     // [DONNÉES/ÉTAT]
     function afficherAppli() {
         document.getElementById('vue-chargement').style.display = 'none';
@@ -1864,14 +3341,15 @@
         document.getElementById('securite-staff-bloc').style.display = sessionStaff ? 'block' : 'none';
         document.getElementById('communications-client-bloc').style.display = sessionClient ? 'block' : 'none';
 
-        if (sessionClient) { chargerMonProfil(); chargerMesDemandes(); }
+        if (sessionClient) { chargerMonProfil(); chargerMesDemandes(); mettreAJourCompteurMessages('client'); }
         if (sessionStaff) {
             chargerMonProfilStaff();
             chargerAgents();
             chargerTicketsStaff();
+            mettreAJourCompteurMessages('staff');
             if (sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') { chargerTypesPartenaireFormulaire(); chargerListePartenaires(); chargerContactsEnCours([]); chargerProspects(); }
         }
-        if (sessionPartenaire) { chargerMesDossiersPartenaire(); }
+        if (sessionPartenaire) { chargerMesDossiersPartenaire(); mettreAJourCompteurMessages('partenaire'); }
 
         // Lot C (04/09/2026) : le Tableau de bord devient l'écran d'accueil
         // unique, quel que soit le rôle actif -- remplace le repli par
@@ -1894,11 +3372,11 @@
 
         if (sessionClient) {
             html += '<div class="menu-groupe-titre">Espace Client</div>';
-            html += `<button class="menu-item" data-page="mes-demandes" onclick="afficherPage('mes-demandes')">Mes demandes</button>`;
+            html += `<button class="menu-item" data-page="mes-demandes" onclick="afficherPage('mes-demandes'); chargerMesDemandes();">Mes demandes<span class="badge-notif" style="display:none; background:#dc2626; color:white; border-radius:999px; font-size:10px; padding:1px 6px; margin-left:4px;"></span></button>`;
         }
         if (sessionStaff) {
             html += '<div class="menu-groupe-titre">Espace Personnel</div>';
-            html += `<button class="menu-item" data-page="tickets" onclick="afficherPage('tickets')">Tickets</button>`;
+            html += `<button class="menu-item" data-page="tickets" onclick="afficherPage('tickets'); chargerTicketsStaff();">Tickets<span class="badge-notif" style="display:none; background:#dc2626; color:white; border-radius:999px; font-size:10px; padding:1px 6px; margin-left:4px;"></span></button>`;
             html += `<button class="menu-item" data-page="messagerie" onclick="afficherPage('messagerie'); chargerMessagerie('staff');">Messagerie</button>`;
             html += `<button class="menu-item" data-page="taches" onclick="afficherPage('taches'); chargerTaches();">Tâches</button>`;
             // Scindé le 12/09/2026 (analyse de fond demandée par Roger) --
@@ -1925,12 +3403,13 @@
                 html += '<div class="menu-groupe-titre">Administration</div>';
                 html += `<button class="menu-item" data-page="clients" onclick="afficherPage('clients'); chargerListeClients();">Clients</button>`;
                 html += `<button class="menu-item" data-page="personnel" onclick="afficherPage('personnel'); chargerListePersonnel();">Personnel</button>`;
+                html += `<button class="menu-item" data-page="parametres" onclick="afficherPage('parametres'); chargerParametresSite();">Paramètres</button>`;
                 html += `<button class="menu-item" data-page="journal-no-reply" onclick="afficherPage('journal-no-reply'); chargerJournalNoReply();">Journal no-reply</button>`;
             }
         }
         if (sessionPartenaire) {
             html += '<div class="menu-groupe-titre">Espace Partenaire</div>';
-            html += `<button class="menu-item" data-page="mes-dossiers-partenaire" onclick="afficherPage('mes-dossiers-partenaire')">Mes dossiers</button>`;
+            html += `<button class="menu-item" data-page="mes-dossiers-partenaire" onclick="afficherPage('mes-dossiers-partenaire'); chargerMesDossiersPartenaire();">Mes dossiers<span class="badge-notif" style="display:none; background:#dc2626; color:white; border-radius:999px; font-size:10px; padding:1px 6px; margin-left:4px;"></span></button>`;
             html += `<button class="menu-item" data-page="messagerie" onclick="afficherPage('messagerie'); chargerMessagerie('partenaire');">Messagerie</button>`;
         }
 
@@ -1990,6 +3469,25 @@
 
     // [DONNÉES/ÉTAT]
     function afficherPage(nomPage) {
+        // Protection contre la perte de modifications (18/09/2026,
+        // correctif suite au test T4.5) -- beforeunload ne couvre que la
+        // fermeture/rechargement réel du navigateur, jamais une bascule
+        // de page interne à l'application (simple manipulation du DOM,
+        // pas une navigation). Il faut intercepter ici, au moment précis
+        // où on quitterait la page Paramètres.
+        const pageActuelleVisible = document.querySelector('.page.visible');
+        const onQuitteParametres = pageActuelleVisible && pageActuelleVisible.id === 'page-parametres' && nomPage !== 'parametres';
+        if (onQuitteParametres && typeof modificationsParametresNonEnregistrees !== 'undefined' && modificationsParametresNonEnregistrees) {
+            if (!confirm('Des modifications de Paramètres ne sont pas enregistrées. Les abandonner et changer de page ?')) {
+                return;
+            }
+            modificationsParametresNonEnregistrees = false;
+            document.getElementById('indicateur-non-enregistre').style.display = 'none';
+            const btnSauvegarder = document.getElementById('btn-sauvegarder-parametres');
+            if (btnSauvegarder) btnSauvegarder.style.display = 'none';
+            const btnAnnuler = document.getElementById('btn-annuler-parametres');
+            if (btnAnnuler) btnAnnuler.style.display = 'none';
+        }
         document.querySelectorAll('.page').forEach((p) => p.classList.remove('visible'));
         document.querySelectorAll('.menu-item').forEach((b) => b.classList.remove('actif'));
         const page = document.getElementById('page-' + nomPage);
@@ -2373,6 +3871,17 @@
     });
 
     // [DONNÉES/ÉTAT]
+    // Même règle que motDePasseRobuste() côté serveur (lib/reinitialisationMdp.js,
+    // lib/reinitialisationBoiteMail.js) -- les 4 critères sont TOUS requis
+    // ici, contrairement à barreMdp() qui ne fait qu'un score visuel.
+    function motDePasseEstRobuste(mdp) {
+        if (typeof mdp !== 'string' || mdp.length < 10) return false;
+        if (!/[a-zA-Z]/.test(mdp)) return false;
+        if (!/[0-9]/.test(mdp)) return false;
+        if (!/[^a-zA-Z0-9]/.test(mdp)) return false;
+        return true;
+    }
+
     function barreMdp(idInput, idBarre) {
         const val = document.getElementById(idInput).value;
         const barre = document.getElementById(idBarre);
@@ -2403,6 +3912,13 @@
     document.getElementById('mdp-client-confirm').addEventListener('input', () => barreCorrespondance('mdp-client-nouveau', 'mdp-client-confirm', 'barre-correspondance-client'));
     document.getElementById('mdp-staff-nouveau').addEventListener('input', () => { barreMdp('mdp-staff-nouveau', 'barre-force-staff'); barreCorrespondance('mdp-staff-nouveau', 'mdp-staff-confirm', 'barre-correspondance-staff'); });
     document.getElementById('mdp-staff-confirm').addEventListener('input', () => barreCorrespondance('mdp-staff-nouveau', 'mdp-staff-confirm', 'barre-correspondance-staff'));
+
+    // Péremption/boîte mail (14/09/2026) -- mêmes barres réutilisées pour
+    // les champs de reconfiguration de boîte mail (Personnel, Partenaire).
+    document.getElementById('pers-boite-mail-mdp').addEventListener('input', () => { barreMdp('pers-boite-mail-mdp', 'barre-force-pers-boite-mail'); barreCorrespondance('pers-boite-mail-mdp', 'pers-boite-mail-mdp-confirme', 'barre-correspondance-pers-boite-mail'); });
+    document.getElementById('pers-boite-mail-mdp-confirme').addEventListener('input', () => barreCorrespondance('pers-boite-mail-mdp', 'pers-boite-mail-mdp-confirme', 'barre-correspondance-pers-boite-mail'));
+    document.getElementById('cp-boite-mail-mdp-reconfig').addEventListener('input', () => { barreMdp('cp-boite-mail-mdp-reconfig', 'barre-force-cp-boite-mail'); barreCorrespondance('cp-boite-mail-mdp-reconfig', 'cp-boite-mail-mdp-reconfig-confirme', 'barre-correspondance-cp-boite-mail'); });
+    document.getElementById('cp-boite-mail-mdp-reconfig-confirme').addEventListener('input', () => barreCorrespondance('cp-boite-mail-mdp-reconfig', 'cp-boite-mail-mdp-reconfig-confirme', 'barre-correspondance-cp-boite-mail'));
 
     document.getElementById('form-changer-mdp-client').addEventListener('submit', async function (event) {
         event.preventDefault();
@@ -2471,23 +3987,43 @@
         } catch (err) { console.error(err); }
     }
 
+    // Lot E (16/09/2026) -- mémorise la dernière liste chargée par rôle,
+    // pour retrouver le libellé/référence d'un ticket au clic sans
+    // second aller-retour serveur (cf. trouverMetaTicket()).
+    let mesTicketsClientCourants = [];
+    let mesDossiersPartenaireCourants = [];
+
     // [PRÉSENTATION-CLIENT]
     async function chargerMesDemandes() {
+        // Correctif (16/09/2026) -- cliquer sur "Mes demandes" depuis
+        // l'intérieur d'un fil de lecture laissait l'ancienne vue détail
+        // affichée : afficherPage() change de section mais ne connaît pas
+        // la bascule interne liste/détail de ce module. Remise à "liste"
+        // systématique à chaque rechargement.
+        document.getElementById('mes-demandes-liste-vue').style.display = 'block';
+        document.getElementById('mes-demandes-detail-vue').style.display = 'none';
+        document.getElementById('page-mes-demandes').style.maxWidth = '';
+        ticketOuvertActuellement = null;
         const conteneur = document.getElementById('mes-demandes-liste');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
         try {
             const resp = await fetch('/api/mes-tickets', { credentials: 'include' });
             const data = await resp.json();
-            if (!data.succes || !data.tickets.length) { conteneur.innerHTML = '<p class="vide">Vous n\'avez encore aucune demande.</p>'; return; }
+            if (!data.succes || !data.tickets.length) { conteneur.innerHTML = '<p class="vide">Vous n\'avez encore aucune demande.</p>'; mesTicketsClientCourants = []; return; }
+            mesTicketsClientCourants = data.tickets;
             conteneur.innerHTML = data.tickets.map((t) => `
-                <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; background:white;">
+                <div onclick="ouvrirFilMessages('client', ${t.id_ticket})" style="border:1px solid ${t.a_message_non_lu ? 'var(--purple)' : 'var(--border)'}; border-radius:12px; padding:12px; margin-bottom:10px; background:white; cursor:pointer;">
                     <div style="display:flex; justify-content:space-between;">
-                        <strong style="font-size:13px;">${t.type_libelle_fr}</strong>
+                        <strong style="font-size:13px;">${t.a_message_non_lu ? '🔴 ' : ''}${t.type_libelle_fr}</strong>
                         <span class="badge badge-${t.code_statut_ticket}">${t.statut_libelle_fr}</span>
                     </div>
                     <p style="font-size:11px; color:var(--gray); margin:4px 0 0;">${t.code_ticket} — ${new Date(t.date_creation).toLocaleDateString('fr-FR')}</p>
                 </div>
             `).join('');
+            // Lot E -- rejoint la room socket de chaque ticket visible pour
+            // que le badge du menu se mette à jour en temps réel même
+            // sans avoir ouvert le fil (section 10 du cahier des charges).
+            data.tickets.forEach((t) => rejoindreRoomTicket(t.id_ticket));
         } catch (err) { console.error(err); }
     }
 
@@ -2759,6 +4295,9 @@
 
     // [PRÉSENTATION-PERSONNEL]
     async function chargerTicketsStaff() {
+        document.getElementById('tickets-liste-vue').style.display = 'block';
+        document.getElementById('tickets-detail-vue').style.display = 'none';
+        ticketOuvertActuellement = null;
         const conteneur = document.getElementById('tickets-staff-conteneur');
         const statut = document.getElementById('filtre-statut').value;
         const type = document.getElementById('filtre-type').value;
@@ -2818,7 +4357,7 @@
         const optionsStatut = [{ code: 'recu', libelle: 'Reçu' }, { code: 'en_cours', libelle: 'En cours' }, { code: 'resolu', libelle: 'Résolu' }];
         const fleche = (colonne) => triColonneTickets === colonne ? `<span class="fleche-tri">${triDescendantTickets ? '▼' : '▲'}</span>` : '';
 
-        let html = `<table><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr>
+        let html = `<table><colgroup><col><col><col><col><col><col><col><col></colgroup><thead><tr>
             <th class="th-triable" onclick="trierColonneTickets('code_ticket')">Référence${fleche('code_ticket')}</th>
             <th class="th-triable" onclick="trierColonneTickets('type_libelle_fr')">Type${fleche('type_libelle_fr')}</th>
             <th>Statut</th>
@@ -2826,6 +4365,7 @@
             <th class="th-triable" onclick="trierColonneTickets('telephone_contact')">Téléphone${fleche('telephone_contact')}</th>
             <th>Assigné à</th>
             <th class="th-triable" onclick="trierColonneTickets('date_creation')">Créé le${fleche('date_creation')}</th>
+            <th></th>
         </tr></thead><tbody>`;
 
         let dernierGroupe = null;
@@ -2833,7 +4373,7 @@
             if (triColonneTickets === 'date_creation') {
                 const groupe = libelleGroupeDateTicket(t.date_creation);
                 if (groupe !== dernierGroupe) {
-                    html += `<tr class="ligne-groupe"><td colspan="7">${groupe}</td></tr>`;
+                    html += `<tr class="ligne-groupe"><td colspan="8">${groupe}</td></tr>`;
                     dernierGroupe = groupe;
                 }
             }
@@ -2844,8 +4384,13 @@
             const celluleAssignation = peutEcrire
                 ? `<select class="action" onchange="changerAssignationTicket(${t.id_ticket}, this.value)"><option value="">Non assigné</option>${listeAgents.map(a => `<option value="${a.id_staff}" ${a.id_staff === t.id_staff_assigne ? 'selected' : ''}>${nomAffiche(a)}</option>`).join('')}</select>`
                 : (t.staff_assigne_nom || '—');
-            html += `<tr><td><strong>${t.code_ticket}</strong></td><td>${t.type_libelle_fr}</td><td>${celluleStatut}</td><td>${t.email_contact}</td><td>${t.telephone_contact}</td><td>${celluleAssignation}</td><td>${dateStr}</td></tr>`;
+            const celluleMessages = `<button class="action" onclick="ouvrirFilMessages('staff', ${t.id_ticket})" style="font-size:11px; padding:5px 10px; border:1px solid var(--purple); border-radius:6px; background:#faf5ff; color:var(--purple); cursor:pointer; white-space:nowrap; font-weight:${t.a_message_non_lu ? '700' : '400'};">${t.a_message_non_lu ? '🔴 ' : ''}💬 Messages</button>`;
+            html += `<tr><td><strong>${t.code_ticket}</strong></td><td>${t.type_libelle_fr}</td><td>${celluleStatut}</td><td>${t.email_contact}</td><td>${t.telephone_contact}</td><td>${celluleAssignation}</td><td>${dateStr}</td><td>${celluleMessages}</td></tr>`;
         });
+        // Lot E -- rejoint la room socket de chaque ticket affiché, pour
+        // que le badge du menu se mette à jour en temps réel même sans
+        // avoir ouvert un fil (section 10 du cahier des charges).
+        tickets.forEach((t) => rejoindreRoomTicket(t.id_ticket));
         html += '</tbody></table>';
         conteneur.innerHTML = html;
     }
@@ -4478,6 +6023,11 @@
         // Tri par timestamp réel, pas par texte formaté (sinon tri
         // lexicographique incorrect sur des dates JJ/MM/AAAA).
         { cle: 'date', libelle: 'Inscrit le', trier: (c) => new Date(c.date_creation).getTime() },
+        // Péremption (14/09/2026) -- pas de formulaire riche comme
+        // Personnel/Partenaire ici, 2 icônes basculables directement dans
+        // la ligne suffisent (Client = n'expire jamais par défaut, cas
+        // rarement modifié).
+        { cle: 'securite', libelle: 'Sécurité', trier: () => 0 },
     ];
 
     function genererLignesClients(page) {
@@ -4485,6 +6035,10 @@
             const nomAffiche = [c.prenom, c.nom].filter(Boolean).join(' ') || '—';
             const statutBadge = c.statut_compte === 'actif' ? '<span class="badge badge-resolu">Actif</span>' : '<span class="badge badge-perdu">Suspendu</span>';
             const dateStr = new Date(c.date_creation).toLocaleDateString('fr-FR');
+            const iconeExpire = c.mot_de_passe_n_expire_jamais ? '♾️' : '⏳';
+            const titreExpire = c.mot_de_passe_n_expire_jamais ? 'N\'expire jamais — cliquer pour activer la péremption' : 'Péremption active — cliquer pour désactiver';
+            const iconeForce = c.doit_changer_mot_de_passe ? '🔒' : '🔓';
+            const titreForce = c.doit_changer_mot_de_passe ? 'Changement forcé à la prochaine connexion — cliquer pour annuler' : 'Cliquer pour forcer un changement à la prochaine connexion';
             return `<tr>
                 <td><input type="checkbox" class="client-select" value="${c.id_utilisateur}"></td>
                 <td>${nomAffiche}</td>
@@ -4493,8 +6047,31 @@
                 <td style="font-size:11px; color:var(--gray);">H02 — Client</td>
                 <td>${statutBadge}</td>
                 <td style="font-size:11px;">${dateStr}</td>
+                <td>
+                    <button type="button" onclick="basculerPeremptionClient(${c.id_utilisateur}, 'mot_de_passe_n_expire_jamais', ${!c.mot_de_passe_n_expire_jamais})" title="${titreExpire}" style="border:none; background:none; cursor:pointer; font-size:14px;">${iconeExpire}</button>
+                    <button type="button" onclick="basculerPeremptionClient(${c.id_utilisateur}, 'doit_changer_mot_de_passe', ${!c.doit_changer_mot_de_passe})" title="${titreForce}" style="border:none; background:none; cursor:pointer; font-size:14px;">${iconeForce}</button>
+                </td>
             </tr>`;
         }).join('');
+    }
+
+    // [PRÉSENTATION-PERSONNEL] Péremption Client (14/09/2026) -- bascule
+    // directe depuis la ligne, sans passer par un formulaire.
+    async function basculerPeremptionClient(idUtilisateur, champ, nouvelleValeur) {
+        try {
+            const resp = await fetch(`/api/staff/clients/${idUtilisateur}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ [champ]: nouvelleValeur }),
+            });
+            const data = await resp.json();
+            if (!data.succes) { alert((data.erreurs && data.erreurs[0]) || 'Erreur.'); return; }
+            const client = clientsCourants.find((c) => c.id_utilisateur === idUtilisateur);
+            if (client) client[champ] = nouvelleValeur;
+            afficherTableauClients();
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+        }
     }
 
     function donneesClientsAffichables() {
@@ -4745,7 +6322,7 @@
             const styleLigne = estVerrouille ? ' style="background:#f1f5f9; color:#94a3b8;"' : '';
             const celluleAction = estVerrouille
                 ? '<span style="font-size:14px;" title="Compte réservé — non modifiable">✅</span>'
-                : `<button onclick='ouvrirEditionPersonnel(${p.id_staff}, ${JSON.stringify(p.nom)}, ${JSON.stringify(p.prenom || "")}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")}, ${JSON.stringify(p.email_validation || "")})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>`;
+                : `<button onclick='ouvrirEditionPersonnel(${p.id_staff}, ${JSON.stringify(p.nom)}, ${JSON.stringify(p.prenom || "")}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")}, ${JSON.stringify(p.email_validation || "")}, ${!!p.mot_de_passe_n_expire_jamais}, ${!!p.doit_changer_mot_de_passe})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>`;
 
             return `<tr${styleLigne}>
                 <td><input type="checkbox" class="pers-select" value="${p.id_staff}"
@@ -4797,6 +6374,536 @@
         } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
     }
 
+    // [PRÉSENTATION-PERSONNEL] Registre système (18/09/2026, révisé le
+    // même jour -- @json-editor/json-editor, formulaire généré à partir
+    // du schéma reçu de GET /parametres-site plutôt qu'un arbre de clés
+    // brutes. disable_edit_json/disable_properties masquent les 2
+    // fonctions de bas niveau de la bibliothèque qui réexposeraient des
+    // clés techniques -- contraire à l'intention (Roger, 18/09/2026).
+    // [PRÉSENTATION-PERSONNEL] Registre système (v5, 19/09/2026) --
+    // disposition à 2 volets (arborescence + détail), façon éditeur de
+    // registre Windows. Remplace le formulaire en colonne unique du v4.
+    // Backend strictement inchangé (v5, section 2).
+    let schemaGlobalParametres = null;
+    let valeursGlobalesParametres = null;
+    let arborescenceGlobaleParametres = null;
+    let dateMajParametresChargee = null;
+    let modificationsParametresNonEnregistrees = false;
+    let estSuperadminParametres = false;
+    let valeursOriginalesParametres = null; // instantané pris au chargement, pour "Annuler"
+    let cheminSelectionneCourant = null;
+    let ligneSelectionneeParametres = null; // { chemin, cle } -- pour Copier/Coller d'une seule paire de boutons
+    let instanceVoletDroitParametres = null;
+    let presseParametres = null; // { cheminOrigine, valeur, schemaElement }
+
+    function lireCheminObjet(obj, chemin) {
+        return chemin.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+    }
+    function ecrireCheminObjet(obj, chemin, valeur) {
+        const parties = chemin.split('.');
+        const derniere = parties.pop();
+        const cible = parties.reduce((o, k) => (o[k] = o[k] || {}), obj);
+        cible[derniere] = valeur;
+    }
+    function obtenirSousSchema(schema, chemin) {
+        return chemin.split('.').reduce((s, k) => s.properties[k], schema);
+    }
+
+    // Détection branche/feuille/collection -- vérifiée par exécution
+    // réelle contre le schéma (19/09/2026, échanges avec la session CC,
+    // 2 bugs trouvés et corrigés avant cette version).
+    function detecterCollectionHomogene(sousSchema) {
+        if (sousSchema.type === 'object' && sousSchema.additionalProperties && typeof sousSchema.additionalProperties === 'object') {
+            return { type: 'dictionnaire', schemaElement: sousSchema.additionalProperties };
+        }
+        if (sousSchema.type === 'object' && sousSchema.properties) {
+            const valeurs = Object.values(sousSchema.properties);
+            const memeFormeInterne = valeurs.length > 1 && valeurs.every((v) =>
+                v.type === 'object' &&
+                JSON.stringify(Object.keys(v.properties || {}).sort()) === JSON.stringify(Object.keys(valeurs[0].properties || {}).sort())
+            );
+            if (memeFormeInterne) return { type: 'dictionnaire', schemaElement: valeurs[0] };
+        }
+        if (sousSchema.type === 'array' && sousSchema.items) {
+            return { type: 'liste', schemaElement: sousSchema.items };
+        }
+        return null;
+    }
+    function estFormulaireSimple(sousSchema) {
+        if (!sousSchema.properties) return false;
+        return Object.values(sousSchema.properties).every((p) => p.type !== 'object' && p.type !== 'array');
+    }
+    function construireArborescence(schema, chemin) {
+        chemin = chemin || '';
+        return Object.entries(schema.properties || {}).map(([cle, sousSchema]) => {
+            const cheminComplet = chemin ? `${chemin}.${cle}` : cle;
+            const collection = detecterCollectionHomogene(sousSchema);
+            const estFeuille = collection !== null || estFormulaireSimple(sousSchema);
+            return {
+                titre: sousSchema.title || cle,
+                chemin: cheminComplet,
+                feuille: estFeuille,
+                typeCollection: collection ? collection.type : null,
+                schemaElement: collection ? collection.schemaElement : null,
+                enfants: estFeuille ? [] : construireArborescence(sousSchema, cheminComplet)
+            };
+        });
+    }
+    function trouverNoeudParChemin(noeuds, chemin) {
+        for (const n of noeuds) {
+            if (n.chemin === chemin) return n;
+            if (!n.feuille) { const trouve = trouverNoeudParChemin(n.enfants, chemin); if (trouve) return trouve; }
+        }
+        return null;
+    }
+    // Transforme le schéma réel en un schéma "navigation seule" : chaque
+    // feuille détectée devient un objet vide (aucune propriété, donc
+    // aucune valeur générée) -- @json-editor/json-editor rend alors
+    // uniquement les titres et ses propres boutons Réduire/Développer
+    // natifs. Patch v6 (19/09/2026, session CC) -- reprend la
+    // transformation déjà vérifiée, fonction identique.
+    function construireSchemaNavigation(sousSchema) {
+        const collection = detecterCollectionHomogene(sousSchema);
+        const estFeuille = collection !== null || estFormulaireSimple(sousSchema);
+        if (estFeuille) {
+            // Icône + type entre crochets, dans le titre (19/09/2026,
+            // retour à cette solution -- la tentative d'injection en CSS
+            // pur via des attributs posés après coup sur le DOM
+            // (::before/attr()) s'est révélée peu fiable en pratique
+            // (icônes disparues) ; celle-ci est confirmée fonctionner.
+            const suffixe = collection ? ` [${collection.type}]` : '';
+            return {
+                type: 'object', title: `🍃 ${sousSchema.title}${suffixe}`, properties: {},
+                options: { disable_collapse: true } // rien à replier/déplier sur un nœud vide
+            };
+        }
+        const proprietesNav = {};
+        Object.entries(sousSchema.properties || {}).forEach(([cle, enfant]) => {
+            proprietesNav[cle] = construireSchemaNavigation(enfant);
+        });
+        return { type: 'object', title: `📁 ${sousSchema.title}`, properties: proprietesNav };
+    }
+    function getSousSchemaParChemin(schema, chemin) {
+        if (!chemin) return schema;
+        const segments = chemin.split('.').filter(Boolean);
+        let noeud = schema;
+        for (const seg of segments) noeud = noeud.properties[seg];
+        return noeud;
+    }
+    function estUneFeuilleReelle(sousSchema) {
+        return detecterCollectionHomogene(sousSchema) !== null || estFormulaireSimple(sousSchema);
+    }
+
+    // Traduction française des boutons de @json-editor/json-editor
+    // (18/09/2026, noms de clés vérifiés dans la documentation
+    // officielle avant usage, pas devinés). Réduire/Développer
+    // remplacés par des symboles universels le 19/09/2026 (retour de
+    // Roger : le texte répété à chaque nœud encombrait le visuel).
+    JSONEditor.defaults.languages.fr = {
+        button_collapse: '▾', button_expand: '▸',
+        button_add_row_title: 'Ajouter {{0}}', button_delete_row_title: 'Supprimer {{0}}',
+        button_delete_row_title_short: 'Supprimer', button_delete_last: 'Dernier {{0}}',
+        button_delete_all: 'Tout', button_move_down_title: 'Descendre', button_move_up_title: 'Monter',
+        button_object_properties: 'Propriétés', button_copy_row_title_short: 'Copier',
+    };
+    JSONEditor.defaults.language = 'fr';
+
+    let instanceGaucheParametres = null;
+
+    async function chargerParametresSite() {
+        const resp = await fetch('/api/staff/parametres-site', { credentials: 'include' });
+        const data = await resp.json();
+        schemaGlobalParametres = data.schema;
+        valeursGlobalesParametres = data.valeurs;
+        valeursOriginalesParametres = structuredClone(data.valeurs); // instantané pour "Annuler"
+        dateMajParametresChargee = data.date_maj;
+        modificationsParametresNonEnregistrees = false;
+        cheminSelectionneCourant = null;
+        document.getElementById('indicateur-non-enregistre').style.display = 'none';
+        document.getElementById('btn-annuler-parametres').style.display = 'none';
+        presseParametres = null;
+        if (instanceVoletDroitParametres) { instanceVoletDroitParametres.destroy(); instanceVoletDroitParametres = null; }
+        if (instanceGaucheParametres) { instanceGaucheParametres.destroy(); instanceGaucheParametres = null; }
+
+        arborescenceGlobaleParametres = construireArborescence(schemaGlobalParametres);
+
+        instanceGaucheParametres = new JSONEditor(document.getElementById('arborescence-parametres'), {
+            schema: construireSchemaNavigation(schemaGlobalParametres),
+            theme: 'html',
+            disable_edit_json: true,
+            disable_properties: true,
+            disable_array_add: true,
+            disable_array_delete: true,
+        });
+        // Détection du clic -- patch v6 (19/09/2026, session CC),
+        // data-schemapath vérifié directement dans le code source réel
+        // de @json-editor/json-editor (editor.js : chaque conteneur
+        // porte son propre chemin, mécanisme interne à la bibliothèque,
+        // pas une supposition sur sa structure DOM). Remplace la
+        // correspondance de texte de la version précédente.
+        document.getElementById('arborescence-parametres').addEventListener('click', (e) => {
+            const conteneur = e.target.closest('[data-schemapath]');
+            if (!conteneur) return;
+            const chemin = conteneur.getAttribute('data-schemapath').replace(/^root\.?/, '');
+            const sousSchemaReel = getSousSchemaParChemin(schemaGlobalParametres, chemin);
+            if (sousSchemaReel && estUneFeuilleReelle(sousSchemaReel) && chemin) {
+                selectionnerFeuilleParametres(chemin);
+            }
+            // Clic sur une branche (ou la racine) : json-editor gère déjà
+            // le repli/dépli nativement, rien à faire de plus ici.
+        });
+
+        document.getElementById('volet-droit-titre').textContent = 'Sélectionnez un élément dans l\'arborescence';
+        document.getElementById('volet-droit-contenu').innerHTML = '';
+
+        // Vue mobile : revenir à l'arborescence par défaut à chaque chargement.
+        document.getElementById('arborescence-parametres-vue').classList.add('actif');
+        document.getElementById('volet-droit-parametres-vue').classList.remove('actif');
+        document.getElementById('btn-retour-arborescence-mobile').style.display = 'none';
+
+        const session = await fetch('/api/staff/session', { credentials: 'include' }).then((r) => r.json());
+        estSuperadminParametres = session.code_role === 'superadmin';
+        document.getElementById('btn-sauvegarder-parametres').style.display = 'none'; // réapparaît seulement s'il y a quelque chose à enregistrer
+    }
+
+
+    // Avertissement natif au changement de vue/fermeture -- motif déjà
+    // établi côté tableau de bord personnalisable.
+    window.addEventListener('beforeunload', (e) => {
+        if (modificationsParametresNonEnregistrees) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    function marquerModifieParametres() {
+        modificationsParametresNonEnregistrees = true;
+        document.getElementById('indicateur-non-enregistre').style.display = 'inline';
+        if (estSuperadminParametres) {
+            document.getElementById('btn-sauvegarder-parametres').style.display = '';
+            document.getElementById('btn-annuler-parametres').style.display = '';
+        }
+    }
+
+    // Annuler -- revient à l'état chargé au départ (aucune modification
+    // enregistrée depuis), sans requête réseau : recharger depuis le
+    // serveur produirait le même résultat puisque rien n'a encore été
+    // envoyé, mais repartir de l'instantané local est immédiat.
+    function annulerModificationsParametres() {
+        if (!confirm('Abandonner toutes les modifications non enregistrées ?')) return;
+        valeursGlobalesParametres = structuredClone(valeursOriginalesParametres);
+        modificationsParametresNonEnregistrees = false;
+        document.getElementById('indicateur-non-enregistre').style.display = 'none';
+        document.getElementById('btn-sauvegarder-parametres').style.display = 'none';
+        document.getElementById('btn-annuler-parametres').style.display = 'none';
+        presseParametres = null;
+        if (cheminSelectionneCourant) {
+            selectionnerFeuilleParametres(cheminSelectionneCourant);
+        }
+    }
+
+    // -- Sélection d'une feuille dans l'arborescence --
+    function selectionnerFeuilleParametres(chemin) {
+        cheminSelectionneCourant = chemin;
+        const noeud = trouverNoeudParChemin(arborescenceGlobaleParametres, chemin);
+        const sousSchema = obtenirSousSchema(schemaGlobalParametres, chemin);
+        document.getElementById('volet-droit-titre').textContent = noeud.titre;
+
+        // Marquage visuel -- via data-schemapath (fiable, vérifié dans
+        // le code source), plus la correspondance de texte de la
+        // version précédente.
+        document.querySelectorAll('#arborescence-parametres [data-schemapath]').forEach((el) => {
+            el.classList.toggle('actif', el.getAttribute('data-schemapath') === `root.${chemin}`);
+        });
+
+        if (noeud.typeCollection) {
+            afficherFeuilleCollection(chemin, noeud.typeCollection, noeud.schemaElement);
+        } else {
+            afficherFeuilleFormulaire(chemin, sousSchema);
+        }
+
+        // Bascule mobile : afficher le volet détail (sans effet visible en desktop, les 2 volets restant côte à côte).
+        document.getElementById('arborescence-parametres-vue').classList.remove('actif');
+        document.getElementById('volet-droit-parametres-vue').classList.add('actif');
+        document.getElementById('btn-retour-arborescence-mobile').style.display = '';
+    }
+    function retourArborescenceMobile() {
+        document.getElementById('volet-droit-parametres-vue').classList.remove('actif');
+        document.getElementById('arborescence-parametres-vue').classList.add('actif');
+    }
+
+    // Séparateur redimensionnable entre les 2 volets (retour de Roger,
+    // 19/09/2026) -- élargit/rétrécit le volet gauche en glissant. Le
+    // réajustement des retours à la ligne et des hauteurs de lignes est
+    // pris en charge automatiquement par le flux normal du navigateur
+    // (texte et tableau se redisposent seuls quand la largeur change) --
+    // rien à calculer en plus pour ça. Masqué sur mobile via CSS (un
+    // seul volet visible à la fois, rien à redimensionner).
+    (function initialiserRedimensionnementParametres() {
+        const separateur = document.getElementById('redimensionneur-parametres');
+        const voletGauche = document.getElementById('arborescence-parametres-vue');
+        if (!separateur || !voletGauche) return;
+        let enCours = false;
+        separateur.addEventListener('mousedown', (e) => {
+            enCours = true;
+            separateur.classList.add('actif');
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!enCours) return;
+            const rectConteneur = document.getElementById('conteneur-2-volets-parametres').getBoundingClientRect();
+            const nouvelleLargeur = e.clientX - rectConteneur.left;
+            if (nouvelleLargeur > 180 && nouvelleLargeur < rectConteneur.width - 200) {
+                voletGauche.style.flexBasis = nouvelleLargeur + 'px';
+            }
+        });
+        window.addEventListener('mouseup', () => {
+            if (!enCours) return;
+            enCours = false;
+            separateur.classList.remove('actif');
+            document.body.style.userSelect = '';
+        });
+    })();
+
+    // -- Volet droit : formulaire simple (json-editor sur le sous-schéma) --
+    function afficherFeuilleFormulaire(chemin, sousSchema) {
+        document.getElementById('volet-droit-contenu').innerHTML = `
+            <div style="margin-bottom:8px;">
+                <button type="button" class="bouton-mini-parametres" onclick="copierFeuilleParametres('${chemin}')">Copier</button>
+                <button type="button" class="bouton-mini-parametres" id="btn-coller-parametres" onclick="collerFeuilleParametres('${chemin}')">Coller</button>
+            </div>
+            <div id="volet-droit-editeur"></div>
+        `;
+        let ignorerPremier = true;
+        instanceVoletDroitParametres = new JSONEditor(document.getElementById('volet-droit-editeur'), {
+            schema: sousSchema,
+            startval: lireCheminObjet(valeursGlobalesParametres, chemin),
+            theme: 'html', disable_edit_json: true, disable_properties: true,
+        });
+        instanceVoletDroitParametres.on('ready', () => { ignorerPremier = true; });
+        instanceVoletDroitParametres.on('change', () => {
+            if (ignorerPremier) { ignorerPremier = false; return; }
+            ecrireCheminObjet(valeursGlobalesParametres, chemin, instanceVoletDroitParametres.getValue());
+            marquerModifieParametres();
+        });
+        rafraichirBoutonCollerParametres(sousSchema);
+    }
+
+    // -- Volet droit : collection homogène (tableau générique, jamais de
+    // branche nommée en dur -- v5, section 3.3/3.4) --
+    function afficherFeuilleCollection(chemin, typeCollection, schemaElement) {
+        if (instanceVoletDroitParametres) { instanceVoletDroitParametres.destroy(); instanceVoletDroitParametres = null; }
+        // Sélection de ligne réinitialisée à chaque changement de feuille --
+        // une sélection d'une autre collection n'a pas de sens ici.
+        if (!ligneSelectionneeParametres || ligneSelectionneeParametres.chemin !== chemin) {
+            ligneSelectionneeParametres = null;
+        }
+        const donnees = lireCheminObjet(valeursGlobalesParametres, chemin);
+        const cles = typeCollection === 'dictionnaire' ? Object.keys(donnees) : donnees.map((_, i) => i);
+        const colonnes = (typeCollection === 'dictionnaire' && schemaElement.properties)
+            ? Object.entries(schemaElement.properties).map(([c, s]) => ({ cle: c, titre: s.title || c, type: s.type }))
+            : [{ cle: null, titre: schemaElement.title || 'Valeur', type: schemaElement.type }];
+        const plusieursLignes = cles.length > 1;
+
+        // Une seule paire Copier/Coller, agit sur la ligne sélectionnée --
+        // retour de Roger (19/09/2026) : une paire par ligne devenait
+        // lourde avec 10 contextes téléphoniques.
+        let html = `<div style="margin-bottom:8px; font-size:11px; color:var(--gray);">
+            Cliquez sur une ligne pour la sélectionner, puis Copier/Coller vers une autre ligne compatible.
+        </div>
+        <div style="margin-bottom:8px;">
+            <button type="button" class="bouton-mini-parametres" id="btn-copier-ligne-parametres" onclick="copierLigneSelectionneeParametres()" disabled>Copier la ligne sélectionnée</button>
+            <button type="button" class="bouton-mini-parametres" id="btn-coller-ligne-parametres" onclick="collerLigneSelectionneeParametres()" disabled>Coller</button>
+        </div>`;
+
+        html += '<div style="overflow-x:auto;"><table class="table-collection-parametres"><thead><tr>';
+        html += typeCollection === 'dictionnaire' ? '<th></th>' : '<th>#</th>';
+        colonnes.forEach((c) => {
+            html += `<th>${echapperHtml(c.titre)}`;
+            if (plusieursLignes) {
+                html += ` <button type="button" class="bouton-mini-parametres" title="Dupliquer la première valeur vers toutes les lignes" onclick="dupliquerColonneParametres('${chemin}', '${typeCollection}', ${c.cle ? `'${c.cle}'` : 'null'})">⧉</button>`;
+            }
+            html += '</th>';
+        });
+        html += '</tr></thead><tbody>';
+
+        cles.forEach((cle) => {
+            const selectionnee = ligneSelectionneeParametres && String(ligneSelectionneeParametres.cle) === String(cle);
+            html += `<tr data-cle="${echapperHtml(String(cle))}" class="${selectionnee ? 'actif' : ''}">`;
+            html += `<td class="cellule-selection-ligne" onclick="selectionnerLigneCollection('${chemin}', '${cle}')" title="Sélectionner cette ligne" style="cursor:pointer; font-size:10px; font-weight:700; background:#f1f5f9; color:var(--navy); white-space:nowrap; ${typeCollection === 'liste' ? 'text-align:right; padding-right:12px; width:1%;' : ''}">${typeCollection === 'dictionnaire' ? echapperHtml(cle) : Number(cle) + 1}</td>`;
+            colonnes.forEach((c) => {
+                const valeurChamp = c.cle ? (donnees[cle] || {})[c.cle] : donnees[cle];
+                if (c.type === 'boolean') {
+                    html += `<td><div class="cellule-champ-centree"><input type="checkbox" ${valeurChamp ? 'checked' : ''} onchange="modifierCelluleCollection('${chemin}', '${cle}', ${c.cle ? `'${c.cle}'` : 'null'}, this.checked)"></div></td>`;
+                } else {
+                    html += `<td><div class="cellule-champ-centree"><input type="${c.type === 'integer' || c.type === 'number' ? 'number' : 'text'}" value="${echapperHtml(String(valeurChamp === undefined ? '' : valeurChamp))}" onchange="modifierCelluleCollection('${chemin}', '${cle}', ${c.cle ? `'${c.cle}'` : 'null'}, this.value)"></div></td>`;
+                }
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+
+        if (typeCollection === 'liste') {
+            html += `<button type="button" class="bouton-mini-parametres" style="margin-top:8px;" onclick="ajouterElementListe('${chemin}')">+ Ajouter</button>`;
+        }
+
+        document.getElementById('volet-droit-contenu').innerHTML = html;
+        rafraichirBoutonsCopierCollerLigne(schemaElement);
+        ajusterHauteurChampsGrille();
+    }
+
+    // Hauteur des champs de saisie fixée dynamiquement à 80% de la
+    // hauteur réelle de leur cellule (19/09/2026, demande de Roger) --
+    // pas possible en CSS pur (la hauteur d'une cellule de tableau
+    // dépend de son contenu, elle n'est jamais "connue" à l'avance) :
+    // on mesure la hauteur réellement rendue de chaque cellule, puis on
+    // fixe la hauteur de son enveloppe à 80% de cette mesure -- le champ
+    // à l'intérieur suit alors (height:100% de l'enveloppe, qui a cette
+    // fois une hauteur définie en pixels, donc fiable).
+    function ajusterHauteurChampsGrille() {
+        document.querySelectorAll('#volet-droit-contenu .cellule-champ-centree').forEach((enveloppe) => {
+            const cellule = enveloppe.closest('td');
+            if (!cellule) return;
+            const hauteurCellule = cellule.clientHeight;
+            if (hauteurCellule > 0) {
+                // 80% de hauteur, 10% de marge en haut (et donc en bas)
+                // -- maintenant que la vraie cause du décalage (marge
+                // héritée de 14px sur l'input, voir plus haut) est
+                // corrigée, ce réglage devrait fonctionner correctement
+                // (19/09/2026, retour de Roger).
+                enveloppe.style.height = Math.round(hauteurCellule * 0.8) + 'px';
+                enveloppe.style.marginTop = Math.round(hauteurCellule * 0.1) + 'px';
+            }
+        });
+    }
+
+    function modifierCelluleCollection(chemin, cle, sousCle, valeur) {
+        const donnees = lireCheminObjet(valeursGlobalesParametres, chemin);
+        if (sousCle) { donnees[cle][sousCle] = valeur; } else { donnees[cle] = valeur; }
+        marquerModifieParametres();
+    }
+
+    // Dupliquer UNE COLONNE de la première ligne vers toutes les autres
+    // (v5, section 3.4) -- jamais de branche nommée, générique sur
+    // n'importe quelle collection homogène à plusieurs lignes.
+    function dupliquerColonneParametres(chemin, typeCollection, cleColonne) {
+        const donnees = lireCheminObjet(valeursGlobalesParametres, chemin);
+        const cles = typeCollection === 'dictionnaire' ? Object.keys(donnees) : donnees.map((_, i) => i);
+        if (cles.length < 2) return;
+        const premiereCle = cles[0];
+        const valeurSource = cleColonne ? donnees[premiereCle][cleColonne] : donnees[premiereCle];
+        if (!confirm(`Dupliquer cette valeur vers les ${cles.length - 1} autres lignes ?`)) return;
+        cles.forEach((c) => { if (cleColonne) { donnees[c][cleColonne] = valeurSource; } else { donnees[c] = valeurSource; } });
+        const noeud = trouverNoeudParChemin(arborescenceGlobaleParametres, chemin);
+        afficherFeuilleCollection(chemin, typeCollection, noeud.schemaElement);
+        marquerModifieParametres();
+    }
+
+    function ajouterElementListe(chemin) {
+        const donnees = lireCheminObjet(valeursGlobalesParametres, chemin);
+        donnees.push('');
+        const noeud = trouverNoeudParChemin(arborescenceGlobaleParametres, chemin);
+        afficherFeuilleCollection(chemin, 'liste', noeud.schemaElement);
+        marquerModifieParametres();
+    }
+
+    // -- Sélection de ligne (une seule paire Copier/Coller pour toute la
+    // collection, plutôt qu'une par ligne -- retour de Roger, 19/09/2026) --
+    function selectionnerLigneCollection(chemin, cle) {
+        ligneSelectionneeParametres = { chemin, cle };
+        document.querySelectorAll('.table-collection-parametres tr[data-cle]').forEach((tr) => {
+            tr.classList.toggle('actif', tr.dataset.cle === String(cle));
+        });
+        const noeud = trouverNoeudParChemin(arborescenceGlobaleParametres, chemin);
+        rafraichirBoutonsCopierCollerLigne(noeud.schemaElement);
+    }
+    function copierLigneSelectionneeParametres() {
+        if (!ligneSelectionneeParametres) return;
+        copierLigneParametres(ligneSelectionneeParametres.chemin, ligneSelectionneeParametres.cle);
+    }
+    function collerLigneSelectionneeParametres() {
+        if (!ligneSelectionneeParametres) return;
+        collerLigneParametres(ligneSelectionneeParametres.chemin, ligneSelectionneeParametres.cle);
+    }
+    function rafraichirBoutonsCopierCollerLigne(schemaElementCible) {
+        const btnCopier = document.getElementById('btn-copier-ligne-parametres');
+        const btnColler = document.getElementById('btn-coller-ligne-parametres');
+        if (btnCopier) btnCopier.disabled = !ligneSelectionneeParametres;
+        if (btnColler) {
+            btnColler.disabled = !ligneSelectionneeParametres || !presseParametres || !memeFormeParametres(presseParametres.schemaElement, schemaElementCible);
+        }
+    }
+
+    // -- Copier/Coller inter-nœuds (v5, section 3.4bis) --
+    function memeFormeParametres(schemaA, schemaB) {
+        const clesA = Object.keys((schemaA && schemaA.properties) || {}).sort();
+        const clesB = Object.keys((schemaB && schemaB.properties) || {}).sort();
+        return JSON.stringify(clesA) === JSON.stringify(clesB);
+    }
+    function copierFeuilleParametres(chemin) {
+        const valeur = lireCheminObjet(valeursGlobalesParametres, chemin);
+        const sousSchema = obtenirSousSchema(schemaGlobalParametres, chemin);
+        presseParametres = { cheminOrigine: chemin, valeur: structuredClone(valeur), schemaElement: sousSchema };
+        rafraichirBoutonCollerParametres(sousSchema);
+    }
+    function collerFeuilleParametres(chemin) {
+        if (!presseParametres) return;
+        ecrireCheminObjet(valeursGlobalesParametres, chemin, structuredClone(presseParametres.valeur));
+        afficherFeuilleFormulaire(chemin, obtenirSousSchema(schemaGlobalParametres, chemin));
+        marquerModifieParametres();
+    }
+    function rafraichirBoutonCollerParametres(sousSchemaCible) {
+        const bouton = document.getElementById('btn-coller-parametres');
+        if (!bouton) return;
+        bouton.disabled = !presseParametres || !memeFormeParametres(presseParametres.schemaElement, sousSchemaCible);
+    }
+    function copierLigneParametres(chemin, cle) {
+        const donnees = lireCheminObjet(valeursGlobalesParametres, chemin);
+        const noeud = trouverNoeudParChemin(arborescenceGlobaleParametres, chemin);
+        presseParametres = { cheminOrigine: `${chemin}.${cle}`, valeur: structuredClone(donnees[cle]), schemaElement: noeud.schemaElement };
+        rafraichirBoutonsCopierCollerLigne(noeud.schemaElement);
+    }
+    function collerLigneParametres(chemin, cle) {
+        if (!presseParametres) return;
+        const donnees = lireCheminObjet(valeursGlobalesParametres, chemin);
+        donnees[cle] = structuredClone(presseParametres.valeur);
+        const noeud = trouverNoeudParChemin(arborescenceGlobaleParametres, chemin);
+        afficherFeuilleCollection(chemin, noeud.typeCollection, noeud.schemaElement);
+        marquerModifieParametres();
+    }
+
+    function messageErreurLisibleParametres(erreursAjv) {
+        return erreursAjv.map((e) => `${e.instancePath || 'racine'} : ${e.message}`).join('\n');
+    }
+
+    async function enregistrerParametresSite() {
+        try {
+            const resp = await fetch('/api/staff/parametres-site', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ valeurs: valeursGlobalesParametres, date_maj_chargee: dateMajParametresChargee }),
+            });
+            const data = await resp.json();
+            if (data.succes) {
+                modificationsParametresNonEnregistrees = false;
+                document.getElementById('indicateur-non-enregistre').style.display = 'none';
+                document.getElementById('btn-sauvegarder-parametres').style.display = 'none';
+                document.getElementById('btn-annuler-parametres').style.display = 'none';
+                alert('Paramètres enregistrés.');
+                chargerParametresSite(); // recharge pour resynchroniser dateMajParametresChargee
+            } else if (resp.status === 409) {
+                alert(data.message);
+            } else if (data.erreurs) {
+                alert('Erreur de validation :\n' + messageErreurLisibleParametres(data.erreurs));
+            } else {
+                alert('Erreur : ' + (data.message || 'inconnue'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erreur réseau.');
+        }
+    }
+
     // [PRÉSENTATION-PERSONNEL]
     async function actionGroupeePersonnel(action) {
         const coches = Array.from(document.querySelectorAll('.pers-select:checked'));
@@ -4834,11 +6941,13 @@
     }
 
     // [PRÉSENTATION-PERSONNEL]
-    function ouvrirEditionPersonnel(id, nom, prenom, email, telephone, emailValidation) {
+    function ouvrirEditionPersonnel(id, nom, prenom, email, telephone, emailValidation, mdpJamaisExpire, doitChangerMdp) {
         document.getElementById('pers-id-edition').value = id;
         document.getElementById('pers-form-titre').textContent = `Modifier : ${prenom ? prenom + ' ' + nom : nom}`;
         document.getElementById('pers-nom').value = nom;
         document.getElementById('pers-prenom').value = prenom || '';
+        document.getElementById('pers-mdp-jamais-expire').checked = !!mdpJamaisExpire;
+        document.getElementById('pers-mdp-changer-prochaine-connexion').checked = !!doitChangerMdp;
         document.getElementById('pers-email').value = email;
         document.getElementById('pers-email').disabled = true;
         document.getElementById('pers-telephone').value = telephone;
@@ -4849,6 +6958,15 @@
         document.querySelector('#form-personnel button[type="submit"]').textContent = 'Enregistrer les modifications';
         document.getElementById('pers-annuler-btn').style.display = 'block';
         document.getElementById('pers-resultat').style.display = 'none';
+        // Bascule 14/09/2026 -- la case "créer automatiquement" n'a de sens
+        // qu'à la création (jamais lue par le serveur en édition, voir
+        // corps.creer_boite_mail dans soumettrePersonnel) ; le bloc de
+        // reconfiguration, lui, n'a de sens qu'en édition.
+        document.getElementById('pers-creer-boite-mail-label').style.display = 'none';
+        document.getElementById('pers-boite-mail-edition').style.display = 'block';
+        document.getElementById('pers-boite-mail-champs').style.display = 'none';
+        document.getElementById('pers-boite-mail-mdp').value = '';
+        document.getElementById('pers-boite-mail-mdp-confirme').value = '';
         window.scrollTo({ top: document.getElementById('form-personnel').offsetTop, behavior: 'smooth' });
     }
 
@@ -4860,7 +6978,97 @@
         document.getElementById('pers-email-validation-bloc').style.display = 'block';
         document.querySelector('#form-personnel button[type="submit"]').textContent = 'Créer le compte';
         document.getElementById('pers-annuler-btn').style.display = 'none';
+        document.getElementById('pers-creer-boite-mail-label').style.display = 'flex';
+        document.getElementById('pers-boite-mail-edition').style.display = 'none';
         document.getElementById('form-personnel').reset();
+    }
+
+    // [PRÉSENTATION-PERSONNEL] Reconfiguration boîte mail (14/09/2026, Option 3)
+    async function envoyerLienReinitBoiteMailPersonnel() {
+        const idEdition = document.getElementById('pers-id-edition').value;
+        if (!idEdition) return;
+        const msg = document.getElementById('pers-boite-mail-msg');
+        msg.style.display = 'block';
+        msg.style.color = 'var(--gray)';
+        msg.textContent = 'Envoi en cours…';
+        try {
+            const resp = await fetch(`/api/staff/personnel/${idEdition}/envoyer-reinitialisation-boite-mail`, {
+                method: 'POST', credentials: 'include',
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                msg.style.color = '#dc2626';
+                msg.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                return;
+            }
+            msg.style.color = '#16a34a';
+            msg.textContent = 'Lien envoyé à l\'adresse de validation personnelle du titulaire.';
+        } catch (err) {
+            console.error(err);
+            msg.style.color = '#dc2626';
+            msg.textContent = 'Erreur réseau.';
+        }
+    }
+
+    function basculerReconfigurationBoiteMail() {
+        const bloc = document.getElementById('pers-boite-mail-champs');
+        const ouverture = bloc.style.display === 'none';
+        bloc.style.display = ouverture ? 'block' : 'none';
+        if (ouverture) {
+            document.getElementById('pers-boite-mail-msg').style.display = 'none';
+            document.getElementById('pers-boite-mail-mdp').value = '';
+            document.getElementById('pers-boite-mail-mdp-confirme').value = '';
+            barreMdp('pers-boite-mail-mdp', 'barre-force-pers-boite-mail');
+            barreCorrespondance('pers-boite-mail-mdp', 'pers-boite-mail-mdp-confirme', 'barre-correspondance-pers-boite-mail');
+        }
+    }
+
+    async function appliquerReconfigurationBoiteMail() {
+        const idEdition = document.getElementById('pers-id-edition').value;
+        if (!idEdition) return; // ne devrait jamais arriver, bloc masqué à la création
+        const mdp = document.getElementById('pers-boite-mail-mdp').value;
+        const mdpConfirme = document.getElementById('pers-boite-mail-mdp-confirme').value;
+        const msg = document.getElementById('pers-boite-mail-msg');
+        msg.style.display = 'block';
+
+        // Même règle que partout ailleurs (motDePasseRobuste côté serveur,
+        // barreMdp côté affichage) -- 14/09/2026, jusqu'ici cette fonction
+        // se contentait d'un minimum de 8 caractères, incohérent.
+        if (!motDePasseEstRobuste(mdp)) {
+            msg.textContent = 'Le mot de passe doit contenir au moins 10 caractères, avec une lettre, un chiffre et un caractère spécial.';
+            msg.style.color = '#dc2626';
+            return;
+        }
+        if (mdp !== mdpConfirme) {
+            msg.textContent = 'Les deux mots de passe ne correspondent pas.';
+            msg.style.color = '#dc2626';
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/api/staff/personnel/${idEdition}/provisionner-boite-mail`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ nouveau_mot_de_passe: mdp }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                msg.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                msg.style.color = '#dc2626';
+                return;
+            }
+            msg.textContent = '✅ C\'est fait — le mot de passe de la boîte mail a bien été mis à jour, le titulaire peut s\'y connecter dès maintenant.';
+            msg.style.color = '#16a34a';
+            document.getElementById('pers-boite-mail-mdp').value = '';
+            document.getElementById('pers-boite-mail-mdp-confirme').value = '';
+            // Repli automatique (14/09/2026, demande de Roger) -- les 2
+            // champs + le bouton "Appliquer" se masquent après un succès,
+            // ne réapparaissent que si l'admin reclique "Reconfigurer".
+            document.getElementById('pers-boite-mail-champs').style.display = 'none';
+        } catch (err) {
+            console.error(err);
+            msg.textContent = 'Erreur réseau.';
+            msg.style.color = '#dc2626';
+        }
     }
 
     // [PRÉSENTATION-PERSONNEL]
@@ -4889,6 +7097,8 @@
             prenom: document.getElementById('pers-prenom').value.trim() || null,
             telephone: document.getElementById('pers-telephone').value.trim(),
             id_role: parseInt(document.getElementById('pers-role').value, 10),
+            mot_de_passe_n_expire_jamais: document.getElementById('pers-mdp-jamais-expire').checked,
+            doit_changer_mot_de_passe: document.getElementById('pers-mdp-changer-prochaine-connexion').checked,
         };
 
         try {
@@ -4983,7 +7193,7 @@
                 <td style="font-size:11px;">${p.types_libelles || '—'}</td>
                 <td>${statutBadge}</td>
                 <td style="text-align:center;">
-                    <button onclick='ouvrirEditionPartenaire(${p.id_partenaire}, ${JSON.stringify(p.nom)}, ${JSON.stringify(p.prenom || "")}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")}, ${idsTypesJson}, ${contactsJson}, ${JSON.stringify(p.email_notification || "")})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>
+                    <button onclick='ouvrirEditionPartenaire(${p.id_partenaire}, ${JSON.stringify(p.nom)}, ${JSON.stringify(p.prenom || "")}, ${JSON.stringify(p.email)}, ${JSON.stringify(p.telephone || "")}, ${idsTypesJson}, ${contactsJson}, ${JSON.stringify(p.email_notification || "")}, ${!!p.mot_de_passe_n_expire_jamais}, ${!!p.doit_changer_mot_de_passe})' title="Modifier" style="font-size:14px; padding:4px 8px; border:none; background:none; cursor:pointer;">✏️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -5162,11 +7372,13 @@
     }
 
     // [PRÉSENTATION-PERSONNEL]
-    function ouvrirEditionPartenaire(id, nom, prenom, email, telephone, idTypes, contacts, emailNotification) {
+    function ouvrirEditionPartenaire(id, nom, prenom, email, telephone, idTypes, contacts, emailNotification, mdpJamaisExpire, doitChangerMdp) {
         document.getElementById('cp-id-edition').value = id;
         document.getElementById('cp-form-titre').textContent = `Modifier : ${prenom ? prenom + ' ' + nom : nom}`;
         document.getElementById('cp-nom').value = nom;
         document.getElementById('cp-prenom').value = prenom || '';
+        document.getElementById('cp-mdp-jamais-expire').checked = !!mdpJamaisExpire;
+        document.getElementById('cp-mdp-changer-prochaine-connexion').checked = !!doitChangerMdp;
         document.getElementById('cp-email').value = email;
         document.getElementById('cp-email').disabled = true;
         document.getElementById('cp-telephone').value = telephone;
@@ -5180,6 +7392,11 @@
         document.querySelector('#form-creer-partenaire button[type="submit"]').textContent = 'Enregistrer les modifications';
         document.getElementById('cp-annuler-btn').style.display = 'block';
         document.getElementById('cp-resultat').style.display = 'none';
+        document.getElementById('cp-creer-boite-mail-label').style.display = 'none';
+        document.getElementById('cp-boite-mail-edition').style.display = 'block';
+        document.getElementById('cp-boite-mail-champs').style.display = 'none';
+        document.getElementById('cp-boite-mail-mdp-reconfig').value = '';
+        document.getElementById('cp-boite-mail-mdp-reconfig-confirme').value = '';
         window.scrollTo({ top: document.getElementById('form-creer-partenaire').offsetTop, behavior: 'smooth' });
     }
 
@@ -5191,9 +7408,93 @@
         document.getElementById('cp-email-verif').style.display = 'none';
         document.querySelector('#form-creer-partenaire button[type="submit"]').textContent = 'Créer le compte';
         document.getElementById('cp-annuler-btn').style.display = 'none';
+        document.getElementById('cp-creer-boite-mail-label').style.display = 'flex';
+        document.getElementById('cp-boite-mail-edition').style.display = 'none';
         document.getElementById('form-creer-partenaire').reset();
         document.querySelectorAll('.cp-type-checkbox').forEach((el) => { el.checked = false; });
         chargerContactsEnCours([]);
+    }
+
+    // [PRÉSENTATION-PERSONNEL] Reconfiguration boîte mail Partenaire (14/09/2026, Option 3)
+    async function envoyerLienReinitBoiteMailPartenaire() {
+        const idEdition = document.getElementById('cp-id-edition').value;
+        if (!idEdition) return;
+        const msg = document.getElementById('cp-boite-mail-msg');
+        msg.style.display = 'block';
+        msg.style.color = 'var(--gray)';
+        msg.textContent = 'Envoi en cours…';
+        try {
+            const resp = await fetch(`/api/staff/partenaires/${idEdition}/envoyer-reinitialisation-boite-mail`, {
+                method: 'POST', credentials: 'include',
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                msg.style.color = '#dc2626';
+                msg.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                return;
+            }
+            msg.style.color = '#16a34a';
+            msg.textContent = 'Lien envoyé à l\'adresse de notification du partenaire.';
+        } catch (err) {
+            console.error(err);
+            msg.style.color = '#dc2626';
+            msg.textContent = 'Erreur réseau.';
+        }
+    }
+
+    function basculerReconfigurationBoiteMailPartenaire() {
+        const bloc = document.getElementById('cp-boite-mail-champs');
+        const ouverture = bloc.style.display === 'none';
+        bloc.style.display = ouverture ? 'block' : 'none';
+        if (ouverture) {
+            document.getElementById('cp-boite-mail-msg').style.display = 'none';
+            document.getElementById('cp-boite-mail-mdp-reconfig').value = '';
+            document.getElementById('cp-boite-mail-mdp-reconfig-confirme').value = '';
+            barreMdp('cp-boite-mail-mdp-reconfig', 'barre-force-cp-boite-mail');
+            barreCorrespondance('cp-boite-mail-mdp-reconfig', 'cp-boite-mail-mdp-reconfig-confirme', 'barre-correspondance-cp-boite-mail');
+        }
+    }
+
+    async function appliquerReconfigurationBoiteMailPartenaire() {
+        const idEdition = document.getElementById('cp-id-edition').value;
+        if (!idEdition) return;
+        const mdp = document.getElementById('cp-boite-mail-mdp-reconfig').value;
+        const mdpConfirme = document.getElementById('cp-boite-mail-mdp-reconfig-confirme').value;
+        const msg = document.getElementById('cp-boite-mail-msg');
+        msg.style.display = 'block';
+
+        if (!motDePasseEstRobuste(mdp)) {
+            msg.textContent = 'Le mot de passe doit contenir au moins 10 caractères, avec une lettre, un chiffre et un caractère spécial.';
+            msg.style.color = '#dc2626';
+            return;
+        }
+        if (mdp !== mdpConfirme) {
+            msg.textContent = 'Les deux mots de passe ne correspondent pas.';
+            msg.style.color = '#dc2626';
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/api/staff/partenaires/${idEdition}/provisionner-boite-mail`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ nouveau_mot_de_passe: mdp }),
+            });
+            const data = await resp.json();
+            if (!data.succes) {
+                msg.textContent = (data.erreurs && data.erreurs[0]) || 'Erreur.';
+                msg.style.color = '#dc2626';
+                return;
+            }
+            msg.textContent = '✅ C\'est fait — le mot de passe de la boîte mail a bien été mis à jour, le titulaire peut s\'y connecter dès maintenant.';
+            msg.style.color = '#16a34a';
+            document.getElementById('cp-boite-mail-mdp-reconfig').value = '';
+            document.getElementById('cp-boite-mail-mdp-reconfig-confirme').value = '';
+            document.getElementById('cp-boite-mail-champs').style.display = 'none';
+        } catch (err) {
+            console.error(err);
+            msg.textContent = 'Erreur réseau.';
+            msg.style.color = '#dc2626';
+        }
     }
 
     // [PRÉSENTATION-PERSONNEL]
@@ -5486,6 +7787,8 @@
             email_notification: document.getElementById('cp-email-notification').value.trim(),
             id_types_partenaire: typesCoches,
             contacts,
+            mot_de_passe_n_expire_jamais: document.getElementById('cp-mdp-jamais-expire').checked,
+            doit_changer_mot_de_passe: document.getElementById('cp-mdp-changer-prochaine-connexion').checked,
         };
 
         try {
@@ -5546,21 +7849,27 @@
 
     // [PRÉSENTATION-PARTENAIRE]
     async function chargerMesDossiersPartenaire() {
+        document.getElementById('mes-dossiers-partenaire-liste-vue').style.display = 'block';
+        document.getElementById('mes-dossiers-partenaire-detail-vue').style.display = 'none';
+        document.getElementById('page-mes-dossiers-partenaire').style.maxWidth = '';
+        ticketOuvertActuellement = null;
         const conteneur = document.getElementById('dossiers-partenaire-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
         try {
             const resp = await fetch('/api/partenaire/mes-dossiers', { credentials: 'include' });
             const data = await resp.json();
-            if (!data.succes || !data.dossiers.length) { conteneur.innerHTML = '<p class="vide">Aucun dossier ne vous est actuellement assigné.</p>'; return; }
+            if (!data.succes || !data.dossiers.length) { conteneur.innerHTML = '<p class="vide">Aucun dossier ne vous est actuellement assigné.</p>'; mesDossiersPartenaireCourants = []; return; }
+            mesDossiersPartenaireCourants = data.dossiers;
             conteneur.innerHTML = data.dossiers.map((d) => `
-                <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; background:white;">
+                <div onclick="ouvrirFilMessages('partenaire', ${d.id_ticket})" style="border:1px solid ${d.a_message_non_lu ? 'var(--purple)' : 'var(--border)'}; border-radius:12px; padding:12px; margin-bottom:10px; background:white; cursor:pointer;">
                     <div style="display:flex; justify-content:space-between;">
-                        <strong style="font-size:13px;">${d.type_libelle_fr}</strong>
+                        <strong style="font-size:13px;">${d.a_message_non_lu ? '🔴 ' : ''}${d.type_libelle_fr}</strong>
                         <span class="badge badge-${d.code_statut_ticket}">${d.statut_libelle_fr}</span>
                     </div>
                     <p style="font-size:11px; color:var(--gray); margin:4px 0 0;">${d.code_ticket} — ${new Date(d.date_maj).toLocaleDateString('fr-FR')}</p>
                 </div>
             `).join('');
+            data.dossiers.forEach((d) => rejoindreRoomTicket(d.id_ticket));
         } catch (err) { console.error(err); }
     }
 
@@ -5574,12 +7883,32 @@
         const params = new URLSearchParams(window.location.search);
         const token = params.get('reinit_token');
         const type = params.get('reinit_type');
-        if (!token || !type || (type !== 'staff' && type !== 'partenaire')) return false;
+        const tokenBoite = params.get('reinit_boite_token');
+        const typeBoite = params.get('reinit_boite_type');
+
+        let cible = null;
+        let tokenUtilise = null;
+        let typeUtilise = null;
+        if (token && (type === 'staff' || type === 'partenaire')) {
+            cible = 'connexion'; tokenUtilise = token; typeUtilise = type;
+        } else if (tokenBoite && (typeBoite === 'staff' || typeBoite === 'partenaire')) {
+            cible = 'boite_mail'; tokenUtilise = tokenBoite; typeUtilise = typeBoite;
+        } else {
+            return false;
+        }
 
         document.getElementById('vue-chargement').style.display = 'none';
         document.getElementById('vue-nouveau-mdp').style.display = 'block';
-        document.getElementById('vue-nouveau-mdp').dataset.token = token;
-        document.getElementById('vue-nouveau-mdp').dataset.type = type;
+        document.getElementById('vue-nouveau-mdp').dataset.token = tokenUtilise;
+        document.getElementById('vue-nouveau-mdp').dataset.type = typeUtilise;
+        document.getElementById('vue-nouveau-mdp').dataset.cible = cible;
+        // Libellés adaptés (14/09/2026, Option 2) -- éviter toute confusion
+        // entre le mot de passe de connexion myspace.html et celui de la
+        // boîte mail professionnelle, deux identifiants distincts.
+        if (cible === 'boite_mail') {
+            document.querySelector('#vue-nouveau-mdp h2').textContent = 'Nouveau mot de passe — boîte mail';
+            document.querySelector('#vue-nouveau-mdp .sous-titre').textContent = 'Choisissez un nouveau mot de passe pour votre boîte mail professionnelle. Votre mot de passe de connexion à myspace.html n\'est pas concerné.';
+        }
         return true;
     }
 
@@ -5588,6 +7917,7 @@
         const vue = document.getElementById('vue-nouveau-mdp');
         const token = vue.dataset.token;
         const type = vue.dataset.type;
+        const cible = vue.dataset.cible || 'connexion';
         const mdp = document.getElementById('nouveau-mdp-saisie').value;
         const confirmation = document.getElementById('nouveau-mdp-confirmation').value;
         const messageEl = document.getElementById('nouveau-mdp-message');
@@ -5600,7 +7930,10 @@
             return;
         }
 
-        const url = type === 'staff' ? '/api/staff/reinitialiser-mot-de-passe' : '/api/partenaire/reinitialiser-mot-de-passe';
+        // Option 2 (14/09/2026) -- deux couples de routes distincts selon
+        // la cible, jamais mélangés (mot de passe de connexion vs boîte mail).
+        const base = type === 'staff' ? '/api/staff' : type === 'partenaire' ? '/api/partenaire' : '/api';
+        const url = cible === 'boite_mail' ? `${base}/reinitialiser-boite-mail` : `${base}/reinitialiser-mot-de-passe`;
         try {
             const resp = await fetch(url, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },

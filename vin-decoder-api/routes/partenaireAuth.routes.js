@@ -25,7 +25,11 @@ const { gabaritEmail, corpsConnexionReussie, corpsActivation } = require('../lib
 const { analyserNavigateur, analyserSysteme } = require('../lib/analyseurUserAgent');
 const { genererEtEnvoyerCode, verifierCode } = require('../lib/verificationConnexion');
 const { masquerEmail, masquerTelephone } = require('../lib/masquage');
-const { envoyerLienReinitialisation, appliquerReinitialisation } = require('../lib/reinitialisationMdp');
+const { envoyerLienReinitialisation, appliquerReinitialisation, genererTokenChangementForce } = require('../lib/reinitialisationMdp');
+const { envoyerNotificationExterne } = require('../lib/notifications');
+const { messageBloqueCorrectionApresLecture } = require('../lib/blocageCorrectionMessage');
+const { verifierPeremptionMotDePasse } = require('../lib/peremptionMdp');
+const { appliquerReinitialisationBoiteMail } = require('../lib/reinitialisationBoiteMail');
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -190,6 +194,15 @@ module.exports = function (pool) {
                 if (precedente.rowCount > 0) derniereConnexionPrecedente = precedente.rows[0];
             } catch (err) {
                 console.error('[POST /api/partenaire/connexion/verifier-code] Erreur lecture historique_connexions :', err);
+            }
+
+            // Péremption (14/09/2026) -- voir même commentaire dans staffAuth.routes.js.
+            const peremption = await verifierPeremptionMotDePasse({ pool, tableCompte: 'site.partenaires', colonneId: 'id_partenaire', idCompte: id_compte, role: 'partenaire' });
+            if (peremption.doitChanger) {
+                const token = await genererTokenChangementForce({ pool, typeCompte: 'partenaire', idCompte: id_compte });
+                return res.status(200).json({
+                    succes: true, doit_changer_mdp: true, motif: peremption.motif, token,
+                });
             }
 
             req.session.regenerate(async (err) => {
@@ -388,6 +401,24 @@ module.exports = function (pool) {
         }
     });
 
+    // Option 2 (14/09/2026) -- voir même commentaire dans staffAuth.routes.js.
+    router.post('/reinitialiser-boite-mail', async (req, res) => {
+        const { token, mot_de_passe, mot_de_passe_confirmation } = req.body;
+        try {
+            const resultat = await appliquerReinitialisationBoiteMail({
+                pool, typeCompte: 'partenaire', token, motDePasse: mot_de_passe, motDePasseConfirmation: mot_de_passe_confirmation,
+                tableCompte: 'site.partenaires', colonneId: 'id_partenaire',
+            });
+            if (!resultat.succes) {
+                return res.status(resultat.statut).json({ succes: false, erreurs: resultat.erreurs });
+            }
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/partenaire/reinitialiser-boite-mail] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur, veuillez réessayer'] });
+        }
+    });
+
     // Règle de visibilité centrale : UNIQUEMENT les tickets où ce
     // partenaire est explicitement assigné — jamais une vue globale.
     router.get('/mes-dossiers', async (req, res) => {
@@ -398,7 +429,11 @@ module.exports = function (pool) {
             const resultat = await pool.query(
                 `SELECT t.id_ticket, t.code_ticket, tt.libelle_fr AS type_libelle_fr,
                         st.code_statut_ticket, st.libelle_fr AS statut_libelle_fr,
-                        t.contenu, t.date_creation, t.date_maj
+                        t.contenu, t.date_creation, t.date_maj,
+                        EXISTS(
+                            SELECT 1 FROM site.messages_dossier m
+                            WHERE m.id_ticket = t.id_ticket AND m.type_auteur IN ('client', 'staff') AND m.visible_client = true AND m.lu_par_partenaire = false
+                        ) AS a_message_non_lu
                  FROM site.tickets t
                  JOIN site.type_ticket tt ON tt.id_type_ticket = t.id_type_ticket
                  JOIN site.statut_ticket st ON st.id_statut_ticket = t.id_statut_ticket
@@ -515,6 +550,184 @@ module.exports = function (pool) {
         } catch (err) {
             console.error('[POST /api/partenaire/renvoyer-activation] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
+        }
+    });
+
+    // Lot E, extension Partenaires (15/09/2026) -- second répondant
+    // professionnel, symétrique au Staff. Visibilité fondée sur
+    // t.id_partenaire_assigne, déjà la règle en place ailleurs dans ce
+    // fichier -- jamais de table de liaison séparée.
+    async function dossierAssigneAuPartenaire(pool, idTicket, idPartenaire) {
+        const r = await pool.query('SELECT code_ticket, email_contact FROM site.tickets WHERE id_ticket = $1 AND id_partenaire_assigne = $2', [idTicket, idPartenaire]);
+        return r.rowCount > 0 ? r.rows[0] : null;
+    }
+
+    router.get('/mes-dossiers/:id/messages', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        const idTicket = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        const dossier = await dossierAssigneAuPartenaire(pool, idTicket, req.session.id_partenaire);
+        if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
+        try {
+            const resultat = await pool.query(
+                `SELECT md.id_message, md.type_auteur, md.contenu, md.date_creation, md.visible_client, md.modifie, md.date_modification,
+                        md.lu_par_client, md.lu_par_staff, md.lu_par_partenaire,
+                        md.date_lecture_client, md.date_lecture_staff, md.date_lecture_partenaire,
+                        COALESCE(u.email, s.email, p.email) AS email_auteur
+                 FROM site.messages_dossier md
+                 LEFT JOIN site.utilisateurs u ON md.type_auteur = 'client' AND u.id_utilisateur = md.id_auteur
+                 LEFT JOIN site.staff s ON md.type_auteur = 'staff' AND s.id_staff = md.id_auteur
+                 LEFT JOIN site.partenaires p ON md.type_auteur = 'partenaire' AND p.id_partenaire = md.id_auteur
+                 WHERE md.id_ticket = $1 AND md.visible_client = true ORDER BY md.date_creation ASC`,
+                [idTicket]
+            );
+            return res.status(200).json({ succes: true, messages: resultat.rows });
+        } catch (err) {
+            console.error('[GET /api/partenaire/mes-dossiers/:id/messages] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    router.post('/mes-dossiers/:id/messages', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        const idTicket = parseInt(req.params.id, 10);
+        const { contenu, visible_client } = req.body;
+        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        if (!contenu || !contenu.trim()) return res.status(400).json({ succes: false, erreurs: ['contenu requis'] });
+        const dossier = await dossierAssigneAuPartenaire(pool, idTicket, req.session.id_partenaire);
+        if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
+        try {
+            const visibleClientFinal = visible_client !== false;
+            const resultat = await pool.query(
+                `INSERT INTO site.messages_dossier (id_ticket, type_auteur, id_auteur, contenu, visible_client)
+                 VALUES ($1, 'partenaire', $2, $3, $4) RETURNING id_message, date_creation`,
+                [idTicket, req.session.id_partenaire, contenu.trim(), visibleClientFinal]
+            );
+            const message = { id_message: resultat.rows[0].id_message, id_ticket: idTicket, type_auteur: 'partenaire', contenu: contenu.trim(), date_creation: resultat.rows[0].date_creation, visible_client: visibleClientFinal };
+
+            // Correctif de sécurité (16/09/2026) -- même faille, même
+            // principe que staffTickets.routes.js.
+            if (global.ioMessagerie) {
+                if (visibleClientFinal) {
+                    global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:nouveau', message);
+                } else {
+                    // Accès direct aux sockets locaux (Map io.sockets.sockets
+                    // + Set de la room via l'adaptateur) plutôt que
+                    // fetchSockets() -- ce dernier renvoie des objets proxy
+                    // qui n'exposent pas garantiment .request, une ambiguïté
+                    // à éviter pour un correctif de sécurité. Valable en
+                    // configuration mono-processus (pas d'adaptateur Redis).
+                    const room = global.ioMessagerie.sockets.adapter.rooms.get(`ticket:${idTicket}`) || new Set();
+                    for (const socketId of room) {
+                        const s = global.ioMessagerie.sockets.sockets.get(socketId);
+                        const sess = s && s.request && s.request.session;
+                        if (sess && (sess.id_staff || sess.id_partenaire)) s.emit('message:nouveau', message);
+                    }
+                }
+            }
+
+            if (visibleClientFinal) {
+                envoyerNotificationExterne(pool, {
+                    destinataireEmail: dossier.email_contact,
+                    destinataireNom: '',
+                    typeEvenement: 'reponse_staff', // même gabarit que la réponse Staff -- le client n'a pas besoin de distinguer l'origine interne
+                    contexte: { codeTicket: dossier.code_ticket, extrait: contenu.trim().slice(0, 100) },
+                });
+            }
+
+            return res.status(201).json({ succes: true, message });
+        } catch (err) {
+            console.error('[POST /api/partenaire/mes-dossiers/:id/messages] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    router.patch('/mes-dossiers/:id/messages/:idMessage', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        const idTicket = parseInt(req.params.id, 10);
+        const idMessage = parseInt(req.params.idMessage, 10);
+        const { contenu } = req.body;
+        if (!Number.isInteger(idTicket) || !Number.isInteger(idMessage)) {
+            return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        }
+        if (!contenu || !contenu.trim()) {
+            return res.status(400).json({ succes: false, erreurs: ['contenu requis'] });
+        }
+        const dossier = await dossierAssigneAuPartenaire(pool, idTicket, req.session.id_partenaire);
+        if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
+        try {
+            const existant = await pool.query(
+                `SELECT id_auteur, visible_client, date_lecture_client, date_lecture_staff FROM site.messages_dossier WHERE id_message = $1 AND id_ticket = $2 AND type_auteur = 'partenaire'`,
+                [idMessage, idTicket]
+            );
+            if (existant.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['message introuvable'] });
+            }
+            if (existant.rows[0].id_auteur !== req.session.id_partenaire) {
+                return res.status(403).json({ succes: false, erreurs: ['seul l\'auteur peut corriger ce message'] });
+            }
+            if (messageBloqueCorrectionApresLecture({
+                typeAuteur: 'partenaire', visibleClient: existant.rows[0].visible_client,
+                dateLectureClient: existant.rows[0].date_lecture_client, dateLectureStaff: existant.rows[0].date_lecture_staff,
+            })) {
+                return res.status(409).json({ succes: false, erreurs: ['ce message a déjà été lu depuis plus de 30 secondes, il ne peut plus être corrigé'] });
+            }
+            const resultat = await pool.query(
+                `UPDATE site.messages_dossier SET contenu = $1, modifie = true, date_modification = now()
+                 WHERE id_message = $2 RETURNING date_modification`,
+                [contenu.trim(), idMessage]
+            );
+            const message = { id_message: idMessage, id_ticket: idTicket, contenu: contenu.trim(), date_modification: resultat.rows[0].date_modification };
+
+            if (global.ioMessagerie) {
+                if (existant.rows[0].visible_client) {
+                    global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:modifie', message);
+                } else {
+                    const room = global.ioMessagerie.sockets.adapter.rooms.get(`ticket:${idTicket}`) || new Set();
+                    for (const socketId of room) {
+                        const s = global.ioMessagerie.sockets.sockets.get(socketId);
+                        const sess = s && s.request && s.request.session;
+                        if (sess && (sess.id_staff || sess.id_partenaire)) s.emit('message:modifie', message);
+                    }
+                }
+            }
+
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[PATCH /api/partenaire/mes-dossiers/:id/messages/:idMessage] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    router.patch('/mes-dossiers/:id/messages/lu', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        const idTicket = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        const dossier = await dossierAssigneAuPartenaire(pool, idTicket, req.session.id_partenaire);
+        if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
+        try {
+            await pool.query(`UPDATE site.messages_dossier SET lu_par_partenaire = true, date_lecture_partenaire = COALESCE(date_lecture_partenaire, now()) WHERE id_ticket = $1 AND type_auteur IN ('client', 'staff') AND visible_client = true`, [idTicket]);
+            if (global.ioMessagerie) global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:lu', { par: 'partenaire' });
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[PATCH /api/partenaire/mes-dossiers/:id/messages/lu] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    router.get('/mes-dossiers/messages-non-lus', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        try {
+            const resultat = await pool.query(
+                `SELECT COUNT(*)::int AS total FROM site.messages_dossier m
+                 JOIN site.tickets t ON t.id_ticket = m.id_ticket
+                 WHERE t.id_partenaire_assigne = $1 AND m.type_auteur IN ('client', 'staff') AND m.visible_client = true AND m.lu_par_partenaire = false`,
+                [req.session.id_partenaire]
+            );
+            return res.status(200).json({ succes: true, total: resultat.rows[0].total });
+        } catch (err) {
+            console.error('[GET /api/partenaire/mes-dossiers/messages-non-lus] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
         }
     });
 
