@@ -45,9 +45,16 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.09.19-ad
-    Dernière modification : 19/09/2026
+    Version actuelle    : 2026.09.22-a
+    Dernière modification : 22/09/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
+
+    Résumé de cette version :
+      - Lot F — signalement visuel (titre d'onglet + badge d'icône
+        d'application) pour un message non lu. Un seul point de
+        branchement (mettreAJourCompteurMessages, déjà partagée par
+        les 3 rôles via CONFIG_MESSAGERIE), pas 3 comme supposé dans
+        le lot livré
 
     Résumé de cette version :
       - Registre système : gras sur le texte de la colonne de clé,
@@ -800,6 +807,13 @@
 @media (min-width: 769px) {
     .carte-dashboard, .carte-dashboard-verrouillee { min-height: clamp(40px, 10vw, 60px); }
     .dashboard-graphique-conteneur { height: 210px; }
+}
+@media print {
+    header, nav, .menu-item, #panneau-filtres-generique, #import-generique-modal,
+    [id^="pagination-"], button { display: none !important; }
+    body { background: white; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 4px 6px; font-size: 11px; }
 }
 </style>
 <link rel="icon" href="/favicon/favicon.ico" sizes="any">
@@ -1997,7 +2011,7 @@
 
     function etatTableau(nomTableau) {
         if (!etatsTableaux[nomTableau]) {
-            etatsTableaux[nomTableau] = { tri: null, filtres: {}, page: 1, taillePage: 25 };
+            etatsTableaux[nomTableau] = { tri: null, filtres: {}, page: 1, taillePage: 25, vue: 'tableau' };
         }
         return etatsTableaux[nomTableau];
     }
@@ -2251,6 +2265,7 @@
     // de savoir si une colonne est en mode "cases à cocher" sans que
     // l'appelant n'ait à le repréciser à chaque clic.
     const colonnesEnregistrees = {};
+    const obtenirDonneesEnregistrees = {};
 
     // [PRÉSENTATION-COMMUNE]
     // nom_complet éliminé partout (03/09/2026, reconstruction des 4
@@ -2302,35 +2317,164 @@
         rafraichirTableau(nomTableau);
     }
 
-    function creerRenduTableau(nomTableau, { obtenirDonnees, colonnes, genererLignes, idConteneur, avant = '', apres = '', colgroup = '', messageVide = 'Aucune donnée.' }) {
+    // [PRÉSENTATION-COMMUNE]
+    let panneauFiltresTableauActif = null;
+
+    function ouvrirPanneauFiltres(nomTableau) {
+        panneauFiltresTableauActif = nomTableau;
+        rafraichirPanneauFiltres();
+        document.getElementById('panneau-filtres-generique').style.display = 'block';
+    }
+
+    function fermerPanneauFiltres() {
+        document.getElementById('panneau-filtres-generique').style.display = 'none';
+        panneauFiltresTableauActif = null;
+    }
+
+    function construireChampFiltrePanneau(nomTableau, col) {
+        const etat = etatTableau(nomTableau);
+        if (col.valeurs) {
+            const listeValeurs = col.valeurs();
+            const selection = etat.filtres[col.cle] !== undefined ? etat.filtres[col.cle] : listeValeurs.map((v) => v.code);
+            return listeValeurs.map((v) => {
+                const coche = selection.includes(v.code) ? 'checked' : '';
+                return `<label style="display:flex; align-items:flex-start; gap:6px; font-size:12px; margin-bottom:4px; cursor:pointer;">
+                    <input type="checkbox" ${coche} onchange="basculerValeurFiltrePanneau('${nomTableau}', '${col.cle}', '${v.code}')" style="margin-top:2px;">
+                    <span>${v.libelle}</span>
+                </label>`;
+            }).join('');
+        }
+        const valeurActuelle = (etat.filtres[col.cle] || '').replace(/"/g, '&quot;');
+        return `<input type="text" value="${valeurActuelle}" placeholder="Filtrer…" oninput="appliquerFiltreColonne('${nomTableau}', '${col.cle}', this.value)" style="width:100%; box-sizing:border-box; font-size:12px; padding:6px 8px; border:1px solid var(--border); border-radius:6px;">`;
+    }
+
+    function rafraichirPanneauFiltres() {
+        if (!panneauFiltresTableauActif) return;
+        const colonnes = colonnesEnregistrees[panneauFiltresTableauActif] || [];
+        document.getElementById('panneau-filtres-contenu').innerHTML = colonnes.map((col) => `
+            <div style="margin-bottom:18px;">
+                <p style="font-size:11px; font-weight:700; color:var(--navy); margin-bottom:6px;">${col.libelle}</p>
+                ${construireChampFiltrePanneau(panneauFiltresTableauActif, col)}
+            </div>
+        `).join('');
+    }
+
+    function basculerValeurFiltrePanneau(nomTableau, cle, code) {
+        if (etatTableau(nomTableau).filtres[cle] === undefined) gererDoubleClicEnTete(nomTableau, cle);
+        basculerValeurFiltreChoix(nomTableau, cle, code);
+        rafraichirPanneauFiltres();
+    }
+
+    function effacerTousFiltresPanneau() {
+        if (panneauFiltresTableauActif) effacerTousFiltres(panneauFiltresTableauActif);
+        rafraichirPanneauFiltres();
+    }
+
+    function basculerVueTableau(nomTableau, vue) {
+        etatTableau(nomTableau).vue = vue;
+        rafraichirTableau(nomTableau);
+    }
+
+    function genererFichesGenerique(colonnes, page) {
+        return page.map((ligne) => `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px 16px;">
+                ${colonnes.map((c) => `
+                    <div class="carte-fiche-libelle">${c.libelle}</div>
+                    <div class="carte-fiche-valeur">${c.trier(ligne) ?? '—'}</div>
+                `).join('')}
+            </div>
+        `).join('');
+    }
+
+    function echapperCelluleCsv(valeur) {
+        const texte = valeur === null || valeur === undefined ? '' : String(valeur);
+        return /[;"\r\n]/.test(texte) ? `"${texte.replace(/"/g, '""')}"` : texte;
+    }
+
+    function exporterTableauCsv(nomTableau) {
+        const colonnes = colonnesEnregistrees[nomTableau] || [];
+        const obtenirDonnees = obtenirDonneesEnregistrees[nomTableau];
+        if (!obtenirDonnees) return;
+        const donnees = trierEtFiltrerDonnees(obtenirDonnees(), colonnes, nomTableau);
+        const entetes = colonnes.map((c) => c.libelle);
+        const lignes = donnees.map((ligne) => colonnes.map((c) => (c.exporter ? c.exporter(ligne) : c.trier(ligne))));
+        const contenu = [entetes, ...lignes].map((l) => l.map(echapperCelluleCsv).join(';')).join('\r\n');
+        const blob = new Blob(['\ufeff' + contenu], { type: 'text/csv;charset=utf-8;' });
+        const lien = document.createElement('a');
+        lien.href = URL.createObjectURL(blob);
+        lien.download = `${nomTableau}-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(lien);
+        lien.click();
+        lien.remove();
+        URL.revokeObjectURL(lien.href);
+    }
+
+    function creerRenduTableau(nomTableau, { obtenirDonnees, colonnes, genererLignes, genererFiches, idConteneur, avant = '', apres = '', colgroup = '', messageVide = 'Aucune donnée.' }) {
         colonnesEnregistrees[nomTableau] = colonnes;
+        obtenirDonneesEnregistrees[nomTableau] = obtenirDonnees;
+
         function traiter() {
             const brutes = obtenirDonnees();
             const traitees = trierEtFiltrerDonnees(brutes, colonnes, nomTableau);
             return { brutes, ...paginerDonnees(traitees, nomTableau) };
         }
+
+        function contenuCorps(page, total) {
+            const etat = etatTableau(nomTableau);
+            if (etat.vue === 'fiches') {
+                return total ? (genererFiches ? genererFiches(page) : genererFichesGenerique(colonnes, page)) : '<p class="vide">Aucun résultat pour ce filtre.</p>';
+            }
+            return total ? genererLignes(page) : `<tr><td colspan="20" class="vide">Aucun résultat pour ce filtre.</td></tr>`;
+        }
+
         function renduComplet() {
             const conteneur = document.getElementById(idConteneur);
             const { brutes, page, total, totalPages } = traiter();
             if (!brutes.length) { conteneur.innerHTML = `<p class="vide">${messageVide}</p>`; return; }
+
+            const etat = etatTableau(nomTableau);
+            const barreOutils = `<div style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+                <button onclick="ouvrirPanneauFiltres('${nomTableau}')" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Filtres</button>
+                <div style="display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+                    <button onclick="basculerVueTableau('${nomTableau}', 'tableau')" style="font-size:11px; padding:6px 10px; border:none; cursor:pointer; background:${etat.vue !== 'fiches' ? 'var(--purple)' : 'white'}; color:${etat.vue !== 'fiches' ? 'white' : 'var(--navy)'};">📋 Tableau</button>
+                    <button onclick="basculerVueTableau('${nomTableau}', 'fiches')" style="font-size:11px; padding:6px 10px; border:none; cursor:pointer; background:${etat.vue === 'fiches' ? 'var(--purple)' : 'white'}; color:${etat.vue === 'fiches' ? 'white' : 'var(--navy)'};">📇 Fiches</button>
+                </div>
+                <button onclick="exporterTableauCsv('${nomTableau}')" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⬇️ Exporter (CSV)</button>
+                <button onclick="window.print()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🖨️ Imprimer</button>
+            </div>`;
+
             const bandeauFiltres = construireBandeauFiltresActifs(nomTableau, colonnes);
-            const thead = creerEnTeteTableau(nomTableau, colonnes, { avant, apres });
-            const corps = total ? genererLignes(page) : `<tr><td colspan="20" class="vide">Aucun résultat pour ce filtre.</td></tr>`;
-            conteneur.innerHTML = `<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div><table>${colgroup}${thead}<tbody id="tbody-${nomTableau}">${corps}</tbody></table><div id="pagination-${nomTableau}">${creerControlePagination(nomTableau, total, totalPages)}</div>`;
+            const corps = contenuCorps(page, total);
+            const pagination = creerControlePagination(nomTableau, total, totalPages);
+
+            if (etat.vue === 'fiches') {
+                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div><div id="fiches-${nomTableau}">${corps}</div><div id="pagination-${nomTableau}">${pagination}</div>`;
+            } else {
+                const thead = creerEnTeteTableau(nomTableau, colonnes, { avant, apres });
+                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div><table>${colgroup}${thead}<tbody id="tbody-${nomTableau}">${corps}</tbody></table><div id="pagination-${nomTableau}">${pagination}</div>`;
+            }
         }
+
         function renduCorps() {
+            const etat = etatTableau(nomTableau);
             const { page, total, totalPages } = traiter();
-            const tbody = document.getElementById(`tbody-${nomTableau}`);
+            const corps = contenuCorps(page, total);
+
+            if (etat.vue === 'fiches') {
+                const conteneurFiches = document.getElementById(`fiches-${nomTableau}`);
+                if (conteneurFiches) conteneurFiches.innerHTML = corps;
+            } else {
+                const tbody = document.getElementById(`tbody-${nomTableau}`);
+                if (tbody) tbody.innerHTML = corps;
+            }
+
             const paginationDiv = document.getElementById(`pagination-${nomTableau}`);
-            if (tbody) tbody.innerHTML = total ? genererLignes(page) : `<tr><td colspan="20" class="vide">Aucun résultat pour ce filtre.</td></tr>`;
             if (paginationDiv) paginationDiv.innerHTML = creerControlePagination(nomTableau, total, totalPages);
-            // Le bandeau vit hors de tbody/pagination -- ciblé séparément,
-            // jamais via conteneur.innerHTML ici (perdrait le focus des
-            // filtres texte en cours de frappe, même piège déjà résolu
-            // ailleurs dans ce fichier).
+
             const conteneurBandeau = document.getElementById(`filtre-actif-${nomTableau}`);
             if (conteneurBandeau) conteneurBandeau.innerHTML = construireBandeauFiltresActifs(nomTableau, colonnes);
         }
+
         rendusTableauxComplet[nomTableau] = renduComplet;
         rendusTableauxCorps[nomTableau] = renduCorps;
         return renduComplet;
@@ -2916,12 +3060,80 @@
     }
 
     // [PRÉSENTATION-COMMUNE]
+    // [PRÉSENTATION-COMMUNE] Lot F (22/09/2026) -- titre d'onglet et
+    // badge d'icône d'application, signalement visuel d'un message non
+    // lu. Réutilise tel quel le comptage déjà câblé par le Lot E.
+    const titreBaseOnglet = document.title; // capturé une seule fois au chargement
+
+    function mettreAJourTitreOnglet(compteur) {
+        document.title = compteur > 0 ? `(${compteur}) ${titreBaseOnglet}` : titreBaseOnglet;
+    }
+
+    let faviconBaseImage = null;
+    function mettreAJourBadgeApplication(compteur) {
+        if ('setAppBadge' in navigator) {
+            if (compteur > 0) navigator.setAppBadge(compteur).catch(() => {});
+            else navigator.clearAppBadge().catch(() => {});
+        }
+        // Repli favicon-canvas pour les navigateurs sans Badging API --
+        // dessine l'icône existante (favicon-32x32.png, vérifiée réelle
+        // dans ce fichier) + un badge rouge par-dessus.
+        dessinerFaviconAvecBadge(compteur);
+    }
+
+    function dessinerFaviconAvecBadge(compteur) {
+        const lienFavicon = document.querySelector('link[rel="icon"][sizes="32x32"]') || document.querySelector('link[rel="icon"]');
+        if (!lienFavicon) return;
+
+        if (!faviconBaseImage) {
+            faviconBaseImage = new Image();
+            faviconBaseImage.crossOrigin = 'anonymous';
+            faviconBaseImage.src = lienFavicon.getAttribute('data-href-originale') || lienFavicon.href;
+            lienFavicon.setAttribute('data-href-originale', faviconBaseImage.src);
+            faviconBaseImage.onload = () => dessinerFaviconAvecBadge(compteur);
+            return;
+        }
+
+        const taille = 32;
+        const canvas = document.createElement('canvas');
+        canvas.width = taille; canvas.height = taille;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(faviconBaseImage, 0, 0, taille, taille);
+
+        if (compteur > 0) {
+            ctx.beginPath();
+            ctx.arc(taille - 8, 8, 7, 0, Math.PI * 2);
+            ctx.fillStyle = '#dc2626';
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(compteur > 9 ? '9+' : String(compteur), taille - 8, 9);
+        }
+
+        let lienDynamique = document.getElementById('favicon-dynamique');
+        if (!lienDynamique) {
+            lienDynamique = document.createElement('link');
+            lienDynamique.id = 'favicon-dynamique';
+            lienDynamique.rel = 'icon';
+            document.head.appendChild(lienDynamique);
+        }
+        lienDynamique.href = canvas.toDataURL('image/png');
+    }
+
     async function mettreAJourCompteurMessages(role) {
         const cfg = CONFIG_MESSAGERIE[role];
         try {
             const resp = await fetch(cfg.urlNonLus, { credentials: 'include' });
             const data = await resp.json();
-            if (data.succes) mettreAJourBadgeMenu(data.total, cfg.prefixePage);
+            if (data.succes) {
+                mettreAJourBadgeMenu(data.total, cfg.prefixePage);
+                // Un seul point de branchement (pas 3 -- cette fonction
+                // est déjà partagée par les 3 rôles via CONFIG_MESSAGERIE).
+                mettreAJourTitreOnglet(data.total);
+                mettreAJourBadgeApplication(data.total);
+            }
         } catch (err) { console.error(err); }
     }
 
@@ -6351,10 +6563,29 @@
         );
     }
 
+    // [PRÉSENTATION-PERSONNEL]
+    function genererFichesPersonnel(page) {
+        return page.map((p) => {
+            let statutBadge;
+            if (p.statut_compte !== 'actif') statutBadge = '<span class="badge badge-perdu">Suspendu</span>';
+            else if (!p.mot_de_passe_defini) statutBadge = '<span class="badge badge-qualifie">En attente d\'activation</span>';
+            else statutBadge = '<span class="badge badge-resolu">Actif</span>';
+
+            return `<div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:8px; display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;">
+                <div class="carte-fiche-libelle">Nom</div><div class="carte-fiche-valeur">${nomAffiche(p)}${!p.boite_mail_configuree ? ' 📪' : ''}</div>
+                <div class="carte-fiche-libelle">Email</div><div class="carte-fiche-valeur">${p.email}</div>
+                <div class="carte-fiche-libelle">Téléphone</div><div class="carte-fiche-valeur">${p.telephone || '—'}</div>
+                <div class="carte-fiche-libelle">Rôle</div><div class="carte-fiche-valeur">${p.role_libelle_fr}</div>
+                <div class="carte-fiche-libelle">Statut</div><div>${statutBadge}</div>
+            </div>`;
+        }).join('');
+    }
+
     const afficherTableauPersonnel = creerRenduTableau('personnel', {
         obtenirDonnees: donneesPersonnelAffichables,
         colonnes: colonnesPersonnel,
         genererLignes: genererLignesPersonnel,
+        genererFiches: genererFichesPersonnel,
         idConteneur: 'personnel-liste-conteneur',
         avant: '<th style="width:24px;"><input type="checkbox" onchange="document.querySelectorAll(\'.pers-select\').forEach(c=>c.checked=this.checked); mettreAJourBoutonRenvoiPersonnel(); mettreAJourBoutonProvisionnement()"></th>',
         apres: '<th style="width:50px;">Modifier</th>',
@@ -8169,5 +8400,18 @@
     </div>
 </div>
 
+<div id="panneau-filtres-generique" style="display:none; position:fixed; inset:0; z-index:1900;">
+    <div onclick="fermerPanneauFiltres()" style="position:absolute; inset:0; background:rgba(15,23,42,0.4);"></div>
+    <div style="position:absolute; top:0; right:0; height:100%; width:320px; max-width:90vw; background:white; box-shadow:-4px 0 20px rgba(0,0,0,0.15); display:flex; flex-direction:column;">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:13px;">Filtres</strong>
+            <button onclick="fermerPanneauFiltres()" style="border:none; background:none; font-size:18px; cursor:pointer; line-height:1;">×</button>
+        </div>
+        <div id="panneau-filtres-contenu" style="padding:14px 16px; overflow-y:auto; flex:1;"></div>
+        <div style="padding:10px 16px; border-top:1px solid var(--border);">
+            <button onclick="effacerTousFiltresPanneau()" style="width:100%; font-size:12px; padding:7px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer;">Tout effacer</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
