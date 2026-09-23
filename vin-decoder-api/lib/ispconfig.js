@@ -23,6 +23,7 @@ const execFileAsync = util.promisify(execFile);
 
 const CHEMIN_AJOUT = '/root/mutuellepro-site/vin-decoder-api/bin/mail_user_add.php';
 const CHEMIN_SUPPRESSION = '/root/mutuellepro-site/vin-decoder-api/bin/mail_user_delete.php';
+const CHEMIN_MODIFICATION = '/root/mutuellepro-site/vin-decoder-api/bin/mail_user_update.php';
 
 async function creerBoiteMail({ email, motDePasse, nomAffiche, quota }) {
     if (!email || !motDePasse) {
@@ -39,7 +40,11 @@ async function creerBoiteMail({ email, motDePasse, nomAffiche, quota }) {
     try {
         ({ stdout } = await execFileAsync('php', [CHEMIN_AJOUT, params], { timeout: 20000 }));
     } catch (err) {
-        throw new Error(`Échec d'exécution du script de création : ${err.message}`);
+        // err.message seul ne contient que le texte générique de child_process
+        // ("Command failed: ...") -- la vraie raison (PHP ou ISPConfig) est
+        // dans stdout/stderr, ignorés jusqu'ici (bug trouvé le 01/09/2026).
+        const details = (err.stderr || err.stdout || '').toString().trim();
+        throw new Error(`Échec d'exécution du script de création${details ? ' : ' + details : ' : ' + err.message}`);
     }
 
     let resultat;
@@ -64,7 +69,8 @@ async function supprimerBoiteMail({ email }) {
     try {
         ({ stdout } = await execFileAsync('php', [CHEMIN_SUPPRESSION, params], { timeout: 20000 }));
     } catch (err) {
-        throw new Error(`Échec d'exécution du script de suppression : ${err.message}`);
+        const details = (err.stderr || err.stdout || '').toString().trim();
+        throw new Error(`Échec d'exécution du script de suppression${details ? ' : ' + details : ' : ' + err.message}`);
     }
 
     let resultat;
@@ -79,4 +85,44 @@ async function supprimerBoiteMail({ email }) {
     return resultat; // { succes: true, mailuser_id_supprime: N }
 }
 
-module.exports = { creerBoiteMail, supprimerBoiteMail };
+// Ajoutée le 14/09/2026 -- comble un trou : mail_user_update.php existait
+// déjà côté PHP (11/09), mais aucune fonction JS ne l'appelait. Sert
+// l'Option 3 du correctif "boîte mail désynchronisée d'ISPConfig" :
+// permettre à un administrateur de fixer explicitement un nouveau mot
+// de passe, y compris quand notre base croit (à tort) qu'un mot de
+// passe valide existe déjà.
+//
+// N'appelle mail_user_update.php QUE si la boîte existe déjà dans
+// ISPConfig (le script erreurera sinon, "Aucune boîte mail trouvée
+// pour l'email") -- à l'appelant de retomber sur creerBoiteMail() dans
+// ce cas, cette fonction ne fait pas ce choix elle-même.
+async function modifierMotDePasseBoiteMail({ email, motDePasse }) {
+    if (!email || !motDePasse) {
+        throw new Error('email et motDePasse sont requis');
+    }
+    const params = JSON.stringify({
+        email,
+        champs: { password: motDePasse },
+    });
+
+    let stdout;
+    try {
+        ({ stdout } = await execFileAsync('php', [CHEMIN_MODIFICATION, params], { timeout: 20000 }));
+    } catch (err) {
+        const details = (err.stderr || err.stdout || '').toString().trim();
+        throw new Error(`Échec d'exécution du script de modification${details ? ' : ' + details : ' : ' + err.message}`);
+    }
+
+    let resultat;
+    try {
+        resultat = JSON.parse(stdout);
+    } catch (err) {
+        throw new Error(`Réponse du script de modification illisible : ${stdout}`);
+    }
+    if (!resultat.succes) {
+        throw new Error(resultat.erreur || 'Échec de modification, raison inconnue');
+    }
+    return resultat; // { succes: true, mailuser_id: N, champs_modifies: [...] }
+}
+
+module.exports = { creerBoiteMail, supprimerBoiteMail, modifierMotDePasseBoiteMail };
