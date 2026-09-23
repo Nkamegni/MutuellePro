@@ -38,9 +38,11 @@ function createRateLimiter(maxRequests, windowMs) {
     const timestamps = (hits.get(ip) || []).filter((t) => now - t < windowMs);
 
     if (timestamps.length >= maxRequests) {
-      return res.status(429).json({ error: 'Trop de requêtes. Veuillez réessayer dans quelques minutes.' });
+      const attenteMs = timestamps[0] + windowMs - now;
+      const attenteMin = Math.ceil(attenteMs / 60000);
+      res.setHeader('Retry-After', Math.ceil(attenteMs / 1000));
+      return res.status(429).json({ error: `Trop de requêtes. Veuillez réessayer dans environ ${attenteMin} minute${attenteMin > 1 ? 's' : ''}.` });
     }
-
     timestamps.push(now);
     hits.set(ip, timestamps);
     next();
@@ -137,18 +139,34 @@ const activationStaffRouter = require('./routes/activationStaff.routes')(pool);
 app.use('/api/staff', activationStaffRouter);
 const staffClientsRouter = require('./routes/staffClients.routes')(pool);
 app.use('/api/staff', staffClientsRouter);
+const journalNoReplyRouter = require('./routes/journalNoReply.routes')(pool);
+app.use('/api/staff', journalNoReplyRouter);
 const prospectPromotionRouter = require('./routes/prospectPromotion.routes')(pool);
 app.use('/api/staff', prospectPromotionRouter);
+const prospectQualificationRouter = require('./routes/prospectQualification.routes')(pool);
+app.use('/api/staff', prospectQualificationRouter);
 const staffKpisRouter = require('./routes/staffKpis.routes')(pool);
 app.use('/api/staff', staffKpisRouter);
+const staffSeuilsAlerteRouter = require('./routes/staffSeuilsAlerte.routes')(pool);
+app.use('/api/staff', staffSeuilsAlerteRouter);
+const requireStaffAuth = require('./middleware/requireStaffAuth');
+const dashboardPreferencesFactory = require('./routes/dashboardPreferences.routes');
+app.use('/api/staff', dashboardPreferencesFactory(pool, { middleware: requireStaffAuth, typeCompte: 'staff', champSessionId: 'id_staff' }));
+app.use('/api', dashboardPreferencesFactory(pool, { middleware: dashboardPreferencesFactory.exigerSessionClient, typeCompte: 'client', champSessionId: 'id_utilisateur' }));
+app.use('/api/partenaire', dashboardPreferencesFactory(pool, { middleware: dashboardPreferencesFactory.exigerSessionPartenaire, typeCompte: 'partenaire', champSessionId: 'id_partenaire' }));
 const testIspconfigRouter = require('./routes/testIspconfig.routes')(pool);
 app.use('/api/staff', testIspconfigRouter);
+const staffTachesRouter = require('./routes/staffTaches.routes')(pool);
+app.use('/api/staff', staffTachesRouter);
 const suiviTicketRouter = require('./routes/suiviTicket.routes')(pool);
 app.use('/api/suivi-ticket', suiviTicketRouter);
 const monCompteRouter = require('./routes/monCompte.routes')(pool);
 app.use('/api/mon-compte', monCompteRouter);
 const staffProspectsRouter = require('./routes/staffProspects.routes')(pool);
 app.use('/api/staff', staffProspectsRouter);
+const modelesImport = { prospects: require('./modeles/prospects.import'), partenaires: require('./modeles/partenaires.import') };
+const importsRouter = require('./routes/imports.routes')(pool, modelesImport);
+app.use('/api/staff', importsRouter);
 const partenaireSession = session({
     name: 'connect.sid.partenaire',
     store: new pgSession({ pool, schemaName: 'site', tableName: 'session_partenaire' }),
