@@ -88,19 +88,20 @@ const pgSession = require('connect-pg-simple')(session);
 
 app.set('trust proxy', 1); // requis derrière le reverse proxy Apache pour que les cookies "secure" fonctionnent
 
-app.use(session({
+const clientSession = session({
     store: new pgSession({ pool, schemaName: 'site', tableName: 'session' }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    rolling: true, // chaque visite prolonge automatiquement l'expiration
+    rolling: true,
     cookie: {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
-        maxAge: 400 * 24 * 60 * 60 * 1000 // 400 jours — plafond maximal autorisé par les navigateurs (Chrome/Safari)
+        maxAge: 400 * 24 * 60 * 60 * 1000
     }
-}));
+});
+app.use(clientSession);
 
 const authRouter = require('./routes/auth.routes')(pool);
 app.use('/api', authRouter);
@@ -182,6 +183,8 @@ app.use('/api/partenaire', partenaireAuthRouter);
 const staffPartenairesRouter = require('./routes/staffPartenaires.routes')(pool);
 app.use('/api/staff', staffPartenairesRouter);
 app.use('/api', mesTicketsRouter);
+const productionRouter = require('./routes/production.routes')(pool);
+app.use('/api', productionRouter);
 
 
 const PORT = process.env.PORT || 3000;
@@ -878,6 +881,51 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const http = require('http');
+const { Server } = require('socket.io');
+
+const serveurHttp = http.createServer(app);
+const io = new Server(serveurHttp); // même origine uniquement, pas de CORS à ouvrir
+
+// 3 sessions distinctes (Client/Staff/Partenaire) -- on détermine laquelle
+// s'applique en inspectant le cookie présent, pas une seule comme le
+// patron générique initial le supposait. staffSession et partenaireSession
+// sont déjà nommées plus haut dans ce fichier ; clientSession vient d'être
+// nommée à l'étape 1 ci-dessus.
+io.use((socket, next) => {
+    const cookies = socket.request.headers.cookie || '';
+    if (cookies.includes('connect.sid.staff=')) {
+        staffSession(socket.request, {}, next);
+    } else if (cookies.includes('connect.sid.partenaire=')) {
+        partenaireSession(socket.request, {}, next);
+    } else {
+        clientSession(socket.request, {}, next);
+    }
+});
+
+io.on('connection', (socket) => {
+    socket.on('rejoindre-ticket', async (idTicket) => {
+        const session = socket.request.session;
+        let autorise = false;
+        if (session.id_utilisateur) {
+            const r = await pool.query('SELECT 1 FROM site.tickets WHERE id_ticket = $1 AND id_utilisateur = $2', [idTicket, session.id_utilisateur]);
+            autorise = r.rowCount > 0;
+        } else if (session.id_staff) {
+            autorise = true; // tout staff peut rejoindre n'importe quel ticket, cohérent avec la lecture déjà ouverte
+        } else if (session.id_partenaire) {
+            const r = await pool.query('SELECT 1 FROM site.tickets WHERE id_ticket = $1 AND id_partenaire_assigne = $2', [idTicket, session.id_partenaire]);
+            autorise = r.rowCount > 0;
+        }
+        if (autorise) socket.join(`ticket:${idTicket}`);
+    });
+
+    socket.on('frappe:debut', (idTicket) => socket.to(`ticket:${idTicket}`).emit('frappe:debut'));
+    socket.on('frappe:fin', (idTicket) => socket.to(`ticket:${idTicket}`).emit('frappe:fin'));
+});
+
+global.ioMessagerie = io;
+
+serveurHttp.listen(PORT, () => {
   console.log(`API VIN décodeur démarrée sur http://localhost:${PORT}`);
 });
+
