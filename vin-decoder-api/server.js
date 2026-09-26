@@ -185,6 +185,8 @@ app.use('/api/staff', staffPartenairesRouter);
 app.use('/api', mesTicketsRouter);
 const productionRouter = require('./routes/production.routes')(pool);
 app.use('/api', productionRouter);
+const mouvementsRouter = require('./routes/mouvements.routes')(pool);
+app.use('/api', mouvementsRouter);
 
 
 const PORT = process.env.PORT || 3000;
