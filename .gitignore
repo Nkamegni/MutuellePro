@@ -29,3 +29,4 @@ public/js/server.js
 public/js/requireAuth.js
 public/js/requireStaffAuth.js
 public/js/*.routes.js
+backups-postgres/
