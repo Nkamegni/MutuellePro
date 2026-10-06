@@ -1,9 +1,9 @@
 # RUT — Référentiel Unique de Tarification
-**v5.1 — Automobile (règles de calcul), cartographie hors automobile, architecture cible, contenu des référentiels — 03/10/2026** (v3.0 livrée puis complétée en v3.1, étendue en v4.0 et v5.0 : voir l'Historique)
+**v5.3 — Automobile (règles de calcul), cartographie hors automobile, architecture cible, référentiels, texte réglementaire de 1994 — 03/10/2026** (v3.0 livrée puis complétée en v3.1, étendue en v4.0, v5.0 et v5.1 : voir l'Historique)
 
 Document source, humain, de référence unique. `areas/tarification.md` (mémoire technique auto-générée) reste un journal de travail ; le RUT est ce qui fait autorité au-dessus — y compris, à terme, matérialisable directement en base de données.
 
-**Périmètre de cette version (v5.1)** : tout le contenu de la v4.0 (Automobile avec ses règles de calcul, cartographie hors automobile), **plus** la description de l'architecture cible : une table de tarif unique, ses tables de concepts, ses mécanismes et ses procédures (Pilier 2, v5.0). Toujours au niveau des règles et de la conception, **pas** de l'application de gestion. **Rien n'est implémenté** : le système n'est pas modifié par cette phase.
+**Périmètre de cette version (v5.2)** : tout le contenu de la v4.0 (Automobile avec ses règles de calcul, cartographie hors automobile), **plus** la description de l'architecture cible : une table de tarif unique, ses tables de concepts, ses mécanismes et ses procédures (Pilier 2, v5.0). Toujours au niveau des règles et de la conception, **pas** de l'application de gestion. **Rien n'est implémenté** : le système n'est pas modifié par cette phase.
 
 **Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
 
@@ -97,6 +97,13 @@ Document source, humain, de référence unique. `areas/tarification.md` (mémoir
   - [6.10 — Dénominations par compagnie (equivalence_garantie, 385 lignes)](#610--dénominations-par-compagnie-equivalence_garantie-385-lignes)
   - [6.11 — Registre des sources](#611--registre-des-sources)
   - [6.12 — Pièges de lecture des sources](#612--pièges-de-lecture-des-sources)
+- [Pilier 2 (v5.2) — Texte réglementaire de 1994 et directives de souscription SUNU](#pilier-2-v52--texte-réglementaire-de-1994-et-directives-de-souscription-sunu)
+  - [7.1 — L'arrêté n° 00380/MINEF/DCE/A du 16 novembre 1994](#71--larrêté-n-00380minefdcea-du-16-novembre-1994)
+  - [7.2 — Directives de souscription du risque automobile (SUNU, pages 7 à 13)](#72--directives-de-souscription-du-risque-automobile-sunu-pages-7-à-13)
+  - [7.3 — Options IPT et IAC de SUNU (page 33)](#73--options-ipt-et-iac-de-sunu-page-33)
+  - [7.4 — Accessoires SUNU (page 34) et comparaison avec la base](#74--accessoires-sunu-page-34-et-comparaison-avec-la-base)
+  - [7.5 — Décisions de Roger du 03/10/2026 : accessoires, Fichier central, mise à jour de la base](#75--décisions-de-roger-du-03102026--accessoires-fichier-central-mise-à-jour-de-la-base)
+  - [7.6 — Source Frais_et_accessoires.csv : décisions du 03/10/2026](#76--source-frais_et_accessoirescsv--décisions-du-03102026)
 - [Pilier 3 — Mémoire : décisions et justifications](#pilier-3--mémoire--décisions-et-justifications)
 - [Pilier 4 — Pilotage](#pilier-4--pilotage)
   - [Dettes identifiées sur ce périmètre](#dettes-identifiées-sur-ce-périmètre)
@@ -125,7 +132,7 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 | 8 | Vol | SUNU, Vol Braquage/Partiel | Doublon — vérifié sur toutes les colonnes (dates de validité, statut, critères, offre commerciale identiques) : seul `bareme_tranche.id` diffère | **Corrigé le 03/10/2026** — même nettoyage que #7 |
 | 9 | Incendie | ROYAL ONYX, Cat.02 | Taux de 2,4%, alors que toutes les autres catégories (ROYAL ONYX et le reste du marché) se situent entre 0,18% et 0,5% — exactement 10× la valeur PROASSUR à la même catégorie (0,24%) | **Non résolu** — ressemble fortement à une virgule décalée, à vérifier auprès de la compagnie |
 | 10 | DTA | `site.bareme_dta`, lignes "par catégorie, 2023" | Redondance — valeurs reprises d'un tarif à lecture directe (AFRINS) sans vérifier si elles différaient du barème général ministériel ; interprétées à tort comme un changement réglementaire réel dans une version antérieure de ce document | **Confirmé par Roger, non corrigé dans cette session** — `bareme_dta` sera purgée par son équipe propriétaire ; cette session ne fait que cartographier |
-| 11 | Accessoires | AFRINS, contrats annuels de prime nette supérieure à 100 000 FCFA | **Règle posée par Roger (03/10/2026)** : accessoires = 3 150 FCFA pour un contrat annuel de plus de 100 000 FCFA de prime nette en RC/RTI, 2 500 FCFA sinon. Le tableau AFRINS l'applique en Zones B et C, Cat.1 (4 lignes à 3 150 ; la ligne annuelle à 98 143 FCFA reste à 2 500, ce qui est cohérent). Il ne l'applique **pas** aux 57 autres lignes annuelles dépassant 100 000 FCFA (Zone A Cat.1, Cat.2, Cat.3), restées à 2 500. Aucune note écrite dans le PDF. | **Règle connue, périmètre à confirmer** — soit le tableau est incohérent sur 57 lignes, soit la règle est plus restreinte que posée (Cat.1 hors Zone A ?) |
+| 11 | Accessoires | AFRINS, catégorie 1, contrat annuel, prime nette supérieure à 100 000 FCFA | Règle : 3 150 FCFA (2 500 FCFA sinon). Le PDF AFRINS l'applique en Zones B et C ; en Zone A, trois lignes (101 997, 127 264, 148 363 FCFA) restent à 2 500 | **Résolu par décision de Roger (03/10/2026)** : règle maintenue, « source officielle » ; les trois lignes de la Zone A sont traitées comme des écarts du PDF, non vérifiés auprès d'AFRINS ; implémentée en B2, script non exécuté |
 | 12 | IPT | AFRINS, absent de la base | Le tarif à lecture directe AFRINS prévoit une IPT forfaitaire (7 500 FCFA en Cat.1 et 2 ; 5 000 FCFA en Cat.3 et 5A) mais AFRINS n'a aucune ligne IPT/IAC en base (17 compagnies seulement) | **Lacune constatée, non corrigée** — cette phase cartographie sans modifier le système |
 | 13 | Hors auto | Catalogue en base vs `Garanties.csv` | Deux référentiels de garanties non rapprochés. Noms identiques (garanties en base concernées) : Santé 5 sur 28, Incendie 19 sur 29, RC générale 10 sur 11, Transport 9 sur 12, Risques techniques 1 sur 2, Aviation 4 sur 6. Test strict : le recouvrement réel est probablement supérieur | **Non résolu** — pas de rapprochement à ce stade |
 | 14 | Hors auto | Crédit et Cautions | Branche vide en base alors que `Garanties.csv` en porte 33 lignes (17 garanties, GMCSA, SAMIRIS copie, SANLAM 1 ligne) | **Information consignée (RUT 4.0, section 4.5), non intégrée en base** sur décision de Roger |
@@ -139,11 +146,19 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 | 22 | Architecture | `fn_generer_code_franchise` | Fonction sans trigger rattaché dans le schéma d'après l'inventaire : le code de franchise n'est peut-être plus généré automatiquement | **À vérifier** |
 | 23 | Architecture | `genre` | Le concept « genre de véhicule » existe en table (16 lignes) mais aucune colonne de `tarif` ni de `bareme_tranche` ne le référence : chaînon manquant de la cause racine des anomalies #2/#3 | **Constaté** — se résout par la coordonnée `id_genre` de la table cible |
 | 24 | Architecture | `tmp_benchmark_meta` | Table résiduelle de 16 lignes, hors convention (préfixe `tmp_`) | **À vérifier avant suppression** — hors périmètre de cette phase |
-| 25 | Compagnies | `compagnie` | SAMIRIS (id 21) : `actif_site = true` et agrément ACTIF en base alors que Roger l'a déclarée inactive ; nom commercial « Alpha Assurances ». ZENITHE : nom commercial encore « SOCAR ». Numéro et date d'agrément vides pour les 21 compagnies | **Constaté, non corrigé** — la base ne reflète pas les décisions (cette phase ne modifie pas le système) |
+| 25 | Compagnies | `compagnie` | SAMIRIS (id 21) : `actif_site = true` et agrément ACTIF en base alors que Roger l'a déclarée inactive ; nom commercial « Alpha Assurances ». ZENITHE : `nom` resté « SOCAR » et `nom_commercial` vide (`nom` conserve aussi ATLANTIQUE pour AFG et BENEFICIAL pour BELIFE, non touchés car non demandés). Numéro et date d'agrément vides pour les 21 compagnies | **Mise à jour autorisée par Roger le 03/10/2026** — script `MAJ_BASE_03102026.sql` (bloc A) préparé, non exécuté à la rédaction |
 | 26 | Dénominations | `offre`, `offre_commerciale`, `equivalence_garantie` | Trois structures pour la même notion ; `offre.id_produit` renseigné sur 1 ligne seulement des 146 ; aucun rapprochement | **Constaté** — à consolider dans la table cible (5.4) |
 | 27 | RUT | Section 3.7 (v3.0 à v5.0) | Le RUT affirmait que les formules de souscription n'avaient « aucune donnée » alors que la base en contient 16 | **Corrigé en v5.1** (6.6) |
 | 28 | Sources | 19 fichiers non cités jusqu'à la v5.0 | Sources sans trace dans le RUT ; 3 contenus non relus (garanties facultatives n° 2, `Garanties_IAC_et_IPT.csv`, `OFFRE_COMMERCIALE.sql`), 2 scans non exploités pour les conditions de souscription et les zones, `devis.js` non analysé | **Partiellement traité** — registre des sources (6.11), lectures restantes en dettes |
-| 29 | Accessoires | Valeurs génériques et AFRINS | Trois valeurs concurrentes : 2 500 FCFA (`compagnie.accessoires_par_defaut`, 21 compagnies), 3 000 FCFA (`bareme_accessoire`, AUCUNE, Automobile) et, pour AFRINS, une seule ligne à 3 000 FCFA « [NON IDENTIFIEE] » sans palier, alors que le tarif AFRINS donne 2 500 FCFA (3 150 FCFA au-delà de 100 000) + Fichier central 1 000 ou 500 FCFA. 3 000 FCFA correspond peut-être à « Accessoires + Fichier ASAC » (fiche Cat.4A), non établi | **Non résolu** — à trancher : le montant de la base inclut-il le Fichier central ? |
+| 29 | Accessoires | Valeurs génériques et AFRINS | Trois valeurs concurrentes : 2 500 FCFA (`compagnie.accessoires_par_defaut`), 3 000 FCFA (`bareme_accessoire`, AUCUNE, Automobile) et une ligne AFRINS à 3 000 FCFA « [NON IDENTIFIEE] » | **Résolu par décision de Roger (03/10/2026)** : la valeur juste est **2 500 FCFA** (source `Frais_et_accessoires.csv`, tarif AFRINS, découpage du Pool, manuel SUNU) ; la base, qui porte 35 lignes à 3 000, est à corriger par `MAJ_BASE_03102026.sql`, non exécuté |
+| 30 | Majorations | `majoration_reduction` id 2 | Description « permis de moins de **3 ans** » alors que l'arrêté de 1994 (art. 5-3 b, vérifié visuellement) dit **« moins deux (2) ans »** ; le RUT 6.3 avait repris l'erreur | **Correction proposée, non demandée par Roger** — incluse comme bloc C de `MAJ_BASE_03102026.sql` (à retirer si elle n'est pas validée), non exécutée. Une fonction ou une application qui coderait « 3 ans » en dur est à corriger |
+| 31 | SUNU | Garanties facultatives | Tierce complète (2,50 %), Tierce collision (1,75 %), Incendie (0,25 %, minimum 5 000), Bris de glaces (0,50 % et 1,50 %), Avance sur recours (2,50 %), Assistance en réparation (1,50 %) : taux dans le document SUNU, **absents de la base** (qui n'a de SUNU que le Vol et la DR). Franchises SUNU absentes aussi | **Constaté, non corrigé** — à charger après décision |
+| 32 | SUNU | Accessoires | Base différente du manuel : courte période à 3 000 FCFA (manuel : 2 500 hors Fichier central) ; ligne « autres risques » de 0 à 100 000 FCFA absente ; tranche 5 000 FCFA rattachée à Flotte Automobile | **Résolu par décision de Roger (03/10/2026)** : le manuel de SUNU prévaut ; corrections B5 et B6 du script, non exécuté |
+| 33 | SUNU | IPT, formule 3 (page 33) | Capitaux imprimés (invalidité 1 000 000, frais médicaux 100 000) incohérents avec la prime imprimée de 20 500 pour 5 places ; elle suppose 2 000 000 et 200 000. La base suit la prime | **Anomalie de la source** — consignée |
+| 34 | Sources | `acte_reglementaire` n° 1 | L'arrêté de 1994 n'a pas de `source_document` en base ; il figure dans `Tarif_Ministériel.pdf` (p.2-6), fichier fourni par SUNU | **Constaté, non corrigé** |
+| 35 | Accessoires | `bareme_accessoire` | Décalage systématique de +500 FCFA : 35 lignes à 3 000 FCFA là où la source dit 2 500 (15 compagnies) ; BELIFE a perdu une tranche ; trois lignes Pool, la ligne ZENITHE et les « autres risques » SUNU sont absentes | **Décidé le 03/10/2026** (7.6) : alignement sur la source, lignes ajoutées ; script `MAJ_BASE_03102026.sql` prêt, non exécuté |
+| 36 | Fichier central | `Frais_et_accessoires.csv` | Fichier central à 0 sur 14 lignes (GMCSA hors automobile, Green Assistance, Voyage, montants négatifs) | **Erreur de saisie** selon Roger : 1 000 FCFA partout, 500 FCFA pour le Pool ; aucune correction nécessaire dans la base (le Fichier central n'y figure pas) |
+| 37 | SUNU | Flotte | Le manuel donne un minimum de 5 000 et un maximum de 10 000 FCFA par flotte, plus 250 FCFA par véhicule ; la base le représente par deux tranches de prime (0 à 1 000 000 : 5 000 ; au-delà : 10 000) | **Approximation constatée, non corrigée** — `bareme_accessoire` ne sait pas porter un minimum et un maximum |
 
 **Anomalies mineures, probable simple arrondi du document source** (écart <5%, mentionnées pour complétude, pas nécessairement bloquantes) :
 - Cat.06, nombre_cartes=5/TARIF_2_3, Zone B non réduite par rapport à Zone A (écart Zone C seul : 4,35%)
@@ -159,7 +174,7 @@ Quand une anomalie est résolue (retour au PDF ministériel original, ou toute a
 ### Acteurs
 - **CIMA / Zone CEMAC** — autorité réglementaire de référence pour le tarif RC ministériel.
 - **MINEFI (Ministère des Finances, Cameroun)** — autorité d'application locale.
-- **19 compagnies actives au marché** : ACTIVA, AFG (ex-ATLANTIQUE), AFRINS, AGC, ALLIANZ, AREA, AXA, BELIFE (ex-BENEFICIAL), CHANAS, CPA, GMCSA, LDASA, NSIA, PROASSUR, ROYAL ONYX, SAAR, SANLAM, SUNU, ZENITHE (code réaffecté, ex-SOCAR). **Niveau générique** : AUCUNE (POOL, `id_compagnie=0`) — ce n'est pas une compagnie. **Non active** : SAMIRIS (`Actif = False`, confirmé par Roger le 03/10/2026) ; son code a été réaffecté le 02/10/2026 à partir de l'ancien code ALPHA, dont l'entité d'origine est en liquidation judiciaire terminée. Ses données (par exemple dans le barème DR) restent en base. **La base ne reflète pas encore cette décision** : `actif_site = true` et `statut_agrement = ACTIF` pour SAMIRIS ; ZENITHE porte encore le nom commercial SOCAR (6.1, anomalie #25).
+- **19 compagnies actives au marché** : ACTIVA, AFG (ex-ATLANTIQUE), AFRINS, AGC, ALLIANZ, AREA, AXA, BELIFE (ex-BENEFICIAL), CHANAS, CPA, GMCSA, LDASA, NSIA, PROASSUR, ROYAL ONYX, SAAR, SANLAM, SUNU, ZENITHE (code réaffecté, ex-SOCAR). **Niveau générique** : AUCUNE (POOL, `id_compagnie=0`) — ce n'est pas une compagnie. **Non active** : SAMIRIS (`Actif = False`, confirmé par Roger le 03/10/2026) ; son code a été réaffecté le 02/10/2026 à partir de l'ancien code ALPHA, dont l'entité d'origine est en liquidation judiciaire terminée. Ses données (par exemple dans le barème DR) restent en base. **La base ne reflète pas encore cette décision** : `actif_site = true` et `statut_agrement = ACTIF` pour SAMIRIS ; ZENITHE a son `nom` resté SOCAR et un `nom_commercial` vide (6.1, anomalie #25).
 
 ### Texte réglementaire fondateur
 Tarif ministériel RC automobile — barème CIMA/Zone CEMAC par catégorie, zone, force fiscale (Essence/Diesel distincts), cylindrée (2-3 roues). Source brute : document PDF ministériel, triangulé avec le fichier GMCSA (8 écarts trouvés, 8 fois la lecture confirmée correcte).
@@ -1576,7 +1591,7 @@ Observé dans le tarif AFRINS, Cat.1, 2 et 3 (90 lignes par durée, 100 % confor
 
 Fiche Cat.4A (format Pool TPV) : 3 mois = 25 %, 6 mois = 50 %, 12 mois = 100 % (3 valeurs vérifiées). Cat.5A : prime annuelle seulement.
 
-Ce n'est **pas** un prorata au jour (60/365 = 16,4 %, et non 20 %). **À confirmer** : s'agit-il d'un barème réglementaire de court terme ou d'une convention propre à AFRINS ? Tant que ce n'est pas établi, la règle 10 s'applique : elle n'est pas généralisée aux autres compagnies. Cette notion de durée est la même que celle qui borne les paliers d'accessoires (3.2).
+Ces coefficients sont ceux de l'**article 6 de l'arrêté de 1994** (1 à 60 jours : 20 % ; 61 à 120 : 40 % ; 121 à 180 : 60 % ; 181 à 240 : 80 % ; 241 à 365 : 100 %) : ils sont **réglementaires et valables pour toutes les compagnies** (7.1). Ce n'est pas un prorata au jour (60/365 = 16,4 %). Le tarif AFRINS ne fait que les appliquer. La fiche Cat.4A (Pool TPV) a ses propres coefficients (25 % et 50 %). Cette notion de durée est la même que celle qui borne les paliers d'accessoires (3.2).
 
 ### 3.2 — Accessoires (`bareme_accessoire`)
 
@@ -1847,7 +1862,7 @@ Table source : `site.bareme_dta` (schéma `site`, propriété historique de Prod
 
 ### 3.8 — Directives de souscription par compagnie
 
-**Non renseigné en base** : aucune règle d'acceptation, de refus, de zones couvertes ni de pièces exigées par compagnie. **Une source existe pourtant** : la note de service n° 0012/22 de PROASSUR (WAFA Assurance), intitulée « tarif et conditions de souscription automobile » (acte n° 6, 7 pages, scan sans texte). Seul son tarif a été exploité ; ses **conditions de souscription n'ont pas été lues** (registre des sources, 6.11). Pour les autres compagnies, aucune source n'a été fournie.
+**Corrigé en v5.2.** Les directives de souscription **de SUNU** sont documentées en **7.2** : principes, garanties minimales, pièces exigées, conditions de souscription des garanties dommages, règle du Vol, tableau des taux, franchises. Pour les autres compagnies, aucune règle d'acceptation, de refus ou de pièces exigées n'est renseignée, en base ou en document. Une source existe pour PROASSUR : la note de service n° 0012/22 (WAFA Assurance), « tarif et conditions de souscription », 7 pages, scan sans texte, **encore à lire** (registre des sources, 6.11).
 
 ### Ce que cette section ne peut pas encore garantir
 
@@ -1864,8 +1879,9 @@ L'objectif annoncé — calculer une Prime TTC comparable entre compagnies sur u
 | Dommages | **Non** |
 | Tierce, Vol véhicule, Incendie, Bris de glaces | **Partiel** — AUCUNE seulement en Cat.04A/B/C |
 | Vol des accessoires, Brigandage | Oui — AUCUNE (2,5 % ; 1,2 %) |
-| Accessoires | **Contradictoire** — 2 500 FCFA (`compagnie.accessoires_par_defaut`) ou 3 000 FCFA (`bareme_accessoire`, AUCUNE, branche Automobile) ; voir l'anomalie #29 |
-| Fichier central, Carte rose | **Non établi** — valeurs connues chez AFRINS seul ; aucune décision n'a été prise de les promouvoir en valeurs génériques |
+| Accessoires | **Oui** — 2 500 FCFA (décision de Roger, 03/10/2026) ; `compagnie.accessoires_par_defaut` vaut déjà 2 500 ; la base porte encore 3 000 pour AUCUNE tant que `MAJ_BASE_03102026.sql` n'est pas exécuté |
+| Fichier central | **Oui** — 1 000 FCFA hors catégorie 4 ; Pool TPV (4A, 4B, 4C) : 500 FCFA (décision de Roger, 03/10/2026) ; paramètre `site.production_frais_fixes` |
+| Carte rose | **Non établi** — valeur connue chez AFRINS seul (1 000 FCFA) ; aucune décision de la promouvoir en valeur générique |
 | TVA | Oui — 19,25 % |
 | DTA | Oui — `site.bareme_dta` (à purger de la redondance, anomalie #10) |
 
@@ -2326,13 +2342,13 @@ Chaque coordonnée, chaque unité, chaque étape de calcul et chaque notion du m
 |---|---|---|---|
 | 1 | RC de base | Lecture du barème (catégorie, zone, puissance, énergie, remorque…) | Établi |
 | 2 | Surprime matière inflammable | Lecture, si demandée (catégories 02 et 03) | Établi ; genre de véhicule à ajouter (#2/#3) |
-| 3 | Ajustements RC réglementaires | RC × (1 + somme des ajustements en %) | Établi |
+| 3 | Ajustements RC réglementaires | RC × (1 + somme des ajustements en %) : art. 5 (socioprofessionnel, jeune conducteur ou permis de moins de 2 ans, clergé), art. 8 (surprime de sinistralité), art. 9 et 10 (bonification jusqu'à 10 %) | Établi (règle de cumul à confirmer) |
 | 4 | DR | montant fixe + RC ajustée × taux | Établi |
 | 5 | IPT / IAC | Forfait, ou montant par place × nombre de places, par composante | Établi (17 compagnies) |
 | 6 | Garanties facultatives | Valeur assurée × taux ; **Vol partiel et Vol braquage s'ajoutent au Vol véhicule** (liens ADDITIF, 6.4) | Établi pour PROASSUR et ROYAL ONYX seulement |
-| 7 | Coefficient de durée | Appliqué à RC + DR + IPT annuels | Observé chez AFRINS seul |
-| 8 | Accessoires | Palier selon prime nette et durée | Règle à confirmer (#11) |
-| 9 | Fichier central | Montant fixe par contrat | Observé chez AFRINS seul |
+| 7 | Coefficient de durée | Appliqué à RC + DR + IPT annuels (art. 6 de l'arrêté de 1994) | **Réglementaire** (toutes compagnies) |
+| 8 | Accessoires | Palier selon prime nette et durée ; 2 500 FCFA par défaut ; 3 150 FCFA pour AFRINS, catégorie 1, annuel, prime nette supérieure à 100 000 | Établi par décision de Roger (03/10/2026) |
+| 9 | Fichier central | Montant fixe par contrat : 1 000 FCFA, 500 FCFA pour le Pool TPV | Établi par décision de Roger (03/10/2026) ; absent de `tarification` |
 | 10 | Assiette de TVA | Prime nette + accessoires + Fichier central | Établi sur AFRINS |
 | 11 | TVA | 19,25 % × assiette | Établi (trois sources) |
 | 12 | Carte rose | Montant fixe par contrat, hors assiette de TVA | Observé chez AFRINS seul |
@@ -2431,7 +2447,7 @@ Retirés à la bascule : les colonnes redondantes de `tarif`, le champ JSON `cri
 
 ### 6.1 — Compagnies
 
-| id | Code | Nom commercial en base | Actif site | Statut agrément |
+| id | Code | Nom commercial (à défaut, `nom`) | Actif site | Statut agrément |
 |---|---|---|---|---|
 | 0 | AUCUNE | Aucune (Mutuelle Pro Assurances) | True | ACTIF |
 | 1 | GMCSA | Garantie Mutuelle des Cadres | True | ACTIF |
@@ -2458,7 +2474,7 @@ Retirés à la bascule : les colonnes redondantes de `tarif`, le champ JSON `cri
 Constats :
 
 - **SAMIRIS (id 21)** : la base indique `actif_site = true` et `statut_agrement = ACTIF`, alors que Roger l'a déclarée inactive le 03/10/2026. Son nom commercial en base est « Alpha Assurances ». **La base n'a pas été mise à jour** (anomalie #25).
-- **ZENITHE (id 13)** : le code a été renommé, mais le nom commercial reste « SOCAR » (anomalie #25).
+- **ZENITHE (id 13)** : `nom` est resté « SOCAR » et `nom_commercial` est vide. `nom` garde de même ATLANTIQUE (AFG), BENEFICIAL (BELIFE) et ALPHA (SAMIRIS) : le renommage n'a porté que sur `code_compagnie`. Le script `MAJ_BASE_03102026.sql` aligne `nom` de ZENITHE et de SAMIRIS sur leur code (anomalie #25).
 - **Aucune compagnie n'a de numéro ni de date d'agrément, ni de date de révocation** : ces colonnes sont vides pour les 21 lignes. L'id 20 n'existe pas.
 - **Accessoires par défaut : 2 500 FCFA pour les 21 compagnies** (colonne `accessoires_par_defaut`) — valeur retrouvée dans le tarif AFRINS. Mais le barème générique `bareme_accessoire` (AUCUNE, branche Automobile) donne **3 000 FCFA** : deux valeurs génériques concurrentes (anomalie #29).
 
@@ -2497,7 +2513,7 @@ Territoire et devise : CM / XAF (15). Le texte fondateur du barème RC est l'**a
 | 5 | SUNU | VOL / VOL_PARTIEL | DISPOSITIF_ALARME_ANTI_BRAQUAGE | REDUCTION | -20 | Installation d'un dispositif d'alarme ou de protection contre le braquage — Vol uniquement |
 | 6 | SUNU | VOL / VOL_VEHICULE | DISPOSITIF_ALARME_ANTI_BRAQUAGE | REDUCTION | -20 | Installation d'un dispositif d'alarme ou de protection contre le braquage — Vol uniquement |
 
-Les trois premières s'appliquent à la **RC uniquement**, au niveau générique (toutes compagnies, repli règle 12) : +10 % pour les délégués médicaux, agents publicitaires et agents d'affaires ; +10 % pour un conducteur de moins de 25 ans ou un permis de moins de 3 ans ; −10 % pour le clergé classé à faible circulation. Les trois autres sont des **réductions de 20 % chez SUNU** sur le Vol (véhicule, partiel, braquage) en cas de dispositif d'alarme ou de protection contre le braquage. Toutes sont en vigueur depuis le 01/01/2000. **Règle de cumul non documentée** : additif ou multiplicatif — à confirmer.
+Les trois premières s'appliquent à la **RC uniquement**, au niveau générique (toutes compagnies, repli règle 12) : +10 % pour les délégués médicaux, agents publicitaires et agents d'affaires ; +10 % pour un conducteur de moins de 25 ans ou un permis de moins de 2 ans (l'arrêté dit 2 ans, la base dit 3 ans : anomalie #30) ; −10 % pour le clergé classé à faible circulation. Les trois autres sont des **réductions de 20 % chez SUNU** sur le Vol (véhicule, partiel, braquage) en cas de dispositif d'alarme ou de protection contre le braquage. Toutes sont en vigueur depuis le 01/01/2000. **Règle de cumul non documentée** : additif ou multiplicatif — à confirmer.
 
 ### 6.4 — Liens entre garanties (`garantie_lien`, 5 lignes)
 
@@ -2656,7 +2672,7 @@ Détail en [annexe E](RUT_annexe_E_accessoires.md). Résumé par compagnie :
 | SANLAM | 1 | 3 000 | aucun | toutes (vide) |
 | SUNU | 6 | 3 000, 4 000, 5 000, 10 000 | aucun, plage | AUTOMOBILE |
 
-**Lecture** : « toutes (vide) » signifie que la branche n'est pas renseignée dans la ligne. **AFRINS n'a qu'une ligne**, à 3 000 FCFA, sans palier, sans branche, avec le risque source « [NON IDENTIFIEE] ». Le tarif AFRINS donne pourtant 2 500 FCFA d'accessoires (3 150 FCFA au-delà de 100 000 FCFA de prime nette, règle de Roger) **plus** un Fichier central de 1 000 ou 500 FCFA ; 3 000 FCFA est le montant de « Accessoires + Fichier ASAC » de la fiche Cat.4A. Le niveau générique (AUCUNE) porte 3 000 FCFA pour l'Automobile et 1 000 FCFA (inactif) pour « Green Assistance Conducteur » (anomalie #29).
+**Lecture** : « toutes (vide) » signifie que la branche n'est pas renseignée dans la ligne. **AFRINS n'a qu'une ligne**, à 3 000 FCFA, sans palier, sans branche, avec le risque source « [NON IDENTIFIEE] ». Le tarif AFRINS donne pourtant 2 500 FCFA d'accessoires (3 150 FCFA au-delà de 100 000 FCFA de prime nette, règle de Roger) **plus** un Fichier central de 1 000 ou 500 FCFA ; 3 000 FCFA est le montant de « Accessoires + Fichier ASAC » de la fiche Cat.4A. Le niveau générique (AUCUNE) porte 3 000 FCFA pour l'Automobile et 1 000 FCFA (inactif) pour « Green Assistance Conducteur » (anomalie #29). **Décision du 03/10/2026 (7.6)** : les 3 000 FCFA sont une erreur de la base ; la valeur juste est 2 500 FCFA.
 
 ### 6.10 — Dénominations par compagnie (`equivalence_garantie`, 385 lignes)
 
@@ -2692,7 +2708,7 @@ Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce 
 
 | Fichier | Nature | Taille | Exploitation |
 |---|---|---|---|
-| `Tarif_Ministériel.pdf` | Barème RC ministériel (arrêté n° 00380/MINEF/DCE/A du 16/11/1994) | 34 p., **scan sans texte** | Source de `bareme_rc_complet.csv` (712 lignes) |
+| `Tarif_Ministériel.pdf` | **Document fourni par SUNU** (acte n° 10), 34 pages : arrêté de 1994 (p.2-6), directives de souscription SUNU (p.7-13), barèmes RC par zone et catégorie (p.14-32), options IPT/IAC SUNU (p.33), accessoires SUNU (p.34) | 34 p., **scan sans texte** | **Lu en v5.2** par OCR (7.1 à 7.4) ; source de `bareme_rc_complet.csv` |
 | `bareme_rc_complet.csv` | Extraction du barème RC | 712 lignes | Chargé en base ; base du RUT 2.3 |
 | `AFRI_INSURANCE_SA_-_TARIF_AUTOMOBILE_A_LECTURE_DIRECTE.pdf` | Tarif à lecture directe AFRINS : RC + DR + IPT, Cat.1 à 3 en zones A, B, C sur 5 durées, Cat.4A, Cat.5A | 22 p., texte | 504 lignes lues et vérifiées (RUT 3.1) ; seule source de la Prime TTC |
 | `NOTE_DE_SERVICE_N_0012_PORTANT_TARIF_ET_CONDITIONS_DE_SOUSCRIPTION_AUTOMOBILE_PROASSUR__WAFA_ASSURANCE_-2.pdf` | Note de service n° 0012/22 PROASSUR (WAFA) : tarif et conditions de souscription (acte n° 6) | 7 p., **scan sans texte** | Tarif exploité (DR PROASSUR) ; **conditions de souscription non exploitées** |
@@ -2705,6 +2721,7 @@ Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce 
 | `Garanties_canoniques.csv` | Garanties canoniques, colonne « Taux Taxes » à 0,00 % | 256 lignes | Sens de la colonne à clarifier (RUT 3.6) |
 | `Garanties_IAC_et_IPT.csv` | Garanties IAC et IPT par compagnie, avec colonnes de franchise | 89 lignes | Contenu non relu dans cette phase |
 | `Compléments_DR.csv` | Défense et recours : 5 compagnies complémentaires (AFRINS, ALLIANZ, ALPHA, AXA, SOCAR), acte n° 25 | 5 lignes | Exploité (RUT DR) |
+| `Frais_et_accessoires.csv` | Table d'origine du 25/09 des frais accessoires et du Fichier central par compagnie, risque, palier de prime et durée | 115 lignes | **Source des accessoires** : décisions du 03/10 en 7.6, comparaison en annexe F ; en cas de divergence avec une autre source, décision au cas par cas |
 | `Franchises.csv` | Franchises Automobile (LDASA, GMCSA, SAAR), acte n° 15 | 36 lignes | Exploité (6.5) |
 | `Offre_commerciale_autre_source.csv` | Offres génériques de toutes les branches (compagnie 0) | 1205 lignes | Source du catalogue hors automobile (RUT 4.2) ; **ne contient aucun prix** |
 | `OFFRE_COMMERCIALE.sql` | Script SQL de l'offre commerciale | — | Contenu non relu dans cette phase |
@@ -2718,7 +2735,7 @@ Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce 
 
 ### 6.12 — Pièges de lecture des sources
 
-- **Deux PDF sont des scans sans couche texte** (le tarif ministériel et la note PROASSUR) : une extraction automatique ne renvoie rien ; il faut les lire visuellement, page par page.
+- **Deux PDF sont des scans sans couche texte** (le tarif SUNU / ministériel et la note PROASSUR) : une extraction automatique ne renvoie rien. **L'OCR fonctionne** (Tesseract, modèle français, 200 dpi) mais confond des chiffres et perd des mots : tout montant critique doit être vérifié visuellement. Cas rencontrés : tableau de taux SUNU illisible, « 105 % » pour 1,05 %, « 0,50%0 » pour 0,50 ‰, « 1056 » pour 10 %, « 0080 » pour 00380.
 - **Les CSV sont en ISO-8859-1**, séparateur point-virgule ; une lecture en UTF-8 corrompt les accents.
 - **Colonnes dupliquées** : `Offre_commerciale_autre_source.csv` a deux colonnes `Obligatoire`, deux `Taux_TVA` (la première à 0,00, la seconde à 19,25) et deux `Taux_Taxe_Enregistrement`. Une lecture par nom de colonne n'en voit qu'une.
 - **Anciens noms de compagnie** dans les sources : ALPHA, BENEFICIAL, ATLANTIQUE, SOCAR, `<DOSSIERS>`, `<GENERIQUE>` ; ils se rapprochent de SAMIRIS, BELIFE, AFG, ZENITHE, AUCUNE.
@@ -2726,6 +2743,204 @@ Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce 
 - **Copies** : les lignes hors automobile d'ALPHA sont une copie de GMCSA (4.4).
 - **Extraction du PDF AFRINS** : les milliers sont séparés par des espaces et des espaces insécables, ce qui fait fusionner des colonnes si on ne distingue pas un espace simple d'un espacement de tableau.
 - **La base peut différer des décisions** : SAMIRIS inactive, nom commercial de ZENITHE (6.1).
+
+---
+
+## Pilier 2 (v5.2) — Texte réglementaire de 1994 et directives de souscription SUNU
+
+**Nature de cette section** : le contenu de `Tarif_Ministériel.pdf`, fichier fourni par SUNU (acte n° 10), jusque-là cité mais **non lu** : un scan de 34 pages sans couche texte. Il a été lu par OCR (Tesseract, modèle français) le 03/10/2026, et les points critiques (permis, tableau de sinistralité, taux SUNU, options IPT) ont été **vérifiés visuellement**. Le reste est une lecture OCR, signalée comme telle. Contenu du fichier : arrêté de 1994 (pages 2 à 6), directives de souscription SUNU (7 à 13), barèmes RC par zone et catégorie (14 à 32, déjà dans le RUT 2.3), options IPT/IAC SUNU (33), accessoires SUNU (34).
+
+### 7.1 — L'arrêté n° 00380/MINEF/DCE/A du 16 novembre 1994
+
+Signé à Yaoundé par le ministre de l'Économie et des Finances, il fixe les **tarifs minimaux de Responsabilité civile** des véhicules terrestres à moteur circulant au Cameroun. Il vise la loi n° 65/DF/9 du 22/05/1965 (assurance automobile obligatoire) et l'ordonnance n° 85/003 du 31/08/1985, et **abroge l'arrêté n° 0083/MINEFI/DCE/A du 28/04/1987** (art. 16). Le tarif minimal repose sur trois critères : la zone géographique de circulation, l'usage du véhicule, le statut socioprofessionnel et les caractéristiques du conducteur habituel (art. 2).
+
+**Zones géographiques de circulation** (art. 3) :
+
+| Zone | Localités |
+|---|---|
+| A | Douala, Yaoundé, Bafoussam, Garoua, Bamenda |
+| B | Maroua, Ngaoundéré, Ebolowa, Buéa et tous les autres chefs-lieux de département |
+| C | Autres localités et campagnes |
+
+**Dix usages** (art. 4) : I Tourisme ; II Commerce ; III Transport public de marchandises ; IV Transport public de voyageurs ; V Deux roues ; VI Véhicules confiés aux garagistes et aux vendeurs ; VII Véhicules des auto-écoles ; VIII Location de véhicules ; IX Engins mobiles de chantier ; X Ambulances, corbillards et fourgons funèbres. Les codes de catégorie du RUT (01 à 10C) en sont des subdivisions (4A, 4B, 4C, 5 et 5bis, 7ARC et 7SRC, 9A et 9B, 10A, 10B et 10C).
+
+**Majorations et réductions** (art. 5) — elles portent sur le tarif de base de la RC :
+
+| Critère | Ajustement | Texte |
+|---|---|---|
+| Délégués médicaux, agents publicitaires, agents d'affaires (forte circulation) | +10 % pour chacune de ces catégories | art. 5-1 |
+| Membres du clergé (faible circulation) | −10 % | art. 5-2 |
+| Conducteur habituel de moins de 25 ans | +10 % | art. 5-3 a |
+| Conducteur titulaire d'un permis de moins de **deux (2) ans** | +10 % | art. 5-3 b — vérifié visuellement |
+
+**La base dit « moins de 3 ans »** pour ce dernier critère (`majoration_reduction`, id 2), et le RUT 6.3 l'avait repris : c'est une erreur de la base, corrigée dans le script `MAJ_BASE_03102026.sql` (anomalie #30).
+
+**Assurances temporaires** (art. 6) — les primes s'entendent pour un an. Pour une garantie plus courte, la prime est une fraction de la prime annuelle :
+
+| Durée consécutive de garantie | Part de la prime annuelle |
+|---|---|
+| 1 à 60 jours | 20 % |
+| 61 à 120 jours | 40 % |
+| 121 à 180 jours | 60 % |
+| 181 à 240 jours | 80 % |
+| 241 à 365 jours | 100 % |
+
+**Ces coefficients sont réglementaires**, donc valables pour toutes les compagnies : c'est la réponse à la question laissée ouverte en 3.1bis (le tarif AFRINS ne fait que les appliquer). Autres règles de l'article 6 : au-delà de 240 jours en plusieurs fractionnements, la somme des fractions perçues ne peut dépasser **105 %** de la prime annuelle ; aucune attestation ne peut couvrir une durée supérieure à celle payée au comptant ; au renouvellement d'un contrat de moins d'un an, la prime de la période continue de garantie suit le même barème.
+
+**Suspension de garantie** (art. 7) : au-delà de quatre semaines consécutives de suspension non consécutive à un sinistre, l'assuré obtient un remboursement du prorata de prime non absorbée ou un report d'échéance (police mono-véhicule), ou la même chose au prorata des véhicules retirés (flotte). Les fractions exactes sont illisibles à l'OCR. **La suspension dure au plus 12 mois** ; au-delà, le contrat est résilié et les primes échues restent acquises à l'assureur.
+
+**Majoration pour sinistralité** (art. 8) — les compagnies sont libres de majorer le tarif selon le taux de sinistre de l'assuré pour un même véhicule, et doivent communiquer mensuellement leurs statistiques à la centrale des risques tenue par l'ASAC. Barème de surprime (tableau vérifié visuellement) :
+
+| Sinistres sur 12 derniers mois | sur 24 derniers mois | sur 36 derniers mois | Surprime, toutes catégories |
+|---|---|---|---|
+| 1 | 2 | 3 | 0 % |
+| 2 | 3 | 4 | 15 % |
+| 3 | 4 | 5 | 20 % |
+| 4 | 5 | 6 | 30 % |
+| 5 | 6 | 7 | 50 % |
+
+Le tableau donne trois seuils par ligne ; **le texte ne dit pas** s'il faut les trois ou l'un des trois pour que la surprime s'applique — à confirmer. Les sinistres pris en compte sont ceux qui font jouer la RC, hors sinistres déclarés pour ordre (responsabilité totale d'un tiers identifié, véhicule en stationnement non responsable).
+
+**Bonification pour non-déclaration de sinistre** (art. 9 et 10) : jusqu'à **10 %** de la prime pour une police mono-véhicule sans sinistre sur l'année (ou avec une attestation de non-sinistre de moins de 7 jours signée de la compagnie précédente) ; elle est supprimée à l'échéance suivant un sinistre. Pour une police de flotte de plus d'un véhicule, jusqu'à 10 % également, sur une portion de prime calculée par une formule dont les termes (véhicules, sinistres) sont illisibles à l'OCR.
+
+**Flotte** (art. 11 et 12) :
+
+- Les primes d'une flotte sont celles du tarif plein de chaque véhicule, avec une **réduction pour pluralité** de **10 %** du total des primes pour 2 à 20 véhicules assurés, **15 %** au-delà de 20.
+- Seuls les véhicules immatriculés au nom d'une même personne physique ou morale forment une flotte.
+- Le calcul se fait **séparément** pour les deux-roues à usage personnel (catégorie V) d'une part, et pour les quatre-roues et les catégories I, II, III, IX, X d'autre part. Les remorques ne comptent pas dans le nombre de véhicules, mais la réduction s'applique à leur prime.
+- **Aucune réduction** pour les catégories V bis (motos-taxis), VI (garagistes), VII (auto-écoles), VIII (location) ; ces véhicules ne sont jamais totalisés avec les autres.
+- Des véhicules couverts par des polices ou des compagnies différentes peuvent être regroupés, chaque police indiquant les autres (numéros de police, noms des sociétés).
+
+**Dispositions finales** (art. 13 à 17) : le dispositif d'application du tarif affiché au siège doit être identique chez les intermédiaires agréés ; les sinistres antérieurs à la publication ne sont pas concernés par les majorations de l'article 8 ; les contraventions sont punies selon l'article R 370 du Code pénal ; l'arrêté prend effet à sa publication.
+
+### 7.2 — Directives de souscription du risque automobile (SUNU, pages 7 à 13)
+
+Document interne de SUNU (acte n° 10), rédigé pour l'exercice 2018. Lecture OCR, hors tableau des taux et hors options IPT/IAC (vérifiés visuellement).
+
+**Principes** : le tarif en vigueur s'applique sans dérogation ; la RC pèse trop dans les souscriptions, SUNU veut élargir sa gamme (assistance sur le lieu du sinistre, remorquage) et sélectionner les véhicules ; **tout contrat automobile comporte au moins RC/RTI, Défense et Recours et IPT** ; les producteurs proposent plutôt l'**Individuelle accidents du conducteur** à tout demandeur, car l'obligation d'assurance ne couvre pas les dommages subis par le conducteur (art. 206).
+
+**Pièces exigées** : carte grise, certificat de visite technique, permis de conduire, certificat de capacité pour les taxis. Sociétés : carte grise dans la mesure du possible, état du parc sous 15 jours. Particuliers : photographie du véhicule pour la RC ; présence du véhicule et photographie pour les garanties dommages.
+
+**Garanties dommages** (Tierce, Tierce collision, Assistance à la réparation, Incendie, Vol, Bris de glace, Bris de glaces et blocs feux) : accordées **seulement si le véhicule a été vu** par le collaborateur, avec deux photographies (avant et arrière) au dossier.
+
+**Vol** : l'extension braquage est **obligatoire** ; souscrire le Vol intègre automatiquement le Vol partiel, le Vol total et le Vol par braquage (c'est la règle ADDITIF du RUT 6.4). Un dispositif d'alarme ou de protection contre le braquage, certifié par un installateur agréé, donne **−20 % sur la prime Vol** (c'est la réduction de la base, 6.3).
+
+**Tableau des taux de prime** (vérifié visuellement) :
+
+| Garantie | Âge du véhicule | Valeur assurée | Taux | Prime minimum |
+|---|---|---|---|---|
+| C1 Tierce complète | au plus 3 ans | valeur neuve au jour de la souscription | 2,50 % | — |
+| C2 Tierce collision | au plus 3 ans | valeur neuve au jour de la souscription | 1,75 % | — |
+| D Incendie | — | valeur déclarée (minimum 1 000 000) | 0,25 % | 5 000 |
+| E Vol (total + partiel + braquage) | jusqu'à 8 ans | valeur déclarée (minimum 1 000 000) | 2,25 % = 1,50 + 0,25 + 0,50 | — |
+| E Vol (total + partiel + braquage) | plus de 8 ans | valeur déclarée | 2,00 % (Vol total 1,25 d'après la base) | — |
+| F1 Bris de glaces | — | valeur déclarée ; indemnité limitée à 20 % de la valeur vénale | 0,50 % | 15 000 |
+| F2 Bris de glaces et blocs feux | — | valeur déclarée | 1,50 % | 25 000 |
+| I Avance sur recours | — | 1 000 000 | 2,50 % | 25 000 |
+| J Assistance en réparation | — | valeur déclarée, maximum 7 000 000 | 1,50 % | 15 000 |
+| Défense et recours | — | — | forfait 1 500 FCFA par véhicule | — |
+
+**Écart avec la base** : la base ne contient de SUNU que le **Vol** (1,50 % et 1,25 % selon l'âge, partiel 0,25 %, braquage 0,50 %) et la **DR à 1 500 FCFA** — tous deux conformes à ce tableau. **Tierce complète, Tierce collision, Incendie, Bris de glaces (F1 et F2), Avance sur recours et Assistance en réparation de SUNU ne sont pas en base** alors que leurs taux sont ici (anomalie #31). Le tableau ne précise pas les catégories concernées. Les deux lignes SUNU « Vol véhicule » du RUT 4.x (1,5 % et 1,25 %) se distinguent par l'**âge du véhicule** (jusqu'à 8 ans, plus de 8 ans), coordonnée que le barème ne porte pas encore.
+
+**Garantie « Participation à la réparation »** (Assistance en réparation) : réservée aux véhicules assurés avec au moins RC, Défense et recours, Personnes transportées, Vol et Incendie ; indemnité fonction de la valeur assurée, sur devis, après une franchise de 10 % avec un minimum de 100 000 FCFA ; somme assurée, de gré à gré, comprise entre 1 000 000 et 7 000 000 FCFA ; pas d'indemnité si le véhicule est déclaré épave. **Avance sur recours** : elle suppose une responsabilité du tiers établie par un procès-verbal de police ou de gendarmerie.
+
+**Franchises SUNU** (page 13, lecture OCR non vérifiée visuellement) :
+
+| Risque | Catégories | Franchise |
+|---|---|---|
+| C1 Tierce complète, C2 Tierce collision | 1 et 10B (collectivités publiques, enlèvement des ordures) | 5 % de l'indemnité, minimum 75 000 FCFA |
+| idem | 2, 4A et 10A (ambulances, corbillards, fourgons funéraires) | 10 % de l'indemnité, minimum 75 000 FCFA |
+| idem | 3, 4B, 4C, 6, 7 et 8 | 10 % de l'indemnité, minimum 150 000 FCFA |
+| idem | 9 et 10C (tracteurs agricoles ou forestiers, hors transport de grumes) | 10 % de la valeur neuve actualisée |
+| D Incendie | toutes | 10 % de l'indemnité, minimum 15 000 FCFA |
+| E Vol | toutes | 10 % de l'indemnité ; minimum 50 000 (vol partiel), 100 000 (vol total, braquage, brigandage) |
+| F Bris de glaces | toutes | 10 % de l'indemnité, minimum 15 000, maximum 75 000 FCFA |
+| I Avance sur recours | toutes | 25 % de l'indemnité, reversée à l'assuré quand le recours aboutit |
+| J Assistance à réparation | toutes | 10 % de l'indemnité, minimum 50 000 FCFA |
+
+La base ne contient pas ces franchises : `franchise_application` ne couvre que LDASA, GMCSA et SAAR (6.5).
+
+### 7.3 — Options IPT et IAC de SUNU (page 33)
+
+**Individuelle personnes transportées** — taux **0,50 ‰** du capital pour le décès accidentel, **0,50 ‰** pour l'incapacité permanente partielle, **1,05 %** du capital pour les frais médicaux et pharmaceutiques (vérifié visuellement). Exemple de la page, prime pour 5 places :
+
+| Formule | Décès | Invalidité | Frais médicaux (maximum) | Prime, 5 places | Base : décès / IPP / FM par place |
+|---|---|---|---|---|---|
+| 1 | 1 000 000 | 1 000 000 | 0 | 5 000 | 500 / 500 / — |
+| 2 | 1 000 000 | 1 000 000 | 100 000 | 10 250 | 500 / 500 / 1 050 |
+| 3 | 2 000 000 | 1 000 000 (imprimé) | 100 000 (imprimé) | 20 500 | 1 000 / 1 000 / 2 100 |
+| 4 | 3 000 000 | 3 000 000 | 300 000 | 30 750 | 1 500 / 1 500 / 3 150 |
+
+Les primes imprimées et les valeurs de la base **concordent** (par exemple 4 100 FCFA par place en formule 3 : 1 000 + 1 000 + 2 100). **Le document est incohérent avec lui-même en formule 3** : avec les capitaux imprimés (invalidité 1 000 000, frais médicaux 100 000), la prime serait de 12 750 FCFA pour 5 places, et non 20 500 ; elle correspond à une invalidité de 2 000 000 et des frais médicaux de 200 000, qui sont probablement les vrais capitaux (anomalie #33). La base suit la prime imprimée.
+
+**Individuelle accidents du conducteur** (lecture OCR, 4 formules) : décès 1 000 000, 2 000 000, 3 000 000, 4 000 000 ; invalidité 1 000 000, 1 000 000, 1 500 000, 2 000 000 ; frais médicaux 100 000, 100 000, 150 000, 200 000 ; options 001 à 004. Ces capitaux, au taux de 2 ‰ pour le décès et l'invalidité et de 2,6 % pour les frais médicaux, redonnent exactement les valeurs SUNU de la base (2 000 à 8 000 FCFA, 2 000 à 4 000 FCFA, 2 600 à 5 200 FCFA).
+
+### 7.4 — Accessoires SUNU (page 34) et comparaison avec la base
+
+SUNU présente ses accessoires **fichier central (FC) compris** : 250 FCFA par contrat, et 250 FCFA par véhicule pour une flotte. La base ne contient pas le FC (il est géré à part, 7.5) : ses montants SUNU sont donc ceux du document **moins 250 FCFA**. Il est perçu autant de fois des frais accessoires qu'il y a d'émissions de polices ou d'avenants (lecture OCR).
+
+| Ligne | Document (FC compris) | Document hors FC | Base (SUNU) | Écart |
+|---|---|---|---|---|
+| Mono-véhicule, courte période (forfait) | 2 750 | 2 500 | 3 000 | **+500** |
+| Mono-véhicule, annuel, prime nette 0 à 200 000 | 3 250 | 3 000 | 3 000 | — |
+| Mono-véhicule, annuel, 200 001 à 500 000 | 4 250 | 4 000 | 4 000 | — |
+| Mono-véhicule, annuel, plus de 500 001 | 5 250 | 5 000 | 5 000 | — |
+| Flotte | minimum 5 000, maximum 10 000, +250 par véhicule pour le FC | — | 5 000 et 10 000 (catégorie 99) | cohérent |
+| Autres risques, prime nette 0 à 100 000 | 2 500 | — | absent | **ligne manquante** |
+| Autres risques, 100 001 à 1 000 000 | 5 000 | — | 5 000 pour 0 à 1 000 000 (rattaché à l'Automobile) | **borne et branche à revoir** |
+| Autres risques, plus de 1 000 000 | 10 000 | — | 10 000 | cohérent |
+
+Écarts consignés en anomalie #32. Le rapprochement complet des accessoires par compagnie reste à faire.
+
+**Décision du 03/10/2026 (7.6)** : le manuel de SUNU prévaut pour SUNU. La page 34 a été relue sur l'image : courte période 2 750 FCFA dont 250 de Fichier central ; annuel 3 250, 4 250 et 5 250 FCFA FC compris ; flotte de 5 000 à 10 000 FCFA plus 250 FCFA par véhicule ; autres risques 2 500, 5 000 et 10 000 FCFA. Le script ramène la courte période à 2 500 FCFA et ajoute les trois lignes « autres risques ».
+
+### 7.5 — Décisions de Roger du 03/10/2026 : accessoires, Fichier central, mise à jour de la base
+
+**Fichier central** : 1 000 FCFA pour tout véhicule autre que ceux de la catégorie 4 (Pool TPV). Aucune table ne le porte dans `tarification` : c'est le paramètre `site.production_frais_fixes`, dont la valeur unique a été fixée à 1 000 (livraison des accessoires, 25/09/2026). Demande à la session Production & Souscription : `demande_maj_fichier_central_03102026.md`.
+
+**Pool TPV (catégories 4A, 4B, 4C)** : accessoires **2 500 FCFA** et Fichier central **500 FCFA**, soit 3 000 FCFA au total. C'est le montant de « Accessoires + Fichier ASAC » de la fiche Cat.4A du tarif AFRINS. *Roger a écrit « les accessoires sont fixés à 500 FCFA » avant de donner la répartition 2 500 + 500 ; c'est la répartition explicite qui est retenue ici, à confirmer.*
+
+**Les 3 000 FCFA de la base — résolu en v5.3** : aucune ligne à 3 000 FCFA n'était de catégorie 4, et la source déposée le 03/10 (7.6) montre qu'ils sont une **erreur de la base** : la source dit 2 500 FCFA. L'hypothèse « 3 000 imputés aux accessoires, plus 1 000 de Fichier central, soit 4 000 » n'a donc plus lieu d'être : les accessoires sont de **2 500 FCFA**.
+
+**AFRINS** : accessoires **2 500 FCFA**, et **3 150 FCFA pour les véhicules de catégorie 1, contrat annuel, prime nette supérieure à 100 000 FCFA** (règle précisée par Roger : elle ne vise que la catégorie 1). Cela lève l'ambiguïté de l'anomalie #11 : les lignes Cat.2 et 3 restées à 2 500 sont normales.
+
+**Divergences du PDF AFRINS avec ces règles** : en Zone A, catégorie 1, contrat annuel, les primes nettes de 101 997, 127 264 et 148 363 FCFA restent à 2 500 au lieu de 3 150 : **écart du PDF**, la règle de Roger (3 150 FCFA, source officielle indiquée par lui) étant maintenue ; non vérifié auprès d'AFRINS. La catégorie 5A (motos) porte un Fichier central de **500 FCFA** sur ses 54 lignes, alors que la règle de Roger est 1 000 FCFA partout sauf le Pool : **non tranché explicitement**.
+
+**Mise à jour de la base** (blocs A et B autorisés par Roger ; bloc C proposé) : script `MAJ_BASE_03102026.sql`, **réécrit en v5.3, syntaxe PostgreSQL vérifiée, non exécuté**. Bloc A : SAMIRIS inactive, noms de SAMIRIS et ZENITHE alignés sur leurs codes. Bloc B : AFRINS à 2 500 FCFA (B1) et 3 150 FCFA pour la catégorie 1 (B2) ; trois lignes Pool à 2 500 FCFA (B3) ; **30 lignes à 3 000 FCFA ramenées à 2 500** par identifiant (B4) ; SUNU courte période et « autres risques » (B5, B6) ; ZENITHE rétablie (B7). Bloc C (proposition, non demandée) : permis récent à 2 ans. Le script contrôle qu'il ne reste que 3 lignes à 3 000 FCFA (PROASSUR 107 et 110, SUNU 20) et contient huit essais de la fonction `fn_accessoires`. **Le Fichier central du Pool (500 FCFA) n'y figure pas** : il relève de `site.production_frais_fixes`.
+
+### 7.6 — Source `Frais_et_accessoires.csv` : décisions du 03/10/2026
+
+Roger a déposé `Frais_et_accessoires.csv` (115 lignes, 12 colonnes, ISO-8859-1) : la **table d'origine du 25/09** d'où a été tiré `bareme_accessoire`, avec sa colonne « Fichier Central ». Comparée à la base ([annexe F](RUT_annexe_F_comparaison_accessoires.md)) : 56 groupes (compagnie, risque, durée), 18 identiques, 38 différents. La source compte **38 lignes à 2 500 FCFA**, la base **35 lignes à 3 000 FCFA** et une seule à 2 500. **Roger : « voici les bonnes valeurs » (la source).** Règle de conduite : en cas de divergence entre sources, décision au cas par cas.
+
+| # | Cas | Décision de Roger | Traduction dans `MAJ_BASE_03102026.sql` |
+|---|---|---|---|
+| 1 | Décalage de +500 FCFA (35 lignes de 15 compagnies) | Aligner sur 2 500 FCFA (aucune source n'appuie 3 000) | B4 : 30 lignes par identifiant ; B1 (AFRINS) et B5 (SUNU) pour les deux autres |
+| 2 | Fichier central à 0 sur 14 lignes | **Erreur de saisie** : 1 000 FCFA partout ; 500 FCFA pour le Pool | Aucun changement dans `tarification` (paramètre `site.production_frais_fixes`) ; demande à Production & Souscription |
+| 3 | Pool TPV : 3 lignes absentes de la base | Les ajouter : accessoires 2 500 + Fichier central 500 | B3 : lignes génériques 04A, 04B, 04C avec les libellés de la source |
+| 4 | ZENITHE : ligne perdue au renommage | La rétablir | B7 |
+| 5 | BELIFE : deux tranches fusionnées (0–50 000 à 2 500 et 50 000–500 000 à 5 000) | **Pas nécessaire** de les restaurer | Aucune ; la tranche fusionnée passe à 2 500 (B4) |
+| 6 | SUNU : tableau, manuel et base diffèrent | **Le manuel de SUNU prévaut** | B5 (courte période 2 500), B6 (autres risques) ; tranches annuelles inchangées |
+| 7 | PROASSUR : 4 lignes issues de sa note de service | **La note de service prévaut** : annuel mono-véhicule 3 000, flotte 5 000 ; courte durée mono-véhicule 2 500, flotte 3 000 | Rien à faire : la base porte déjà ces quatre valeurs ; lignes 107 à 110 exclues de l'alignement |
+| 8 | CHANAS : deux lignes réduites à une (25/09) | Aucune action | — |
+| 9 | Green Assistance et Voyage : actifs dans la source, désactivés en base | Maintenus désactivés | — |
+| 10 | AFRINS | 2 500 FCFA ; **3 150 FCFA** pour la catégorie 1, prime nette supérieure à 100 000 FCFA (**source officielle** selon Roger) | B1, B2 |
+
+**Manuel de SUNU, page 34** (relu sur l'image) et traitement dans la base. SUNU présente ses montants Fichier central compris (250 FCFA) ; la base les porte hors Fichier central :
+
+| Ligne | Manuel (FC compris) | Hors FC | Base avant | Base après |
+|---|---|---|---|---|
+| Mono-véhicule, courte période (forfait) | 2 750 | 2 500 | 3 000 | 2 500 (B5) |
+| Mono-véhicule, annuel, prime nette 0 à 200 000 | 3 250 | 3 000 | 3 000 | 3 000 |
+| Mono-véhicule, annuel, 200 001 à 500 000 | 4 250 | 4 000 | 4 000 | 4 000 |
+| Mono-véhicule, annuel, plus de 500 001 | 5 250 | 5 000 | 5 000 | 5 000 |
+| Flotte | minimum 5 000, maximum 10 000, plus 250 par véhicule pour le FC | — | 5 000 (0 à 1 000 000) et 10 000 (au-delà), catégorie 99 | inchangé : approximation, anomalie #37 |
+| Autres risques, prime nette 0 à 100 000 | 2 500 | non précisé | absent | ajouté (B6) |
+| Autres risques, 100 001 à 1 000 000 | 5 000 | non précisé | absent | ajouté (B6) |
+| Autres risques, plus de 1 000 000 | 10 000 | non précisé | absent | ajouté (B6) |
+
+Le manuel ne dit pas si les montants des « autres risques » incluent le Fichier central : **à confirmer**. Il précise que les frais accessoires sont perçus autant de fois qu'il y a d'émissions de polices ou d'avenants.
+
+**Restent ouverts** : le Fichier central de la catégorie 5A chez AFRINS (500 FCFA dans le PDF, 1 000 FCFA selon la règle) ; les trois lignes de la Zone A du PDF AFRINS à 2 500 FCFA au lieu de 3 150 ; la représentation du minimum et du maximum de la flotte SUNU, aujourd'hui approchée par deux tranches de prime.
 
 ---
 
@@ -2759,6 +2974,11 @@ Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce 
 | 01-02/10 | Nettoyages : suppression de `ACTIVA_ASSISTANCE` (nom de compagnie dans un code canonique) et d'une garantie `FRAIS_MEDICAUX` orpheline ; fusion de « Vol au garage mort » dans Vol véhicule ; purge des doublons `RC_AUTO__*` | Aucun nom de compagnie dans un code canonique ; une garantie orpheline n'a pas de tarif |
 | 02/10 | `GREEN ASSISTANCE CONDUCTEUR` rattachée à l'IAC (produit hybride) ; Extension CEMAC incluse dans les bouquets RC seulement, pas IPT/IAC | Choix de rattachement des bouquets, sur la base de leur composition réelle |
 | 03/10 | Passage en v5.1 : contenu des référentiels (6.1 à 6.10), registre des sources, annexes C, D, E ; corrections des sections 3.4, 3.7, 3.8 et du repli générique | Demande de Roger : le RUT doit répondre seul à toute question de tarification, sans requête |
+| 03/10 | Lecture de `Tarif_Ministériel.pdf` : fichier fourni par SUNU contenant l'arrêté de 1994, les directives SUNU, le barème RC, l'IPT/IAC et les accessoires SUNU ; coefficients de durée reconnus réglementaires ; permis récent = 2 ans | Zones, usages, majorations, sinistralité, flotte et durée courte étaient absents du RUT ; l'arrêté fait foi sur la base |
+| 03/10 | Accessoires : AFRINS 2 500 (3 150 pour la catégorie 1, annuel, prime nette > 100 000) ; Pool TPV : accessoires 2 500 + Fichier central 500 ; Fichier central 1 000 hors catégorie 4 | Décisions de Roger ; la mise à jour de la base est autorisée |
+| 03/10 | Passage en v5.2 | Ajout du texte réglementaire et des directives SUNU sur la base de la v5.1 |
+| 03/10 | Accessoires : la source `Frais_et_accessoires.csv` fait foi (2 500 FCFA) ; la base portait 35 lignes à 3 000 FCFA par erreur ; le manuel SUNU et la note de service PROASSUR prévalent pour leurs compagnies ; Fichier central 1 000 FCFA partout, 500 FCFA pour le Pool, les zéros de la source étant des erreurs de saisie ; tranches de BELIFE non restaurées | Décisions de Roger, cas par cas, après comparaison ligne à ligne ; l'alignement se fait par identifiants explicites, jamais par un remplacement global de 3 000 par 2 500, car des lignes à 3 000 sont justes |
+| 03/10 | Passage en v5.3 | Ajout de la source des accessoires, de la section 7.6 et de l'annexe F sur la base de la v5.2 |
 
 ---
 
@@ -2786,12 +3006,17 @@ Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce 
 - **Sources de prix écartées** (4.8) : à exploiter dans une version ultérieure, une fois validées ; commencer par vérifier la compagnie émettrice du MRH et du Voyage.
 - **Annexes A et B** : à committer avec le RUT, dans le même dossier.
 - **Valider les choix C1 à C8** (5.1) avant toute implémentation ; les points les plus structurants sont C1 (colonnes explicites), C2 (valeurs lues, lois en contrôles) et C3 (étapes en table).
-- **Lire visuellement les deux scans** (tarif ministériel : zones A/B/C, texte des majorations ; note PROASSUR : conditions de souscription) et consigner leur contenu.
+- **Lire visuellement la note PROASSUR n° 0012/22** (conditions de souscription, 7 pages, scan) : le tarif SUNU / ministériel a été lu en v5.2 (Pilier 2, v5.2).
 - **Lire les trois contenus non relus** (garanties facultatives n° 2, `Garanties_IAC_et_IPT.csv`, `OFFRE_COMMERCIALE.sql`) et **analyser `devis.js` / `index.html`** (logique de devis du site public).
 - **Rapprocher les sources et la base** : `Tarif_automobile_automatisé.csv` (GMCSA), `_autres.csv` et `base_autres.csv` contre `tarif` et `bareme_tranche`, pour savoir ce qui a été chargé.
-- **Mettre la base en accord avec les décisions** : SAMIRIS inactive, nom commercial de ZENITHE (#25). Hors périmètre de cette phase.
+- **Exécuter `MAJ_BASE_03102026.sql`** (précédé d'un `pg_dump`) puis exécuter la recette contenue dans le script ; mettre ensuite le RUT en accord avec le résultat. Bloc C (permis à 2 ans) à valider ou à retirer.
+- **Trancher** : Fichier central de la catégorie 5A chez AFRINS (500 FCFA dans le PDF, 1 000 FCFA selon la règle) ; les trois lignes de Zone A du PDF AFRINS à 2 500 FCFA ; si les « autres risques » SUNU incluent le Fichier central ; comment représenter le minimum et le maximum de la flotte SUNU (#37).
+- **Fichier central** : demande à Production & Souscription (`demande_maj_fichier_central_03102026.md`) pour la valeur de 500 FCFA du Pool.
 - **Trancher la valeur générique des accessoires** (#29) : 2 500, 3 000, ou 2 500 + Fichier central ; puis corriger la ligne AFRINS « [NON IDENTIFIEE] ».
 - **Documenter la règle de cumul des majorations** (6.3) et l'interprétation du Vol partiel (différentiel) et du lien Extension CEMAC / Carte rose (6.4).
+- **Charger les garanties facultatives et les franchises SUNU** (7.2, #31) et décider des catégories concernées.
+- **Rapprochements en cours** : les trois CSV de tarifs contre la base, et les trois structures de dénomination (`offre`, `offre_commerciale`, `equivalence_garantie`), sur export de `tarif`, `bareme_tranche` et `offre_commerciale`.
+- **Préciser la surprime de sinistralité** (trois seuils : cumulatifs ou alternatifs ?) et lire les fractions de l'article 7 (suspension).
 - **Aucune API de Prime nette ou TTC n'existe** (#20) : c'est le chemin critique pour myspace ; la procédure cible `fn_calculer_prime_ttc` (5.6) la fournirait.
 - **Purger `site.bareme_dta`** (#10) avant de charger l'élément DTA dans la table cible.
 - **Reconstituer les cas de référence RC** de la session du 01/10 (5.7) : la liste que contenait une première rédaction de ce tableau s'est révélée non fiable (un des montants est absent du barème) et a été retirée.
@@ -2829,3 +3054,6 @@ Franchises (`franchise`, `franchise_application`, non branchées au calcul de la
 | 03/10/2026 | Session Tarification, décisions Roger | **RUT v4.0** : cartographie des branches hors automobile (catalogue 88 garanties / 526 sous-garanties, dénominations `Garanties.csv`, Crédit et Cautions consigné, paramètres d'offre, taxes, sources de prix écartées), annexes A et B, anomalies #13 à #19 | Roger : intégrer les autres branches avec l'information disponible, sans utiliser les tarifs à lecture directe. Constats imprévus : les lignes hors automobile d'ALPHA/SAMIRIS sont une copie de GMCSA (225/225), et l'assiette « Nombre passagers » est une valeur par défaut |
 | 03/10/2026 | Session Tarification, demande Roger | **RUT v5.0** : inventaire du schéma (40 objets), conception de la table de tarif unique et de ses concepts, mécanismes (résolution, étapes de la Prime TTC, contrôles, lisibilité), procédures existantes et cibles, chemin de migration ; anomalies #20 à #24. Relecture critique avant livraison : liste de 10 cas de test RC retirée (un montant absent du barème), provenance des règles de calcul et des fonctions précisée | Roger : une seule table de tarif contenant tout le tarif, concepts décrits dans des tables annexes. Constat imprévu : `fn_calculer_prime_nette_totale` n'a jamais été déployée, il n'existe aucune procédure de Prime nette ou TTC |
 | 03/10/2026 | Session Tarification, demande Roger | **RUT v5.1** : export des référentiels, contenu réel des tables (compagnies, 15 actes, majorations, liens de garanties, franchises, 16 formules, 9 produits, règles de calcul vérifiées, accessoires, dénominations), registre de 23 sources, pièges de lecture, annexes C, D, E ; anomalies #25 à #29 ; corrections 3.4, 3.7, 3.8, repli générique, étape 6 de la Prime TTC | Roger : le RUT est la mémoire de la base et doit répondre seul à toute question. Constats imprévus : les formules de souscription existent en base (le RUT affirmait le contraire), la base ne reflète pas la décision SAMIRIS inactive, et les accessoires ont une valeur par défaut de 2 500 FCFA pour les 21 compagnies |
+| 03/10/2026 | Session Tarification, demandes Roger | **RUT v5.2** : lecture par OCR de `Tarif_Ministériel.pdf` (arrêté de 1994 : zones, usages, majorations, durée, sinistralité, bonification, flotte ; directives, taux, franchises, IPT/IAC et accessoires SUNU), décisions de Roger sur les accessoires et le Fichier central, scripts `MAJ_BASE_03102026.sql` et `export_rapprochement.sql` ; anomalies #30 à #34 ; #11, #25, #29 mises à jour ; 3.1bis et 3.8 corrigées | Roger : lire le tarif ministériel d'abord, puis rapprocher les CSV et la base ; mise à jour de la base autorisée. Constats : le « tarif ministériel » est en réalité un fichier de SUNU, l'arrêté dit 2 ans de permis (la base 3), et les taux de durée courte sont réglementaires |
+| 03/10/2026 | Session Tarification | Réconciliation de la v5.2 avant livraison : `MAJ_BASE_03102026.sql` rétabli après une suppression par erreur de ma part (j'avais pris ce script pour un doublon des miens ; il était mieux construit) ; autorisation de Roger limitée aux blocs A et B, le bloc C (permis à 2 ans) étant une proposition ; ZENITHE : c'est `nom`, et non `nom_commercial`, qui valait « SOCAR » ; export complété par `site.production_frais_fixes` | Contrôle croisé du RUT, des scripts et de la base avant livraison ; l'état annoncé du RUT doit correspondre aux fichiers réellement présents |
+| 03/10/2026 | Session Tarification, décisions Roger | **RUT v5.3** : source `Frais_et_accessoires.csv` comparée à la base (annexe F) ; décisions cas par cas consignées (7.6) ; `MAJ_BASE_03102026.sql` réécrit (alignement de 30 lignes par identifiant, Pool, ZENITHE, SUNU selon son manuel, AFRINS 3 150), syntaxe vérifiée ; anomalies #11, #29, #32 résolues par décision, #35 à #37 ajoutées | Roger : « voici les bonnes valeurs » pour la source ; le manuel SUNU et la note PROASSUR prévalent ; Fichier central 1 000 FCFA partout (Pool 500). Le décalage de +500 FCFA était systématique et non un cas isolé |
