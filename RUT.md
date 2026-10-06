@@ -1,15 +1,78 @@
 # RUT — Référentiel Unique de Tarification
-**v1.0 — Fondations du RC Ministériel — 03/10/2026**
+**v3.0 — Automobile, écosystème complet de la Prime TTC — 03/10/2026**
 
 Document source, humain, de référence unique. `areas/tarification.md` (mémoire technique auto-générée) reste un journal de travail ; le RUT est ce qui fait autorité au-dessus — y compris, à terme, matérialisable directement en base de données.
 
-**Périmètre strict de ce v1.0** : le tarif RC (Responsabilité Civile) automobile ministériel, tel qu'il existait **avant** toute mécanique de calcul construite pour l'exploiter — sa lecture brute. Rien d'autre. DR, IPT/IAC, Dommages, Vol, Incendie, `equivalence_garantie`, `offre_commerciale` : tout ça est extérieur au tarif RC ministériel lui-même et n'a pas sa place ici — réservé au RUT v1.n, périmètre étendu, une fois ce socle validé.
+**Périmètre de cette v3.0** : Automobile uniquement. Hérite du RC ministériel (v1.0), de DR, IPT/IAC, des garanties facultatives (Dommages/Tierce, Vol, Incendie, Bris de glaces) et de `equivalence_garantie`/`offre_commerciale` (v2.0), et ajoute l'assemblage de la Prime TTC (accessoires, Fichier central, Carte rose, DTA, TVA, durées) ainsi que l'état des formules et directives de souscription (v3.0). Toujours au niveau des règles de tarification elles-mêmes, **pas** de la définition de l'application de gestion. Hors-automobile exclu, reporté à une v3.n séparée.
+
+**Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
+
+---
+
+## Table des matières
+
+- [⚠️ REGISTRE DES ANOMALIES — à consulter à chaque référence à ce document](#-registre-des-anomalies--à-consulter-à-chaque-référence-à-ce-document)
+  - [Mécanisme de correction](#mécanisme-de-correction)
+- [Pilier 1 — Fondations](#pilier-1--fondations)
+  - [Acteurs](#acteurs)
+  - [Texte réglementaire fondateur](#texte-réglementaire-fondateur)
+- [Pilier 1-bis — Règles de gouvernance vivantes](#pilier-1-bis--règles-de-gouvernance-vivantes)
+- [Pilier 2 — Moteur : le tarif RC ministériel](#pilier-2--moteur--le-tarif-rc-ministériel)
+  - [2.1 — Mécanisme de lecture](#21--mécanisme-de-lecture)
+  - [2.2 — Directives de souscription par Compagnie](#22--directives-de-souscription-par-compagnie)
+  - [2.2bis — Lois structurelles découvertes (analyse du 03/10/2026)](#22bis--lois-structurelles-découvertes-analyse-du-03102026)
+  - [2.3 — Barème RC complet (712 lignes, source officielle)](#23--barème-rc-complet-712-lignes-source-officielle)
+- [Pilier 2 (v2.0) — Défense et Recours (DR)](#pilier-2-v20--défense-et-recours-dr)
+  - [Mécanisme — formule unique, deux paramètres](#mécanisme--formule-unique-deux-paramètres)
+  - [Barème complet, 20 compagnies + générique](#barème-complet-20-compagnies--générique)
+- [Pilier 2 (v2.0) — IPT / IAC (Individuelle Personnes Transportées / Accidents Conducteur)](#pilier-2-v20--ipt--iac-individuelle-personnes-transportées--accidents-conducteur)
+  - [Mécanisme](#mécanisme)
+  - [IAC — barème complet (forfait, par compagnie et formule)](#iac--barème-complet-forfait-par-compagnie-et-formule)
+  - [IPT — barème complet (par place, par compagnie et formule)](#ipt--barème-complet-par-place-par-compagnie-et-formule)
+- [Pilier 2 (v2.0) — Dommages, Vol, Incendie, Bris de glaces](#pilier-2-v20--dommages-vol-incendie-bris-de-glaces)
+  - [Mécanisme générique](#mécanisme-générique)
+  - [Loi structurelle confirmée — Vol Partiel = Vol Braquage](#loi-structurelle-confirmée--vol-partiel--vol-braquage)
+  - [Matrice de couverture — qui a des taux pour quelle garantie](#matrice-de-couverture--qui-a-des-taux-pour-quelle-garantie)
+  - [Dommages par accident (fusionnée avec l'ex-Tierce Collision)](#dommages-par-accident-fusionnée-avec-lex-tierce-collision)
+  - [Tierce collision (ex-Tierce, nom conservé)](#tierce-collision-ex-tierce-nom-conservé)
+  - [Vol véhicule](#vol-véhicule)
+  - [Vol partiel](#vol-partiel)
+  - [Vol braquage](#vol-braquage)
+  - [Vol des accessoires](#vol-des-accessoires)
+  - [Brigandage](#brigandage)
+  - [Incendie](#incendie)
+  - [Bris de glaces](#bris-de-glaces)
+  - [Bris de glaces et blocs feux (garantie distincte)](#bris-de-glaces-et-blocs-feux-garantie-distincte)
+- [Pilier 2 (v2.0) — equivalence_garantie / offre_commerciale](#pilier-2-v20--equivalence_garantie--offre_commerciale)
+  - [Le problème que cette architecture résout](#le-problème-que-cette-architecture-résout)
+  - [equivalence_garantie — le dictionnaire des dénominations réelles](#equivalence_garantie--le-dictionnaire-des-dénominations-réelles)
+  - [equivalence_garantie_sous_garantie — la composition des bouquets](#equivalence_garantie_sous_garantie--la-composition-des-bouquets)
+  - [offre_commerciale — le catalogue qui porte le vrai nom](#offre_commerciale--le-catalogue-qui-porte-le-vrai-nom)
+- [Pilier 2 (v3.0) — Composition de la Prime TTC et écosystème de souscription](#pilier-2-v30--composition-de-la-prime-ttc-et-écosystème-de-souscription)
+  - [3.1 — Rubriques de la Prime TTC et formule d'assemblage](#31--rubriques-de-la-prime-ttc-et-formule-dassemblage)
+  - [3.1bis — Durée du contrat et prime nette (coefficients de court terme)](#31bis--durée-du-contrat-et-prime-nette-coefficients-de-court-terme)
+  - [3.2 — Accessoires (bareme_accessoire)](#32--accessoires-bareme_accessoire)
+  - [3.3 — Fichier central (ASAC)](#33--fichier-central-asac)
+  - [3.4 — Carte rose](#34--carte-rose)
+  - [3.5 — DTA (Droit de Timbre Automobile)](#35--dta-droit-de-timbre-automobile)
+  - [Barème DTA complet, véhicules (site.bareme_dta, source : site, historisée)](#barème-dta-complet-véhicules-sitebareme_dta-source--site-historisée)
+  - [Barème DTA, motos/tricycles (site.bareme_dta)](#barème-dta-motostricycles-sitebareme_dta)
+  - [3.6 — TVA et fiscalité](#36--tva-et-fiscalité)
+  - [3.7 — Formules de souscription admises par compagnie](#37--formules-de-souscription-admises-par-compagnie)
+  - [3.8 — Directives de souscription par compagnie](#38--directives-de-souscription-par-compagnie)
+  - [Ce que cette section ne peut pas encore garantir](#ce-que-cette-section-ne-peut-pas-encore-garantir)
+- [Pilier 3 — Mémoire : décisions et justifications](#pilier-3--mémoire--décisions-et-justifications)
+- [Pilier 4 — Pilotage](#pilier-4--pilotage)
+  - [Dettes identifiées sur ce périmètre](#dettes-identifiées-sur-ce-périmètre)
+  - [Chantiers hors périmètre de cette v3.0 (RUT v3.n, périmètre étendu)](#chantiers-hors-périmètre-de-cette-v30-rut-v3n-périmètre-étendu)
+  - [Système d'évaluation de la performance](#système-dévaluation-de-la-performance)
+- [Historique des modifications](#historique-des-modifications)
 
 ---
 
 ## ⚠️ REGISTRE DES ANOMALIES — à consulter à chaque référence à ce document
 
-Trois anomalies **non résolues** existent dans le barème RC ministériel tel que construit. Elles doivent être rappelées systématiquement dès que le RUT est utilisé pour répondre à une question de tarification touchant les cas ci-dessous.
+Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC ministériel et dans les données qui s'y rattachent ; leur statut (non résolu, piste identifiée, corrigé) figure dans la dernière colonne. Elles doivent être rappelées systématiquement dès que le RUT est utilisé pour répondre à une question de tarification touchant les cas ci-dessous.
 
 **Réponse standard à produire si une requête tombe sur l'un de ces cas** :
 > *"Anomalie dans la tarification en notre possession ; se rapprocher des services techniques pour obtenir le montant de la prime. Merci de votre compréhension."*
@@ -20,6 +83,14 @@ Trois anomalies **non résolues** existent dans le barème RC ministériel tel q
 | 2 | 03 | 7-10 CV, surprime matière inflammable, Zone B | Écart de 51% par rapport à la loi de zone attendue | **Cause racine identifiée (03/10/2026)** — `Tarif_automobile_automatisé.csv` (GMCSA) révèle que la surprime matière inflammable varie en réalité par **genre de véhicule** (Benne=20263, Camion=23414, Camion/DC+Remorque=22439 pour 11-14CV Zone B) — une dimension **absente de notre modèle actuel**, qui ne porte qu'une valeur unique par (catégorie, zone, force fiscale). Notre valeur stockée (22439) est juste, mais seulement pour un genre précis. **Correction requise : ajouter la dimension "genre de véhicule" au modèle**, pas une simple correction de valeur — chantier à part, non fait dans ce v1.0 |
 | 3 | 03 | 11-14 CV, surprime matière inflammable, Zone B | Écart de 6% par rapport à la loi de zone attendue | **Même cause racine que #2** |
 | 4 | 04B | 7-10 CV, 22 places | Écart de 12 000 FCFA par rapport à la progression linéaire confirmée (+9 133/place) — valeur attendue 386 514, valeur actuelle 398 514 | **Non résolu** — à vérifier au PDF source |
+| 5 | IPT | ROYAL ONYX, formule 3 | Décès=1000 mais Incapacité Permanente=500 — rupture de parité avec les 5 autres formules de la même compagnie (où Décès=IPP systématiquement) | **Non résolu** — à vérifier auprès de la compagnie ou du document source |
+| 6 | IPT | Frais Médicaux absents pour au moins une formule chez 13 compagnies (ACTIVA, AFG, AGC, AREA, AUCUNE, BELIFE, CHANAS, CPA, GMCSA, SAAR, SANLAM, SUNU, LDASA) | Case vide — soit une vraie absence de couverture à cette formule (variante "Sans FM"), soit un oubli de saisie | **Non résolu** — nature de l'absence à confirmer |
+| 7 | IPT | ALLIANZ, toutes formules (Décès/IPP) | Doublon — même `tarif_id`, deux `bareme_tranche` distincts portant la même valeur pour chaque formule (10 lignes au lieu de 5 attendues) | **Corrigé le 03/10/2026** — audit exhaustif de `bareme_tranche` (12 doublons trouvés, exactement #7+#8, aucun autre cas) puis suppression des lignes redondantes |
+| 8 | Vol | SUNU, Vol Braquage/Partiel | Doublon — vérifié sur toutes les colonnes (dates de validité, statut, critères, offre commerciale identiques) : seul `bareme_tranche.id` diffère | **Corrigé le 03/10/2026** — même nettoyage que #7 |
+| 9 | Incendie | ROYAL ONYX, Cat.02 | Taux de 2,4%, alors que toutes les autres catégories (ROYAL ONYX et le reste du marché) se situent entre 0,18% et 0,5% — exactement 10× la valeur PROASSUR à la même catégorie (0,24%) | **Non résolu** — ressemble fortement à une virgule décalée, à vérifier auprès de la compagnie |
+| 10 | DTA | `site.bareme_dta`, lignes "par catégorie, 2023" | Redondance — valeurs reprises d'un tarif à lecture directe (AFRINS) sans vérifier si elles différaient du barème général ministériel ; interprétées à tort comme un changement réglementaire réel dans une version antérieure de ce document | **Confirmé par Roger, non corrigé dans cette session** — `bareme_dta` sera purgée par son équipe propriétaire ; cette session ne fait que cartographier |
+| 11 | Accessoires | AFRINS, Zones B et C, Cat.1, 365 jours, tranches 15-23 CV et 24 CV et + | 4 lignes à 3 150 FCFA alors que les 500 autres lignes du document (dont les mêmes tranches en Zone A) sont à 2 500 FCFA. Aucun seuil de prime ne l'explique (nombreuses lignes à 2 500 avec une prime nette supérieure). TVA et TTC restent cohérents avec ces 3 150. | **Non résolu** — coquille du document AFRINS ou règle propre aux zones B/C, à confirmer |
+| 12 | IPT | AFRINS, absent de la base | Le tarif à lecture directe AFRINS prévoit une IPT forfaitaire (7 500 FCFA en Cat.1 et 2 ; 5 000 FCFA en Cat.3 et 5A) mais AFRINS n'a aucune ligne IPT/IAC en base (17 compagnies seulement) | **Lacune constatée, non corrigée** — cette phase cartographie sans modifier le système |
 
 **Anomalies mineures, probable simple arrondi du document source** (écart <5%, mentionnées pour complétude, pas nécessairement bloquantes) :
 - Cat.06, nombre_cartes=5/TARIF_2_3, Zone B non réduite par rapport à Zone A (écart Zone C seul : 4,35%)
@@ -35,7 +106,7 @@ Quand une anomalie est résolue (retour au PDF ministériel original, ou toute a
 ### Acteurs
 - **CIMA / Zone CEMAC** — autorité réglementaire de référence pour le tarif RC ministériel.
 - **MINEFI (Ministère des Finances, Cameroun)** — autorité d'application locale.
-- **21 compagnies actives au marché** (hors couverture RC elle-même, universelle) : ACTIVA, AFG, AFRINS, AGC, ALLIANZ, AREA, AUCUNE (niveau générique/POOL), AXA, BELIFE, CHANAS, CPA, GMCSA, LDASA, NSIA, PROASSUR, ROYAL ONYX, SAAR, SANLAM, SUNU, ZENITHE. **Non actives** : ALPHA.
+- **19 compagnies actives au marché** : ACTIVA, AFG (ex-ATLANTIQUE), AFRINS, AGC, ALLIANZ, AREA, AXA, BELIFE (ex-BENEFICIAL), CHANAS, CPA, GMCSA, LDASA, NSIA, PROASSUR, ROYAL ONYX, SAAR, SANLAM, SUNU, ZENITHE (code réaffecté, ex-SOCAR). **Niveau générique** : AUCUNE (POOL, `id_compagnie=0`) — ce n'est pas une compagnie. **Non active** : ALPHA (liquidation judiciaire terminée). **SAMIRIS** (code réaffecté à l'ancien code ALPHA le 02/10/2026) figure en base, mais son statut d'activité n'a pas été confirmé — **à confirmer**.
 
 ### Texte réglementaire fondateur
 Tarif ministériel RC automobile — barème CIMA/Zone CEMAC par catégorie, zone, force fiscale (Essence/Diesel distincts), cylindrée (2-3 roues). Source brute : document PDF ministériel, triangulé avec le fichier GMCSA (8 écarts trouvés, 8 fois la lecture confirmée correcte).
@@ -55,6 +126,8 @@ Checklist obligatoire avant toute création de table, colonne ou fonction. Née 
 7. **Un tarif se rattache toujours à la sous-garantie, jamais à la garantie parente.**
 8. **La compagnie ne vit que dans la colonne compagnie dédiée — jamais dans un code canonique de garantie.**
 9. **Toute donnée issue d'un import externe est vérifiée avant d'être insérée — jamais propagée telle quelle si elle semble incohérente.**
+10. **Une valeur issue d'un tarif à lecture directe (ex: AFRINS) ne crée un nouvel enregistrement que si elle contredit la source générale (ex: barème ministériel).** Si elle correspond, c'est une simple relecture compagnie par compagnie, sans valeur distinctive — l'insérer comme donnée séparée crée une redondance prise plus tard pour un vrai changement réglementaire (incident fondateur : interprétation erronée d'une "évolution 2023" du DTA, corrigée par Roger le 03/10/2026).
+11. **Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».** Une hypothèse plausible n'est pas un fait : elle ne s'écrit jamais au présent de l'indicatif sans source (incident fondateur : la nature fiscale du DTA et la définition de la Carte rose, écrites comme des faits dans une version antérieure alors qu'aucune de nos données ne les établit).
 
 ---
 
@@ -926,7 +999,806 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | C | 24-+ CV |  | **108 796** | — |
 ---
 
-## Pilier 3 — Mémoire : décisions et justifications (scopées RC ministériel)
+
+## Pilier 2 (v2.0) — Défense et Recours (DR)
+
+### Mécanisme — formule unique, deux paramètres
+
+Garantie dépendante de RC (mode `ASSIETTE` dans `garantie_lien`) — la prime RC doit être connue avant de calculer DR. Une seule formule couvre les deux mécaniques, l'un des deux paramètres pouvant être nul :
+
+```
+prime_DR = montant_fixe_minimum + prime_RC_ajustee × taux_DR_pct / 100
+```
+
+**Compagnie "forfait"** : `taux_DR_pct = 0`, `montant_fixe_minimum` porte la valeur.
+**Compagnie "%RC"** : `montant_fixe_minimum = 0`, `taux_DR_pct` porte la valeur.
+
+**Date de validité** : quand elle n'est pas mentionnée explicitement pour une ligne, c'est celle du bordereau actif de la compagnie qui s'applique — pas une date par défaut arbitraire.
+
+### Barème complet, 20 compagnies + générique
+
+| Compagnie | Montant fixe (FCFA) | Taux (%RC) | Catégories | Date de validité |
+|---|---|---|---|---|
+| ACTIVA | 0 | 2,5% | Toutes | Bordereau actif |
+| AFG | 2 000 | 0 | Toutes | Bordereau actif |
+| AFRINS | 2 000 | 0 | Toutes | Bordereau actif (corrigé 02/10/2026, source : tarif à lecture directe officiel) |
+| AGC | 0 | 3% | Toutes | Bordereau actif |
+| ALLIANZ | 0 | 3% | Toutes | Bordereau actif |
+| AREA | 1 500 | 0 | Toutes | Bordereau actif |
+| AUCUNE (générique) | 0 | 5% | Toutes, sauf 04A/04B/04C | Bordereau actif |
+| AUCUNE (générique) | 2 000 | 0 | 04A, 04B, 04C uniquement | Bordereau actif |
+| AXA | 1 500 | 0 | Toutes | Bordereau actif |
+| BELIFE | 0 | 2,5% | Toutes | Bordereau actif |
+| CHANAS | 3 500 | 0 | Toutes | Bordereau actif |
+| CPA | 0 | 2,5% | Toutes | Bordereau actif |
+| GMCSA | 0 | 2,5% | Toutes | Bordereau actif |
+| LDASA | 1 500 | 0 | Toutes | Bordereau actif |
+| NSIA | 0 | 2,5% | Toutes | Bordereau actif |
+| PROASSUR | 1 000 | 0 | Cat.01 | Bordereau actif |
+| PROASSUR | 1 500 | 0 | Cat.02, 03, 05, 05bis | Bordereau actif |
+| PROASSUR | 0 | 3% | Cat.06, 07ARC, 07SRC, 08, 09A, 09B, 10A, 10B, 10C | Bordereau actif |
+| ROYAL ONYX | 0 | 2,5% | Toutes | Bordereau actif |
+| SAAR | 0 | 5% | Toutes | Bordereau actif |
+| SAMIRIS | 0 | 2,5% | Toutes | Bordereau actif |
+| SANLAM | 0 | 5% | Toutes | Bordereau actif |
+| SUNU | 1 500 | 0 | Toutes | Bordereau actif |
+| ZENITHE | 1 500 | 0 | Toutes | Bordereau actif |
+
+**Particularité PROASSUR** : seule compagnie à faire varier le *mécanisme lui-même* (pas seulement la valeur) selon la catégorie — forfait pour les catégories "véhicules standards" (01-03, 05/05bis), pourcentage pour les catégories "à risque professionnel accru" (06 et au-delà). Confirmé par relecture directe du PDF source le 01/10/2026, taux 3% uniforme sur Cat.6-10 (corrigé depuis une lecture initiale erronée de 4/5/4/3/2%, confusion avec la ligne adjacente "Dommages Tous Accidents" du même tableau).
+
+**Particularité AUCUNE (générique)** : seule entrée à distinguer les catégories 04A/B/C (forfait 2000) du reste du marché (5% RC) — reflète le POOL TPV, dont le tarif Transport de personnes suit une logique propre.
+
+
+---
+
+## Pilier 2 (v2.0) — IPT / IAC (Individuelle Personnes Transportées / Accidents Conducteur)
+
+### Mécanisme
+
+Décomposées en 3 sous-garanties indépendantes : Décès, Incapacité Permanente, Frais médicaux. IAC toujours en forfait fixe (par formule) ; IPT majoritairement en forfait par place (`montant_fixe_par_place × nombre_places_vehicule`), sauf AFG qui reste en forfait simple.
+
+```
+prime_composante = montant_fixe                              (IAC, toutes compagnies)
+prime_composante = montant_fixe_par_place × nombre_places     (IPT, majorité des compagnies)
+prime_IPT_ou_IAC_totale = prime_Deces + prime_IPP + prime_FraisMedicaux
+```
+
+**Important** : le numéro de formule n'est **pas comparable** d'une compagnie à l'autre — la formule 3 de PROASSUR n'a aucun rapport avec la formule 3 de SUNU. Chaque compagnie définit sa propre échelle d'options.
+
+### IAC — barème complet (forfait, par compagnie et formule)
+
+| Compagnie | Formule | Décès | Incapacité Perm. | Frais Médicaux |
+|---|---|---|---|---|
+| ACTIVA | 1 | 2000.00 | 2000.00 | 2600.00 |
+| AFG | 1 | 2000.00 | 2000.00 | 2600.00 |
+| ALLIANZ | 1 | 2000.00 | 2000.00 | 2600.00 |
+| AREA | 1 | 2000.00 | 2000.00 | 2600.00 |
+| BELIFE | 1 | 2000.00 | 2000.00 | 2600.00 |
+| CHANAS | 1 | 2000.00 | 2000.00 | 2600.00 |
+| CPA | 1 | 2000.00 | 2000.00 | 2600.00 |
+| GMCSA | 1 | 2000.00 | 2000.00 | 2600.00 |
+| LDASA | 1 | 2000.00 | 2000.00 | 2600.00 |
+| NSIA | 1 | 2000.00 | 2000.00 | 2600.00 |
+| PROASSUR | 1 | 2000.00 | 2000.00 | 2600.00 |
+| ROYAL ONYX | 1 | 2000.00 | 2000.00 | 2600.00 |
+| SUNU | 1 | 2000.00 | 2000.00 | 2600.00 |
+| SUNU | 2 | 4000.00 | 2000.00 | 2600.00 |
+| SUNU | 3 | 6000.00 | 3000.00 | 3900.00 |
+| SUNU | 4 | 8000.00 | 4000.00 | 5200.00 |
+**Particularité SUNU** : seule compagnie à proposer plusieurs formules IAC (4, contre 1 pour les 12 autres) — une vraie échelle progressive, pas un forfait unique.
+
+### IPT — barème complet (par place, par compagnie et formule)
+
+| Compagnie | Formule | Décès/place | IPP/place | Frais Médicaux/place |
+|---|---|---|---|---|
+| ACTIVA | 1 | 500.00 | 500.00 | 1050.00 |
+| ACTIVA | 2 | 1000.00 | 1000.00 | 2100.00 |
+| ACTIVA | 3 | 500.00 | 500.00 | - |
+| AFG | 1 | 1500.00 | 1500.00 | 3450.00 |
+| AFG | 2 | 750.00 | 750.00 | 1150.00 |
+| AFG | 3 | 500.00 | 500.00 | - |
+| AGC | 1 | 500.00 | 500.00 | - |
+| AGC | 2 | 500.00 | 500.00 | 1050.00 |
+| AGC | 3 | 1000.00 | 1000.00 | 2100.00 |
+| ALLIANZ | 1 | 500.00 | 500.00 | 1500.00 |
+| ALLIANZ | 2 | 1000.00 | 1000.00 | 3000.00 |
+| ALLIANZ | 3 | 1500.00 | 1500.00 | 4500.00 |
+| ALLIANZ | 4 | 2000.00 | 2000.00 | 6000.00 |
+| ALLIANZ | 5 | 2500.00 | 2500.00 | 7500.00 |
+| AREA | 1 | 500.00 | 500.00 | 1050.00 |
+| AREA | 2 | 1000.00 | 1000.00 | 2100.00 |
+| AREA | 3 | 500.00 | 500.00 | - |
+| AUCUNE | 1 | 500.00 | 500.00 | 1050.00 |
+| AUCUNE | 2 | 1000.00 | 1000.00 | 2100.00 |
+| AUCUNE | 3 | 500.00 | 500.00 | - |
+| BELIFE | 1 | 500.00 | 500.00 | 1050.00 |
+| BELIFE | 2 | 1000.00 | 1000.00 | 2100.00 |
+| BELIFE | 3 | 500.00 | 500.00 | - |
+| CHANAS | 1 | 500.00 | 500.00 | 1050.00 |
+| CHANAS | 2 | 1000.00 | 1000.00 | 2100.00 |
+| CHANAS | 3 | 500.00 | 500.00 | - |
+| CPA | 1 | 500.00 | 500.00 | 1050.00 |
+| CPA | 2 | 1000.00 | 1000.00 | 2100.00 |
+| CPA | 3 | 500.00 | 500.00 | - |
+| GMCSA | 1 | 500.00 | 500.00 | 1050.00 |
+| GMCSA | 2 | 1000.00 | 1000.00 | 2100.00 |
+| GMCSA | 3 | 500.00 | 500.00 | - |
+| LDASA | 1 | 500.00 | 500.00 | - |
+| LDASA | 2 | 700.00 | 700.00 | 1100.00 |
+| LDASA | 3 | 750.00 | 750.00 | 2500.00 |
+| LDASA | 4 | 1450.00 | 1450.00 | 2500.00 |
+| LDASA | 5 | 2000.00 | 2000.00 | 2500.00 |
+| LDASA | 6 | 2500.00 | 2500.00 | 5500.00 |
+| NSIA | 1 | 250.00 | 250.00 | 750.00 |
+| NSIA | 2 | 500.00 | 500.00 | 1500.00 |
+| NSIA | 3 | 1000.00 | 1000.00 | 1500.00 |
+| NSIA | 4 | 2000.00 | 2000.00 | 1500.00 |
+| NSIA | 5 | 2000.00 | 2000.00 | 3000.00 |
+| NSIA | 6 | 2500.00 | 2500.00 | 7500.00 |
+| PROASSUR | 1 | 250.00 | 250.00 | 1000.00 |
+| PROASSUR | 2 | 1000.00 | 1000.00 | 1500.00 |
+| PROASSUR | 3 | 1250.00 | 1250.00 | 3000.00 |
+| PROASSUR | 4 | 2000.00 | 2000.00 | 6000.00 |
+| PROASSUR | 5 | 3000.00 | 3000.00 | 9000.00 |
+| PROASSUR | 6 | 4000.00 | 4000.00 | 12000.00 |
+| PROASSUR | 7 | 5000.00 | 5000.00 | 15000.00 |
+| ROYAL ONYX | 1 | 375.00 | 375.00 | 250.00 |
+| ROYAL ONYX | 2 | 500.00 | 500.00 | 500.00 |
+| ROYAL ONYX | 3 | 1000.00 | 500.00 | 1000.00 |
+| ROYAL ONYX | 4 | 1070.00 | 1070.00 | 1500.00 |
+| ROYAL ONYX | 5 | 1500.00 | 1500.00 | 2000.00 |
+| ROYAL ONYX | 6 | 1774.00 | 1774.00 | 2500.00 |
+| SAAR | 1 | 500.00 | 500.00 | 1050.00 |
+| SAAR | 2 | 500.00 | 500.00 | - |
+| SAAR | 3 | 1000.00 | 1000.00 | 1000.00 |
+| SAAR | 4 | 2000.00 | 2000.00 | 2000.00 |
+| SANLAM | 1 | 500.00 | 500.00 | 1050.00 |
+| SANLAM | 2 | 1000.00 | 1000.00 | 2100.00 |
+| SANLAM | 3 | 500.00 | 500.00 | - |
+| SUNU | 1 | 500.00 | 500.00 | - |
+| SUNU | 2 | 500.00 | 500.00 | 1050.00 |
+| SUNU | 3 | 1000.00 | 1000.00 | 2100.00 |
+| SUNU | 4 | 1500.00 | 1500.00 | 3150.00 |
+**Lacunes de données constatées** (cases "-") : plusieurs compagnies (ACTIVA, AFG, AGC, AREA, AUCUNE, BELIFE, CHANAS, CPA, GMCSA, SAAR, SANLAM, SUNU formule 1, LDASA formule 1) n'ont pas de valeur Frais Médicaux renseignée pour au moins une formule — à vérifier si c'est une vraie absence de couverture à cette formule (type "Sans FM") ou un oubli de saisie.
+
+**Anomalie potentielle — ROYAL ONYX, formule 3** : Décès=1000 mais Incapacité Permanente=500 — rupture de parité avec les autres formules de la même compagnie (où Décès=IPP systématiquement). À vérifier.
+
+**Lacune — AFRINS** : aucune ligne IPT/IAC en base pour AFRINS (comme pour AXA, ZENITHE et SAMIRIS ; 17 compagnies seulement sont renseignées). Son tarif à lecture directe indique pourtant une IPT forfaitaire : 7 500 FCFA en Cat.1 et 2, 5 000 FCFA en Cat.3 et 5A (504 lignes lues, aucune exception). Consigné au registre (#12).
+
+
+---
+
+
+---
+
+## Pilier 2 (v2.0) — Dommages, Vol, Incendie, Bris de glaces
+
+### Mécanisme générique
+
+```
+prime = valeur_assuree × taux_pct / 100
+```
+
+Lecture directe par (compagnie, sous-garantie, catégorie) — chaque sous-garantie reste indépendante, jamais de calcul dérivé d'une autre.
+
+### Loi structurelle confirmée — Vol Partiel = Vol Braquage
+
+```
+taux_Vol_Partiel = taux_Vol_Braquage, dans toutes les catégories où les deux existent
+```
+Vérifié exhaustivement sur les deux compagnies ayant des taux complets (PROASSUR : 5/5 catégories où les deux sont définies ; ROYAL ONYX : 7/7) — **aucune exception**. Règle métier réelle, pas une coïncidence : les deux risques sont tarifés de façon identique.
+
+**Pas de loi trouvée** entre Dommages/Tierce et Vol véhicule (ratio variant de 2,0 à 7,5 selon la catégorie chez PROASSUR — pas de relation constante exploitable).
+
+### Matrice de couverture — qui a des taux pour quelle garantie
+
+| Compagnie | Dommages | Tierce | Vol véh. | Vol part. | Vol braq. | Vol acc. | Brigand. | Incendie | Bris gl. | Bris BF |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ACTIVA | — | — | — | — | — | ✓ | — | — | — | — |
+| AFG | — | — | — | — | — | ✓ | — | — | — | — |
+| ALLIANZ | — | — | — | — | — | ✓ | — | — | — | — |
+| AREA | — | — | — | — | — | ✓ | — | — | — | — |
+| AUCUNE (générique) | — | ✓ | ✓ | — | — | ✓ | ✓ | ✓ | ✓ | — |
+| BELIFE | — | — | — | — | — | ✓ | — | — | — | — |
+| CHANAS | — | — | — | — | — | ✓ | — | — | — | — |
+| CPA | — | — | — | — | — | ✓ | ✓ | — | — | — |
+| GMCSA | — | — | — | — | — | ✓ | — | — | — | — |
+| LDASA | — | — | — | — | — | — | ✓ | — | — | — |
+| NSIA | — | — | — | — | — | ✓ | — | — | — | — |
+| **PROASSUR** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ |
+| **ROYAL ONYX** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ |
+| SAAR | — | — | — | — | — | ✓ | ✓ | — | — | — |
+| SANLAM | — | — | — | — | — | ✓ | — | — | — | — |
+| SUNU | — | — | ✓ | ✓ | ✓ | — | — | — | — | — |
+
+**Priorité de complétion suggérée par cette matrice** : Dommages/Tierce/Incendie n'existent nulle part ailleurs que PROASSUR, ROYAL ONYX et le générique — 13 compagnies sur 16 présentes dans ce tableau n'ont aucun taux sur ces trois garanties pourtant centrales.
+
+### Dommages par accident (fusionnée avec l'ex-Tierce Collision)
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| PROASSUR | 01 | 2.5% |
+| PROASSUR | 02 | 3% |
+| PROASSUR | 03 | 3.5% |
+| PROASSUR | 06 | 4% |
+| PROASSUR | 07ARC | 5% |
+| PROASSUR | 07SRC | 5% |
+| PROASSUR | 08 | 4% |
+| PROASSUR | 09A | 3% |
+| PROASSUR | 09B | 3% |
+| PROASSUR | 10A | 2% |
+| PROASSUR | 10B | 2% |
+| PROASSUR | 10C | 2% |
+| ROYAL ONYX | 02 | 3.5% |
+| ROYAL ONYX | 03 | 4% |
+| ROYAL ONYX | 04A | 8% |
+| ROYAL ONYX | 04C | 8% |
+| ROYAL ONYX | 07ARC | 3.75% |
+| ROYAL ONYX | 07SRC | 3.75% |
+| ROYAL ONYX | 08 | 4% |
+| ROYAL ONYX | 09A | 2.5% |
+| ROYAL ONYX | 09B | 2.5% |
+| ROYAL ONYX | 10A | 10% |
+| ROYAL ONYX | 10B | 10% |
+| ROYAL ONYX | 10C | 10% |
+
+### Tierce collision (ex-Tierce, nom conservé)
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| AUCUNE | 04A | 4% |
+| AUCUNE | 04B | 4% |
+| AUCUNE | 04C | 4% |
+| PROASSUR | 01 | 2% |
+| PROASSUR | 02 | 2% |
+| PROASSUR | 03 | 2% |
+| PROASSUR | 06 | 3% |
+| PROASSUR | 07ARC | 3% |
+| PROASSUR | 07SRC | 3% |
+| PROASSUR | 08 | 3.25% |
+| PROASSUR | 09A | 1.95% |
+| PROASSUR | 09B | 1.95% |
+| PROASSUR | 10A | 2% |
+| PROASSUR | 10B | 2% |
+| PROASSUR | 10C | 2% |
+| ROYAL ONYX | 02 | 2.5% |
+| ROYAL ONYX | 03 | 3% |
+| ROYAL ONYX | 04A | 4% |
+| ROYAL ONYX | 04C | 4% |
+| ROYAL ONYX | 07ARC | 3.75% |
+| ROYAL ONYX | 07SRC | 3.75% |
+| ROYAL ONYX | 08 | 3.5% |
+| ROYAL ONYX | 09A | 1.5% |
+| ROYAL ONYX | 09B | 1.5% |
+| ROYAL ONYX | 10A | 7% |
+| ROYAL ONYX | 10B | 7% |
+| ROYAL ONYX | 10C | 7% |
+
+### Vol véhicule
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| AUCUNE | 04A | 2% |
+| AUCUNE | 04B | 2% |
+| AUCUNE | 04C | 2% |
+| PROASSUR | 01 | 1% |
+| PROASSUR | 02 | 1% |
+| PROASSUR | 03 | 1% |
+| PROASSUR | 06 | 1.5% |
+| PROASSUR | 07ARC | 1.5% |
+| PROASSUR | 07SRC | 1.5% |
+| PROASSUR | 08 | 1% |
+| PROASSUR | 09A | 0.4% |
+| PROASSUR | 09B | 0.4% |
+| PROASSUR | 10A | 1% |
+| PROASSUR | 10B | 1% |
+| PROASSUR | 10C | 1% |
+| ROYAL ONYX | 02 | 1% |
+| ROYAL ONYX | 03 | 1% |
+| ROYAL ONYX | 04A | 1.5% |
+| ROYAL ONYX | 04C | 1.5% |
+| ROYAL ONYX | 07ARC | 1% |
+| ROYAL ONYX | 07SRC | 1% |
+| ROYAL ONYX | 08 | 1.5% |
+| SUNU | ALL | 1.5% |
+
+### Vol partiel
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| PROASSUR | 01 | 0.5% |
+| PROASSUR | 02 | 0.5% |
+| PROASSUR | 03 | 0.5% |
+| PROASSUR | 06 | 1% |
+| PROASSUR | 07ARC | 1% |
+| PROASSUR | 07SRC | 1% |
+| PROASSUR | 08 | 0.5% |
+| PROASSUR | 09A | 0.35% |
+| PROASSUR | 09B | 0.35% |
+| PROASSUR | 10A | 0.5% |
+| PROASSUR | 10B | 0.5% |
+| PROASSUR | 10C | 0.5% |
+| ROYAL ONYX | 02 | 0.5% |
+| ROYAL ONYX | 03 | 0.5% |
+| ROYAL ONYX | 04A | 0.5% |
+| ROYAL ONYX | 04C | 0.5% |
+| ROYAL ONYX | 07ARC | 0.5% |
+| ROYAL ONYX | 07SRC | 0.5% |
+| ROYAL ONYX | 08 | 0.5% |
+| SUNU | ALL | 0.25% |
+
+### Vol braquage
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| PROASSUR | 01 | 0.5% |
+| PROASSUR | 02 | 0.5% |
+| PROASSUR | 03 | 0.5% |
+| PROASSUR | 06 | 1% |
+| ROYAL ONYX | 02 | 0.5% |
+| ROYAL ONYX | 03 | 0.5% |
+| ROYAL ONYX | 04A | 0.5% |
+| ROYAL ONYX | 04C | 0.5% |
+| ROYAL ONYX | 07ARC | 0.5% |
+| ROYAL ONYX | 07SRC | 0.5% |
+| ROYAL ONYX | 08 | 0.5% |
+| SUNU | ALL | 0.5% |
+
+### Vol des accessoires
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| ACTIVA | ALL | 0.5% |
+| AFG | ALL | 0% |
+| ALLIANZ | ALL | 0.5% |
+| AREA | ALL | 0.7% |
+| AUCUNE | ALL | 2.5% |
+| BELIFE | ALL | 0.7% |
+| CHANAS | ALL | 2.5% |
+| CPA | ALL | 0% |
+| GMCSA | ALL | 0.7% |
+| NSIA | ALL | 2.5% |
+| PROASSUR | ALL | 2.5% |
+| ROYAL ONYX | ALL | 0.7% |
+| SAAR | ALL | 0.7% |
+| SANLAM | ALL | 0.7% |
+
+### Brigandage
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| AUCUNE | ALL | 1.2% |
+| CPA | ALL | 0.5% |
+| LDASA | ALL | 1.5% |
+| SAAR | ALL | 1% |
+
+### Incendie
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| AUCUNE | 04A | 0.25% |
+| AUCUNE | 04B | 0.25% |
+| AUCUNE | 04C | 0.25% |
+| PROASSUR | 01 | 0.18% |
+| PROASSUR | 02 | 0.22% |
+| PROASSUR | 03 | 0.24% |
+| PROASSUR | 06 | 0.24% |
+| PROASSUR | 07ARC | 0.24% |
+| PROASSUR | 07SRC | 0.24% |
+| PROASSUR | 08 | 0.24% |
+| PROASSUR | 09A | 0.35% |
+| PROASSUR | 09B | 0.35% |
+| PROASSUR | 10A | 0.25% |
+| PROASSUR | 10B | 0.25% |
+| PROASSUR | 10C | 0.25% |
+| ROYAL ONYX | 02 | 2.4% |
+| ROYAL ONYX | 03 | 0.24% |
+| ROYAL ONYX | 04A | 0.25% |
+| ROYAL ONYX | 04C | 0.25% |
+| ROYAL ONYX | 07ARC | 0.24% |
+| ROYAL ONYX | 07SRC | 0.24% |
+| ROYAL ONYX | 08 | 0.24% |
+| ROYAL ONYX | 09A | 0.37% |
+| ROYAL ONYX | 09B | 0.37% |
+| ROYAL ONYX | 10A | 0.5% |
+| ROYAL ONYX | 10B | 0.5% |
+| ROYAL ONYX | 10C | 0.5% |
+
+### Bris de glaces
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| AUCUNE | 04A | 0.5% |
+| AUCUNE | 04B | 0.5% |
+| AUCUNE | 04C | 0.5% |
+| PROASSUR | 01 | 0.3% |
+| PROASSUR | 02 | 0.3% |
+| PROASSUR | 03 | 0.4% |
+| PROASSUR | 06 | 0.5% |
+| PROASSUR | 07ARC | 0.5% |
+| PROASSUR | 07SRC | 0.5% |
+| PROASSUR | 08 | 0.5% |
+| PROASSUR | 10A | 0.5% |
+| PROASSUR | 10B | 0.5% |
+| PROASSUR | 10C | 0.5% |
+
+### Bris de glaces et blocs feux (garantie distincte)
+
+| Compagnie | Catégorie | Taux |
+|---|---|---|
+| PROASSUR | 01 | 0.6% |
+| PROASSUR | 02 | 0.6% |
+| PROASSUR | 03 | 0.6% |
+| PROASSUR | 06 | 0.9% |
+| PROASSUR | 07ARC | 0.9% |
+| PROASSUR | 07SRC | 0.9% |
+| PROASSUR | 08 | 0.9% |
+| PROASSUR | 10A | 0.9% |
+| PROASSUR | 10B | 0.9% |
+| PROASSUR | 10C | 0.9% |
+| ROYAL ONYX | 02 | 0.3% |
+| ROYAL ONYX | 03 | 0.3% |
+| ROYAL ONYX | 04A | 0.5% |
+| ROYAL ONYX | 04C | 0.5% |
+| ROYAL ONYX | 08 | 0.3% |
+| ROYAL ONYX | 09A | 1% |
+| ROYAL ONYX | 09B | 1% |
+| ROYAL ONYX | 10A | 1% |
+| ROYAL ONYX | 10B | 1% |
+| ROYAL ONYX | 10C | 1% |---
+
+
+---
+
+## Pilier 2 (v2.0) — `equivalence_garantie` / `offre_commerciale`
+
+### Le problème que cette architecture résout
+
+Chaque compagnie nomme ses garanties à sa façon ("Protection circulation", "Assistance Auto", "RC/RTI"...) — jamais le code canonique. Sans rattachement explicite, impossible de savoir que ces libellés désignent la même chose d'une compagnie à l'autre, ou de générer un écran de cotation lisible pour le client.
+
+### `equivalence_garantie` — le dictionnaire des dénominations réelles
+
+```
+Une ligne = (compagnie, dénomination réelle) → sous-garantie canonique
+```
+
+Contrainte d'unicité sur `(garantie_code, id_compagnie, denomination)` — deux compagnies peuvent légitimement partager un même mot courant ("Vol véhicule") sans se bloquer mutuellement.
+
+**État actuel** : 385 dénominations réelles, dont 14 génériques (niveau POOL/AUCUNE, sans compagnie précise), couvrant 20 des 21 entrées de la table `compagnie` (générique AUCUNE incluse).
+
+### `equivalence_garantie_sous_garantie` — la composition des bouquets
+
+Certaines dénominations couvrent **plusieurs** sous-garanties à la fois (IPT, IAC, RC — "Protection circulation Avec FM" = Décès + IPP + Frais médicaux en une seule fois). `equivalence_garantie.garantie_code` reste la sous-garantie "principale" (référence d'affichage simple) ; cette table de liaison porte la composition complète.
+
+```
+prime_bouquet_totale = Σ prime_composante, pour chaque sous-garantie liée dans equivalence_garantie_sous_garantie
+```
+
+**État actuel** : 616 liens, couvrant les 385 dénominations (1 lien pour une dénomination simple, 2-3 pour un bouquet).
+
+### `offre_commerciale` — le catalogue qui porte le vrai nom
+
+Point de jonction entre une compagnie, une sous-garantie, et sa dénomination réelle (via `id_equivalence_garantie`). `tarif.id_offre_commerciale` est la seule vraie clé de regroupement pour une ligne tarifaire — les anciennes colonnes (`id_compagnie`/`id_garantie`/`id_sous_garantie`/`garantie_code` sur `tarif`) restent en doublon volontaire, retrait prévu après confiance éprouvée.
+
+**État actuel** : 300 offres commerciales, dont 103 rattachées à une dénomination réelle confirmée (le reste porte un libellé "PLACEHOLDER" généré automatiquement en Phase 4, faute de dénomination connue — pas une vraie valeur commerciale). `tarif.id_offre_commerciale` couvre 100% des 343 lignes tarifaires (Phases 4-5, 02/10/2026).
+
+**Dette explicite** : 197 offres encore sur un libellé générique plutôt qu'une vraie dénomination compagnie — pas une anomalie de calcul (le tarif reste juste), mais un écran de cotation basé dessus afficherait un nom provisoire, pas le vrai nom commercial.
+
+
+---
+
+
+---
+
+## Pilier 2 (v3.0) — Composition de la Prime TTC et écosystème de souscription
+
+### 3.1 — Rubriques de la Prime TTC et formule d'assemblage
+
+Établie et vérifiée sur le tarif à lecture directe AFRINS : **504 lignes sur 504 conformes** (à ±1 FCFA près, arrondi), plus 3 lignes de la fiche Cat.4A (format 3/6/12 mois). Source unique à ce jour pour la structure complète d'une Prime TTC ; le taux de TVA est recoupé par deux autres fichiers (voir 3.6).
+
+```
+Prime nette de la période = coefficient_durée × (RC + DR + IPT/IAC annuels)   [+ garanties facultatives souscrites]
+Assiette de TVA           = Prime nette + Accessoires + Fichier central
+TVA                       = 19,25 % × Assiette de TVA
+Prime TTC                 = Prime nette + Accessoires + Fichier central + TVA + Carte rose
+```
+
+- **Accessoires, Fichier central, Carte rose** : montants fixes par contrat, **non proratisés** selon la durée (AFRINS : mêmes valeurs à 60, 120, 180, 240 et 365 jours).
+- **Carte rose** : hors assiette de TVA (vérifié sur 504 lignes).
+- **DTA** : absent de la Prime TTC dans les tarifs AFRINS, qui l'indiquent à part (« à ajouter au besoin »). Sa nature exacte (taxe d'État collectée via le contrat et non reversée à l'assureur) est une **hypothèse non sourcée dans nos données — à confirmer**.
+- **Garanties facultatives** : le tarif AFRINS ne contient que RC + DR + IPT. Que Dommages, Vol, etc. entrent dans la prime nette et dans l'assiette de TVA de la même façon est une **hypothèse — à confirmer**.
+- **Autres compagnies** : cette formule n'est vérifiée que sur AFRINS. Aucun autre tarif à lecture directe ne nous a été fourni.
+
+### 3.1bis — Durée du contrat et prime nette (coefficients de court terme)
+
+Observé dans le tarif AFRINS, Cat.1, 2 et 3 (90 lignes par durée, 100 % conformes) :
+
+| Durée | Coefficient appliqué à (RC + DR + IPT) annuels |
+|---|---|
+| 60 jours (2 mois) | 20 % |
+| 120 jours (4 mois) | 40 % |
+| 180 jours (6 mois) | 60 % |
+| 240 jours (8 mois) | 80 % |
+| 365 jours (1 an) | 100 % |
+
+Fiche Cat.4A (format Pool TPV) : 3 mois = 25 %, 6 mois = 50 %, 12 mois = 100 % (3 valeurs vérifiées). Cat.5A : prime annuelle seulement.
+
+Ce n'est **pas** un prorata au jour (60/365 = 16,4 %, et non 20 %). **À confirmer** : s'agit-il d'un barème réglementaire de court terme ou d'une convention propre à AFRINS ? Tant que ce n'est pas établi, la règle 10 s'applique : elle n'est pas généralisée aux autres compagnies. Cette notion de durée est la même que celle qui borne les paliers d'accessoires (3.2).
+
+### 3.2 — Accessoires (`bareme_accessoire`)
+
+**Algorithme conceptuel** (pas le code — la règle elle-même) :
+
+```
+accessoire = f(compagnie, branche, catégorie, prime_nette, durée_contrat)
+```
+
+Le montant retenu dépend de deux paliers combinés :
+- **Palier de prime** : soit un seuil unique ("à partir de X FCFA de prime nette"), soit une plage (prime nette entre X et Y)
+- **Palier de durée** : la durée du contrat peut elle-même restreindre quel palier de prime s'applique
+
+Le palier le plus spécifique l'emporte (compagnie+catégorie précise avant compagnie seule, durée précisée avant durée libre) — même logique de spécificité que RC (Pilier 2.1, v1.0).
+
+**Valeurs observées chez AFRINS** : 2 500 FCFA sur 500 lignes sur 504, indépendamment de la durée, de la zone et de la tranche de puissance. Quatre lignes à 3 150 FCFA (anomalie #11). En Cat.4A, la fiche présente « Accessoires + Fichier ASAC » ensemble (3 000 FCFA) sans les décomposer.
+
+**État des données en base** : table peuplée pour plusieurs compagnies, non auditée exhaustivement dans cette version.
+
+### 3.3 — Fichier central (ASAC)
+
+**Valeurs observées chez AFRINS** : 1 000 FCFA en Cat.1, 2 et 3 (450 lignes) ; 500 FCFA en Cat.5A (54 lignes) ; montant fixe par contrat, non proratisé selon la durée ; il entre dans l'assiette de TVA (vérifié). En Cat.4A il est présenté avec les accessoires (3 000 FCFA au total, non décomposé).
+
+**Aucune table dédiée dans notre schéma.** Source unique : le tarif à lecture directe AFRINS. Qui fixe ce montant et selon quelle règle (catégorie, compagnie, date) n'est pas établi — **à confirmer**. *(Correction : une version antérieure indiquait « 1 000 à 1 500 FCFA », valeur inexacte.)*
+
+### 3.4 — Carte rose
+
+**Fonction** *(à confirmer — définition issue de la connaissance générale du métier, non sourcée dans nos données)* : attestation de couverture RC pour circuler en zone CEMAC hors du pays d'immatriculation, pendant commercial de la sous-garantie `AUTO_RC__EXTENSION_CEMAC`.
+
+**Calcul observé chez AFRINS** : forfait de 1 000 FCFA sur les 504 lignes lues, quelles que soient la catégorie, la zone et la durée ; hors assiette de TVA. Aucune autre compagnie vérifiée, aucune table dédiée dans notre schéma.
+
+### 3.5 — DTA (Droit de Timbre Automobile)
+
+Table source : `site.bareme_dta` (schéma `site`, propriété historique de Production & Souscription — lu ici comme référence, jamais modifié depuis cette session). Structure par (genre de véhicule, catégorie, tranche CV, période de validité) — **conçue nativement pour historiser les changements réglementaires dans le temps**, exactement ce que cette section du RUT doit documenter.
+
+**Lacune découverte en construisant cette section** : la distinction par cylindrée pour les motos/tricycles (genre MOTO2/MOTO3), visible dans le barème CIMA général (AFRINS : 2-7CV=30000, 8-13CV=50000...), **n'existe pas** dans `site.bareme_dta` — un seul montant par genre, toutes cylindrées confondues. Soit une autre source la porte, soit elle n'a jamais été saisie. Non résolu dans cette version — exactement le genre de trou que le RUT est fait pour révéler, pas pour cacher.
+
+**⚠️ Correction (Roger, 03/10/2026)** : la phrase ci-dessous, présente dans une version antérieure de ce document, était une **erreur d'interprétation** — conservée biffée pour traçabilité, pas effacée silencieusement.
+
+~~Évolution structurelle découverte : avant 2023, le DTA suivait un barème général unique, indépendant de la catégorie CIMA. À partir du 01/01/2023, chaque catégorie a son propre barème par tranche de force fiscale — changement réglementaire réel, pas une incohérence de nos données.~~
+
+**Ce qui est réellement arrivé** : les lignes "par catégorie, 2023" ne sont pas un nouveau barème réglementaire — ce sont des valeurs reprises d'un **tarif à lecture directe** (AFRINS), qui relit simplement le barème général ministériel compagnie par catégorie, pour la commodité de lecture. Une valeur issue d'un tarif à lecture directe **ne doit générer un nouvel enregistrement dans `bareme_dta` que si elle contredit le barème général ministériel** — si elle y correspond, elle n'apporte aucune valeur distinctive et n'a pas lieu d'exister comme ligne séparée. `site.bareme_dta` contient actuellement cette redondance, non intentionnelle.
+
+**Conséquence** : `site.bareme_dta` sera purgée de ces doublons. Cette session ("Mise en place du RUT") ne modifie pas le système de tarification — seule la cartographie de l'état actuel est faite ici, la purge revient à la session/équipe propriétaire de cette table.
+
+### Barème DTA complet, véhicules (`site.bareme_dta`, source : `site`, historisée)
+
+
+**Barème général (sans distinction de catégorie, 2017-2022)**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 7 | 15 000 | 2017-01-01 | 2019-12-31 | DTA_utf8.csv, réf. 3 |
+| 0 | 7 | 15 000 | 2020-01-01 | 2022-12-31 | DTA_utf8.csv, réf. 9 |
+| 8 | 13 | 25 000 | 2017-01-01 | 2019-12-31 | DTA_utf8.csv, réf. 4 |
+| 8 | 13 | 25 000 | 2020-01-01 | 2022-12-31 | DTA_utf8.csv, réf. 10 |
+| 14 | 20 | 50 000 | 2017-01-01 | 2019-12-31 | DTA_utf8.csv, réf. 5 |
+| 14 | 20 | 50 000 | 2020-01-01 | 2022-12-31 | DTA_utf8.csv, réf. 11 |
+| 21 | — | 100 000 | 2017-01-01 | 2019-12-31 | DTA_utf8.csv, réf. 6 |
+| 21 | — | 100 000 | 2020-01-01 | 2020-12-31 | DTA_utf8.csv, réf. 12 |
+| 21 | — | 150 000 | 2021-01-01 | 2022-12-31 | DTA_utf8.csv, réf. 14 |
+
+**Catégorie 01**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 38 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 39 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 40 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 41 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 42 |
+
+**Catégorie 02**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 43 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 44 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 45 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 46 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 47 |
+
+**Catégorie 03**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 17 |
+| 2 | 7 | 15 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 18 |
+| 8 | 13 | 25 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 19 |
+| 14 | 20 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 22 |
+| 21 | — | 150 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 20 |
+
+**Catégorie 04A**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 23 |
+| 2 | 7 | 15 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 24 |
+| 8 | 13 | 25 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 25 |
+| 14 | 20 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 26 |
+| 21 | — | 150 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 27 |
+
+**Catégorie 04B**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 28 |
+| 2 | 7 | 15 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 29 |
+| 8 | 13 | 25 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 30 |
+| 14 | 20 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 31 |
+| 21 | — | 150 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 32 |
+
+**Catégorie 04C**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 33 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 34 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 35 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 36 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 37 |
+
+**Catégorie 05**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 48 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 49 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 50 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 51 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 52 |
+
+**Catégorie 05bis**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 53 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 54 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 55 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 56 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 57 |
+
+**Catégorie 06**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 58 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 59 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 60 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 61 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 62 |
+
+**Catégorie 07ARC**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 68 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 69 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 70 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 71 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 72 |
+
+**Catégorie 07SRC**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 73 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 74 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 75 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 76 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 77 |
+
+**Catégorie 08**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 78 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 79 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 80 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 81 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 82 |
+
+**Catégorie 09A**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| — | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 113 |
+
+**Catégorie 09B**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 83 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 84 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 85 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 86 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 87 |
+
+**Catégorie 10A**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 88 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 89 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 90 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 91 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 92 |
+
+**Catégorie 10B**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 93 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 94 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 95 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 96 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 97 |
+
+**Catégorie 10C**
+
+| CV min | CV max | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 98 |
+| 2 | 7 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 99 |
+| 8 | 13 | 50 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 100 |
+| 14 | 20 | 75 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 101 |
+| 21 | — | 200 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 102 |
+
+### Barème DTA, motos/tricycles (`site.bareme_dta`)
+
+| Genre | Montant (FCFA) | Du | Au | Référence |
+|---|---|---|---|---|
+| MOTO2 | 2 000 | 2017-01-01 | 2019-12-31 | DTA_utf8.csv, réf. 1 |
+| MOTO2 | 10 000 | 2020-01-01 | 2022-12-31 | DTA_utf8.csv, réf. 7 |
+| MOTO2 | 10 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 15 |
+| MOTO3 | 5 000 | 2017-01-01 | 2019-12-31 | DTA_utf8.csv, réf. 2 |
+| MOTO3 | 15 000 | 2020-01-01 | 2022-12-31 | DTA_utf8.csv, réf. 8 |
+| MOTO3 | 30 000 | 2023-01-01 | 2099-12-31 | DTA_utf8.csv, réf. 16 |
+
+### 3.6 — TVA et fiscalité
+
+**Taux : 19,25 %**, établi par trois sources indépendantes :
+
+| Source | Constat |
+|---|---|
+| Tarif à lecture directe AFRINS | TVA = 19,25 % × (prime nette + accessoires + Fichier central) sur 504 lignes sur 504, et sur 3 lignes de la fiche Cat.4A (écart maximal 0,4 FCFA) |
+| `Tarif_automobile_automatisé.csv` (GMCSA) | Colonne « Taux Taxes » = 19,25 % sur 5 112 lignes sur 5 112 |
+| `Offre_commerciale_autre_source.csv` | Colonne `Taux_TVA` = 19,25 sur 1 170 lignes (35 sans valeur), avec un `Code_Taxe` par branche (code 2 sur 162 lignes, correspondant au nombre de lignes de la branche Automobile) |
+
+**Assiette** : prime nette + accessoires + Fichier central. Carte rose et DTA sont exclus.
+
+**Réserves** :
+- `Garanties_canoniques.csv` porte une colonne « Taux Taxes » à 0,00 % sur 244 lignes : sens à clarifier (peut-être une autre taxe).
+- La colonne `Taux_TCA` de `Offre_commerciale_autre_source.csv` vaut 0,00 sur toutes les lignes : aucune TCA n'apparaît dans cette source — à confirmer.
+- Aucune historisation du taux de TVA n'est disponible (date d'entrée en vigueur, évolutions). Le RUT reste ouvert pour la consigner.
+- `tarification.taux_fiscalite` ne contient qu'une ligne illustrative : la valeur réelle est connue du RUT, mais pas encore de la base.
+- Piège de lecture rencontré : ce dernier fichier contient deux colonnes nommées `Taux_TVA` (la première à 0,00, la seconde à 19,25). Une lecture par nom de colonne ne voit que l'une des deux.
+
+### 3.7 — Formules de souscription admises par compagnie
+
+**Ce qui existe, déjà documenté (v2.0)** : les formules IPT/IAC — un numéro de formule par compagnie, jamais comparable d'une compagnie à l'autre (Pilier 2 v2.0, section IPT/IAC).
+
+**Ce qui n'existe pas encore** : le "Produit" commercial transversal (Essentiel/Classique/Confort/Premium ou équivalent), qui combine plusieurs garanties en un seul choix pour le client — identifié comme chantier non résolu depuis le cahier des charges du 01/10/2026, toujours sans modèle de données ni donnée réelle à ce jour. C'est, de l'aveu même de Roger, la section la plus importante du RUT — et c'est celle où le système en sait le moins aujourd'hui.
+
+### 3.8 — Directives de souscription par compagnie
+
+**Non renseigné.** Aucune donnée disponible sur les règles d'acceptation, de refus, de zones couvertes ou de pièces exigées par compagnie — ni en base, ni fournie à cette session à ce jour. Lacune assumée depuis le v1.0 (Pilier 2.2), toujours ouverte.
+
+### Ce que cette section ne peut pas encore garantir
+
+L'objectif annoncé — calculer une Prime TTC comparable entre compagnies sur un contrat multi-garanties — est **atteint pour AFRINS sur RC + DR + IPT** (structure complète vérifiée sur 504 lignes), et **pas encore pour les autres compagnies** : Fichier central, Carte rose, accessoires et coefficients de durée ne sont connus que par AFRINS. Le taux de TVA (19,25 %) et le DTA (table `site`) sont connus. Le Produit transversal et les directives de souscription n'ont aucune donnée. Le RUT rend ce manque visible plutôt que de laisser croire à une comparabilité qui n'existe pas encore dans les données.
+
+
+---
+
+## Pilier 3 — Mémoire : décisions et justifications
 
 | Date | Décision | Justification |
 |---|---|---|
@@ -935,20 +1807,40 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | 01/10 | Cat.06 nécessite `rang_vehicule` explicite, Cat.07 nécessite `type_vehicule_base` explicite | Plusieurs lignes de tarif existent avec des critères par ailleurs identiques — impossible de choisir sans ambiguïté sans ce paramètre |
 | 01/10 | Cat.04B, extrapolation au-delà de 40 places : base 40 places + 5 000 FCFA/place supplémentaire | Règle explicite du document source, page 31 |
 | 03/10 | RUT v1.0 recentré strictement sur le RC ministériel, sans aucune mécanique extérieure (DR, IPT/IAC, Dommages...) | Première version jugée hors-périmètre par Roger — l'objectif de ce document est de vérifier qu'on comprend soi-même le métier, pas de documenter l'ensemble du moteur d'un coup |
+| 01/10 | Dommages et Tierce Collision fusionnées sous une seule garantie (6 sous-garanties) | « Tierce » n'était pas une garantie distincte de Dommages ; 145 lignes sur 6 tables redirigées après audit exhaustif des dépendances |
+| 01/10 | Sous-garanties « Perte totale » (Dommages, Incendie) gardées séparées | Même assiette de prime que la version standard, périmètre de couverture non confirmé. Principe : garder le maximum séparé, `equivalence_garantie` gère les rapprochements confirmés |
+| 02/10 | 14 tables renommées au singulier, 27 colonnes en `id_nomchamp`, 24 contraintes alignées | Maintenance et migration. Le renommage des tables avait cassé 7 fonctions sans qu'on s'en aperçoive ; elles ont été rattrapées et un audit systématique est devenu la règle 6 |
+| 02/10 | BENEFICIAL→BELIFE, ATLANTIQUE→AFG ; codes SOCAR→ZENITHE et ALPHA→SAMIRIS réaffectés | SOCAR et ALPHA en liquidation judiciaire terminée ; les codes sont réaffectés à des entités distinctes, pas une fusion commerciale |
+| 02/10 | AFRINS DR : forfait 2 000 FCFA au lieu de 5 % de RC avec minimum 80 000 | Le tarif à lecture directe officiel contredisait l'extraction CSV de la veille ; la source officielle fait foi |
+| 02/10 | Architecture « bouquet » : `equivalence_garantie_sous_garantie` | Une dénomination (ex. « Protection circulation Avec FM ») couvre plusieurs sous-garanties ; une seule colonne `garantie_code` ne pouvait pas le représenter |
+| 02/10 | `tarif.id_offre_commerciale` (343 lignes sur 343) ; fonctions RC et DR via `offre_commerciale` | Phases 4-5 de la restructuration ; 125 lignes encore au niveau garantie parente ont été corrigées en chemin |
+| 03/10 | 12 doublons de `bareme_tranche` supprimés (ALLIANZ, SUNU) | Audit exhaustif de la table : exactement ces 12, aucun autre cas. Un premier passage avait produit 139 faux positifs (RC n'utilise pas `montant_fixe`/`taux_pct`) |
+| 03/10 | « Évolution 2023 du DTA » : interprétation retirée | Corrigée par Roger : relecture d'un tarif à lecture directe, pas un nouveau barème (règle 10) |
+| 03/10 | TVA = 19,25 % sur prime nette + accessoires + Fichier central, Carte rose exclue | Vérifiée sur 504 lignes AFRINS et recoupée par deux autres fichiers |
+| 03/10 | Coefficients de court terme (20/40/60/80/100 %) consignés sans être généralisés | Observés chez AFRINS seul ; généralité à confirmer |
 
 ---
 
 ## Pilier 4 — Pilotage
 
 ### Dettes identifiées sur ce périmètre
+- **197 des 300 `offre_commerciale` portent un libellé "PLACEHOLDER"** généré automatiquement en Phase 4, faute de vraie dénomination compagnie connue — le tarif associé reste correct, mais un écran de cotation basé dessus afficherait un nom provisoire.
 - **Dimension "genre de véhicule" manquante** (découverte 03/10/2026, via `Tarif_automobile_automatisé.csv`) — la surprime matière inflammable (et peut-être d'autres éléments) varie par genre (Benne/Camion/Camion+Remorque...) pour Cat.02/03 au moins, non capturée aujourd'hui. Cause des anomalies #2/#3. Vérifier si d'autres catégories sont concernées avant de modéliser.
 - **Format des tableaux du Pilier 2.3** — actuellement une colonne "Autres critères" en texte libre (JSON). Devrait devenir des colonnes explicites propres à chaque catégorie (nombre de places, remorque, RC élèves, genre de véhicule...) plutôt qu'un bloc texte — aurait rendu l'anomalie "genre de véhicule" visible immédiatement au lieu de la masquer. Restructuration non faite dans ce v1.0, risque trop élevé en fin de session.
 - Sous-catégories 04A/B/C, 05/05bis, 06, 07ARC/SRC, 09A/B, 10A/B/C : la logique de distinction entre elles n'est documentée nulle part de façon narrative — seulement implicite dans la structure du barème. À expliciter si une vraie règle écrite existe.
 - Directives de souscription par compagnie : absentes de ce document, jamais fournies à cette session.
 - Catégories 10B et 10C portent exactement les mêmes montants que 10A — à confirmer si c'est une vraie distinction réglementaire (trois catégories séparées existant pour une autre raison que le montant) ou une simplification de notre construction.
+- **Deux sources de vérité, aucun contrôle automatique.** Le RUT et la base peuvent diverger sans que personne ne le voie, ce qui recréerait le problème que le RUT devait résoudre. À construire : un script qui compare chaque tableau du RUT à la base et signale les écarts (priorité haute).
+- **Cause d'origine des doublons ALLIANZ/SUNU non recherchée** : 12 lignes supprimées, mais pas pourquoi elles existaient (script rejoué ? import sans clé d'unicité ?). Risque de récidive au prochain import.
+- **Dimension « genre de véhicule » à auditer sur Dommages et Vol** (Benne/Camion/Camion+Remorque) : hypothèse non vérifiée, par analogie avec la matière inflammable.
+- **Couverture des garanties facultatives** : 13 compagnies sur 16 n'ont aucun taux sur Dommages, Vol, Incendie (matrice du Pilier 2). Compléter d'abord les plus grosses compagnies du marché.
+- **Statut de SAMIRIS** non confirmé (voir Acteurs). **IPT AFRINS** absente de la base (#12). **Accessoires 3 150 chez AFRINS** (#11).
+- **Sections 3.2 à 3.4 et 3.1bis reposent sur AFRINS seul** : appliquer la règle 10 avant de les généraliser ou de chercher une deuxième compagnie.
+- **Affirmations marquées « à confirmer »** : nature fiscale du DTA, définition de la Carte rose, qui fixe le Fichier central, traitement des garanties facultatives dans l'assiette de TVA, généralité des coefficients de durée.
+- **Taille du document** : si une version future ajoute un barème aussi dense que celui du DTA, sortir les grands tableaux dans des fichiers annexes liés et garder le RUT centré sur les formules, les principes et le registre d'anomalies.
 
-### Chantiers hors périmètre de ce v1.0 (RUT v1.n, périmètre étendu)
-DR, IPT/IAC, Dommages/Tierce, Vol, Incendie, Bris de glaces, `equivalence_garantie`, `offre_commerciale`, franchises, majorations/réductions, catalogue hors-automobile.
+### Chantiers hors périmètre de cette v3.0 (RUT v3.n, périmètre étendu)
+Franchises (`franchise`, `franchise_application`, non branchées au calcul de la prime), majorations et réductions hors RC (dont la réduction Vol SUNU de −20 %), Produit transversal (Essentiel/Classique/Confort/Premium), bordereau comme entité datée, catalogue hors-automobile (reconstruit le 02/10 depuis une source compagnie ; Crédit et Cautions vide).
 
 ### Système d'évaluation de la performance
 *Non défini à ce stade — à construire avec Roger.*
@@ -964,3 +1856,14 @@ DR, IPT/IAC, Dommages/Tierce, Vol, Incendie, Bris de glaces, `equivalence_garant
 | 03/10/2026 | Session Tarification | Lois de zone (23/24, 11/12) et de remorque (coefficient par catégorie) découvertes et vérifiées exhaustivement (535+144 tests) ; registre d'anomalies créé (3 anomalies non résolues, réponse standard définie) ; tentative de loi sur les tranches CV/cylindrée testée et écartée | Roger : "nous n'avons pas le droit à l'erreur, tout doit être vérifié valeur après valeur" — aucune règle admise sans vérification exhaustive, aucune anomalie masquée |
 | 03/10/2026 | Session Tarification | Analyse étendue à 04A/04B/08 : deux régimes linéaires en 04B (places), incrément par tranche en 04A, coefficient de tonnage dépendant de la force fiscale en 08 — tous confirmés par zone ; 4ᵉ anomalie trouvée (04B, 22 places, tranche 7-10CV) | Poursuite de la rigueur exhaustive demandée ; aucune loi admise sans vérification sur toutes les zones disponibles |
 | 03/10/2026 | Session Tarification | Cause racine des anomalies #2/#3 identifiée : dimension "genre de véhicule" absente du modèle (confirmé via `Tarif_automobile_automatisé.csv`, colonne "Genre ou Classe") — pas une erreur de saisie mais une variable manquante. Discussion sur le format des tableaux (large vs long) tranchée : structure longue avec critères explicites par catégorie, pas de table universelle à colonnes fixes | Roger a questionné l'efficacité du format texte libre "autres critères" ; cette anomalie en est la preuve directe — un format à colonnes explicites l'aurait révélée immédiatement |
+| 03/10/2026 | Session Tarification | RUT passé en v2.0 — périmètre étendu à DR (21 compagnies + générique, taux réels) et IPT/IAC (21 compagnies, barème complet par formule) ; 2 nouvelles anomalies trouvées (ROYAL ONYX formule 3, Frais Médicaux absents chez 13 compagnies) | Roger : "les vrais taux, et notre fameuse mécanique de calcul" — périmètre Automobile étendu au-delà du RC seul, hors-automobile toujours exclu |
+| 03/10/2026 | Session Tarification | DR reformulé en une seule formule à deux paramètres (`montant_fixe_minimum + prime_RC_ajustee × taux_DR_pct / 100`, l'un des deux nul selon la compagnie) ; règle de date de validité par défaut (bordereau actif) explicitée ; doublon ALLIANZ confirmé réel en base (même `tarif_id`, deux `bareme_tranche` par formule) | Roger a proposé le format unifié, plus simple à exploiter que deux mécaniques séparées ; la requête de vérification a confirmé le doublon, pas un artefact de comptage |
+| 03/10/2026 | Session Tarification | Dommages/Tierce, Vol, Incendie, Bris de glaces ajoutés (PROASSUR et ROYAL ONYX, taux complets par catégorie ; reste du marché limité à Vol accessoires/braquage/brigandage) ; 2 nouvelles anomalies (doublon SUNU, taux Incendie ROYAL ONYX Cat.02 hors échelle) | Complète le périmètre v2.0 annoncé ; couverture volontairement partielle documentée plutôt que masquée — la plupart des compagnies n'ont pas encore de taux construits pour ces garanties facultatives |
+| 03/10/2026 | Session Tarification | Doublon SUNU confirmé (pas seulement probable) — vérification élargie à toutes les colonnes (dates, statut, critères, offre commerciale), toutes identiques sauf l'id `bareme_tranche` | Roger a demandé d'élargir la recherche avant de conclure à un doublon plutôt que de se fier à un seul motif apparent |
+| 03/10/2026 | Session Tarification | `equivalence_garantie`/`offre_commerciale` ajoutée (385 dénominations, 616 liens de composition, 300 offres dont 103 avec vrai nom commercial) — v2.0 complète sur le périmètre annoncé | Dernier bloc du périmètre v2.0 validé par Roger ; dette des 197 offres "PLACEHOLDER" consignée explicitement plutôt que masquée |
+| 03/10/2026 | Session Tarification | Audit exhaustif de `bareme_tranche` (premier passage faussé par une colonne manquante dans le `GROUP BY`, corrigé) — 12 doublons confirmés, exactement les anomalies #7/#8, aucun autre cas dans toute la table. Doublons supprimés, second audit à 0 ligne | Roger a donné quitus pour l'optimisation du RUT ; audit corrigé après qu'un premier passage ait produit 139 faux positifs (RC n'utilise pas `montant_fixe`/`taux_pct`) |
+| 03/10/2026 | Session Tarification | Optimisation terminée : table des matières ajoutée ; loi Vol Partiel=Vol Braquage découverte et vérifiée (12/12 cas, deux compagnies) ; matrice de couverture par compagnie/garantie construite | Clôture des 4 axes d'optimisation proposés (anomalies, lois structurelles, couverture, navigabilité) |
+| 03/10/2026 | Session Tarification | RUT v3.0 — composition complète de la Prime TTC documentée (accessoires, fichier central, carte rose, DTA via `site.bareme_dta`, TVA, formules/directives de souscription) ; lacune découverte sur la distinction cylindrée des motos en DTA | Roger : objectif de comparabilité des offres multi-garanties entre compagnies ; le RUT rend les lacunes visibles (Fichier central/Carte rose vérifiés chez AFRINS seul, TVA quasi vide, Produit transversal toujours sans donnée) plutôt que de prétendre à une comparabilité qui n'existe pas encore |
+| 03/10/2026 | Session Tarification | Barème DTA complet intégré (96 lignes, `site.bareme_dta`) | Confirme que `site.bareme_dta` est bien conçu pour historiser ce type de changement réglementaire, usage visé par cette section du RUT |
+| 03/10/2026 | Roger (correction) | L'"évolution structurelle 2023" du DTA était une erreur d'interprétation — les lignes "par catégorie" ne sont qu'une relecture d'un tarif à lecture directe (AFRINS), redondante avec le barème général ministériel, pas un nouveau barème réglementaire. `bareme_dta` sera purgée de cette redondance (hors scope de cette session, qui cartographie sans modifier) | Principe posé par Roger : une valeur issue d'un tarif à lecture directe ne crée un nouvel enregistrement que si elle contredit la source ministérielle générale — sinon elle n'apporte aucune valeur distinctive |
+| 03/10/2026 | Session Tarification, quitus Roger | Corrections avant Git : formule d'assemblage de la Prime TTC et TVA 19,25 % vérifiées (504/504 lignes AFRINS, recoupées par deux fichiers) ; coefficients de durée ajoutés ; Fichier central corrigé (500 ou 1 000 FCFA, et non « 1 000 à 1 500 ») ; 2 anomalies et 1 lacune ajoutées au registre ; compte des compagnies corrigé (19 actives + générique + SAMIRIS à confirmer) ; Pilier 3 étendu à toutes les décisions depuis le 01/10 ; règle 11 ajoutée ; table des matières régénérée depuis les titres | Revue critique de la carte : affirmations non sourcées marquées « à confirmer », sections figées sur l'ancien périmètre mises à jour, et une erreur d'analyse corrigée (la TVA avait été écrite comme « sans aucune valeur disponible » alors qu'elle se déduit des tarifs à lecture directe) |
