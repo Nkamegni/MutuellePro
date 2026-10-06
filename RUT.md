@@ -1,9 +1,11 @@
 # RUT — Référentiel Unique de Tarification
-**v4.0 — Automobile (règles de calcul) et cartographie hors automobile — 03/10/2026** (v3.0 livrée puis complétée en v3.1 le même jour : voir l'Historique)
+**v5.1 — Automobile (règles de calcul), cartographie hors automobile, architecture cible, contenu des référentiels — 03/10/2026** (v3.0 livrée puis complétée en v3.1, étendue en v4.0 et v5.0 : voir l'Historique)
 
 Document source, humain, de référence unique. `areas/tarification.md` (mémoire technique auto-générée) reste un journal de travail ; le RUT est ce qui fait autorité au-dessus — y compris, à terme, matérialisable directement en base de données.
 
-**Périmètre de cette version (v4.0)** : Automobile, avec toutes les règles de calcul de la v3.1 (RC ministériel, DR, IPT/IAC, garanties facultatives, `equivalence_garantie`/`offre_commerciale`, assemblage de la Prime TTC, repli générique), **plus** une cartographie des branches hors automobile (Pilier 2, v4.0). Toujours au niveau des règles de tarification elles-mêmes, **pas** de la définition de l'application de gestion. Hors automobile, aucune prime n'est calculable à ce stade : le RUT consigne ce qui existe et ce qui manque.
+**Périmètre de cette version (v5.1)** : tout le contenu de la v4.0 (Automobile avec ses règles de calcul, cartographie hors automobile), **plus** la description de l'architecture cible : une table de tarif unique, ses tables de concepts, ses mécanismes et ses procédures (Pilier 2, v5.0). Toujours au niveau des règles et de la conception, **pas** de l'application de gestion. **Rien n'est implémenté** : le système n'est pas modifié par cette phase.
+
+**Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
 
 **Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
 
@@ -73,10 +75,32 @@ Document source, humain, de référence unique. `areas/tarification.md` (mémoir
   - [4.7 — Taxes hors automobile](#47--taxes-hors-automobile)
   - [4.8 — Sources de prix disponibles, non exploitées](#48--sources-de-prix-disponibles-non-exploitées)
   - [4.9 — Ce que le RUT ne peut pas dire hors automobile](#49--ce-que-le-rut-ne-peut-pas-dire-hors-automobile)
+- [Pilier 2 (v5.0) — Architecture cible : une table de tarif unique et ses concepts](#pilier-2-v50--architecture-cible--une-table-de-tarif-unique-et-ses-concepts)
+  - [5.1 — Principe et choix de conception](#51--principe-et-choix-de-conception)
+  - [5.2 — État actuel du schéma (inventaire du 03/10/2026)](#52--état-actuel-du-schéma-inventaire-du-03102026)
+  - [5.3 — La table de tarif cible](#53--la-table-de-tarif-cible)
+  - [5.4 — Les tables de concepts](#54--les-tables-de-concepts)
+  - [5.5 — Mécanismes](#55--mécanismes)
+  - [5.6 — Procédures stockées](#56--procédures-stockées)
+  - [5.7 — Passage de l'état actuel à la cible](#57--passage-de-létat-actuel-à-la-cible)
+  - [5.8 — Ce que cette conception ne résout pas](#58--ce-que-cette-conception-ne-résout-pas)
+- [Pilier 2 (v5.1) — Contenu des référentiels et des règles stockées en base](#pilier-2-v51--contenu-des-référentiels-et-des-règles-stockées-en-base)
+  - [6.1 — Compagnies](#61--compagnies)
+  - [6.2 — Actes réglementaires et bordereaux (15)](#62--actes-réglementaires-et-bordereaux-15)
+  - [6.3 — Majorations et réductions (majoration_reduction, 6 lignes)](#63--majorations-et-réductions-majoration_reduction-6-lignes)
+  - [6.4 — Liens entre garanties (garantie_lien, 5 lignes)](#64--liens-entre-garanties-garantie_lien-5-lignes)
+  - [6.5 — Franchises et réductions réglementaires](#65--franchises-et-réductions-réglementaires)
+  - [6.6 — Formules de souscription automobile (formule, 16 lignes)](#66--formules-de-souscription-automobile-formule-16-lignes)
+  - [6.7 — Produits et offres historiques](#67--produits-et-offres-historiques)
+  - [6.8 — Règles de calcul et bases de calcul](#68--règles-de-calcul-et-bases-de-calcul)
+  - [6.9 — Accessoires en base (bareme_accessoire, 110 lignes)](#69--accessoires-en-base-bareme_accessoire-110-lignes)
+  - [6.10 — Dénominations par compagnie (equivalence_garantie, 385 lignes)](#610--dénominations-par-compagnie-equivalence_garantie-385-lignes)
+  - [6.11 — Registre des sources](#611--registre-des-sources)
+  - [6.12 — Pièges de lecture des sources](#612--pièges-de-lecture-des-sources)
 - [Pilier 3 — Mémoire : décisions et justifications](#pilier-3--mémoire--décisions-et-justifications)
 - [Pilier 4 — Pilotage](#pilier-4--pilotage)
   - [Dettes identifiées sur ce périmètre](#dettes-identifiées-sur-ce-périmètre)
-  - [Chantiers hors périmètre de cette v4.0 (RUT v4.n, périmètre étendu)](#chantiers-hors-périmètre-de-cette-v40-rut-v4n-périmètre-étendu)
+  - [Chantiers hors périmètre de cette v5.0 (RUT v5.n, périmètre étendu)](#chantiers-hors-périmètre-de-cette-v50-rut-v5n-périmètre-étendu)
   - [Système d'évaluation de la performance](#système-dévaluation-de-la-performance)
 - [Historique des modifications](#historique-des-modifications)
 
@@ -110,6 +134,16 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 | 17 | Hors auto | Assiette de prime dans `Garanties.csv` | « Nombre passagers » dominante y compris pour Crédit, RC générale, Incendie, Aviation : valeur par défaut sans sens | **Non résolu** — assiette hors automobile inexploitable en l'état |
 | 18 | Hors auto | Tarifs et offres | Aucun tarif ni offre commerciale en base ; six sources de prix (Individuelle accidents ×4, MRH, Voyage) en notre possession mais écartées | **Écarté sur décision de Roger (03/10/2026)** — voir 4.8 |
 | 19 | Hors auto | `Garanties.csv`, branche Transport | « Défense Recours », « Responsabilité civile des médecins » et « Responsabilité civile exploitation » sont classées sous la branche Transport alors qu'elles relèvent de la responsabilité civile (mauvais classement probable) ; toutes les lignes Transport à base de prime renseignée sont de ces trois garanties | **Non résolu** — à confirmer |
+| 20 | Architecture | `fn_calculer_prime_nette_totale` | La fonction présentée comme « API bloquante pour myspace » dans la note de transmission Git du 02/10 **n'existe pas en base** (inventaire du 03/10) : elle a été écrite mais jamais déployée. Aucune procédure ne calcule une Prime nette ou TTC | **Constaté, non corrigé** — la note de transmission d'état initial est inexacte sur ce point |
+| 21 | Architecture | `tarif` | Colonnes redondantes (`id_compagnie`, `id_garantie`, `id_sous_garantie`, `garantie_code`) en doublon de `id_offre_commerciale` ; deux contraintes d'exclusion en parallèle ; `id_offre_commerciale` nullable alors que renseignée sur 343 lignes sur 343 ; champs JSON `criteres_objet`/`criteres_risque` hérités, contenu non audité | **Constaté** — retrait prévu à la bascule (5.7) |
+| 22 | Architecture | `fn_generer_code_franchise` | Fonction sans trigger rattaché dans le schéma d'après l'inventaire : le code de franchise n'est peut-être plus généré automatiquement | **À vérifier** |
+| 23 | Architecture | `genre` | Le concept « genre de véhicule » existe en table (16 lignes) mais aucune colonne de `tarif` ni de `bareme_tranche` ne le référence : chaînon manquant de la cause racine des anomalies #2/#3 | **Constaté** — se résout par la coordonnée `id_genre` de la table cible |
+| 24 | Architecture | `tmp_benchmark_meta` | Table résiduelle de 16 lignes, hors convention (préfixe `tmp_`) | **À vérifier avant suppression** — hors périmètre de cette phase |
+| 25 | Compagnies | `compagnie` | SAMIRIS (id 21) : `actif_site = true` et agrément ACTIF en base alors que Roger l'a déclarée inactive ; nom commercial « Alpha Assurances ». ZENITHE : nom commercial encore « SOCAR ». Numéro et date d'agrément vides pour les 21 compagnies | **Constaté, non corrigé** — la base ne reflète pas les décisions (cette phase ne modifie pas le système) |
+| 26 | Dénominations | `offre`, `offre_commerciale`, `equivalence_garantie` | Trois structures pour la même notion ; `offre.id_produit` renseigné sur 1 ligne seulement des 146 ; aucun rapprochement | **Constaté** — à consolider dans la table cible (5.4) |
+| 27 | RUT | Section 3.7 (v3.0 à v5.0) | Le RUT affirmait que les formules de souscription n'avaient « aucune donnée » alors que la base en contient 16 | **Corrigé en v5.1** (6.6) |
+| 28 | Sources | 19 fichiers non cités jusqu'à la v5.0 | Sources sans trace dans le RUT ; 3 contenus non relus (garanties facultatives n° 2, `Garanties_IAC_et_IPT.csv`, `OFFRE_COMMERCIALE.sql`), 2 scans non exploités pour les conditions de souscription et les zones, `devis.js` non analysé | **Partiellement traité** — registre des sources (6.11), lectures restantes en dettes |
+| 29 | Accessoires | Valeurs génériques et AFRINS | Trois valeurs concurrentes : 2 500 FCFA (`compagnie.accessoires_par_defaut`, 21 compagnies), 3 000 FCFA (`bareme_accessoire`, AUCUNE, Automobile) et, pour AFRINS, une seule ligne à 3 000 FCFA « [NON IDENTIFIEE] » sans palier, alors que le tarif AFRINS donne 2 500 FCFA (3 150 FCFA au-delà de 100 000) + Fichier central 1 000 ou 500 FCFA. 3 000 FCFA correspond peut-être à « Accessoires + Fichier ASAC » (fiche Cat.4A), non établi | **Non résolu** — à trancher : le montant de la base inclut-il le Fichier central ? |
 
 **Anomalies mineures, probable simple arrondi du document source** (écart <5%, mentionnées pour complétude, pas nécessairement bloquantes) :
 - Cat.06, nombre_cartes=5/TARIF_2_3, Zone B non réduite par rapport à Zone A (écart Zone C seul : 4,35%)
@@ -125,7 +159,7 @@ Quand une anomalie est résolue (retour au PDF ministériel original, ou toute a
 ### Acteurs
 - **CIMA / Zone CEMAC** — autorité réglementaire de référence pour le tarif RC ministériel.
 - **MINEFI (Ministère des Finances, Cameroun)** — autorité d'application locale.
-- **19 compagnies actives au marché** : ACTIVA, AFG (ex-ATLANTIQUE), AFRINS, AGC, ALLIANZ, AREA, AXA, BELIFE (ex-BENEFICIAL), CHANAS, CPA, GMCSA, LDASA, NSIA, PROASSUR, ROYAL ONYX, SAAR, SANLAM, SUNU, ZENITHE (code réaffecté, ex-SOCAR). **Niveau générique** : AUCUNE (POOL, `id_compagnie=0`) — ce n'est pas une compagnie. **Non active** : SAMIRIS (`Actif = False`, confirmé par Roger le 03/10/2026) ; son code a été réaffecté le 02/10/2026 à partir de l'ancien code ALPHA, dont l'entité d'origine est en liquidation judiciaire terminée. Ses données (par exemple dans le barème DR) restent en base.
+- **19 compagnies actives au marché** : ACTIVA, AFG (ex-ATLANTIQUE), AFRINS, AGC, ALLIANZ, AREA, AXA, BELIFE (ex-BENEFICIAL), CHANAS, CPA, GMCSA, LDASA, NSIA, PROASSUR, ROYAL ONYX, SAAR, SANLAM, SUNU, ZENITHE (code réaffecté, ex-SOCAR). **Niveau générique** : AUCUNE (POOL, `id_compagnie=0`) — ce n'est pas une compagnie. **Non active** : SAMIRIS (`Actif = False`, confirmé par Roger le 03/10/2026) ; son code a été réaffecté le 02/10/2026 à partir de l'ancien code ALPHA, dont l'entité d'origine est en liquidation judiciaire terminée. Ses données (par exemple dans le barème DR) restent en base. **La base ne reflète pas encore cette décision** : `actif_site = true` et `statut_agrement = ACTIF` pour SAMIRIS ; ZENITHE porte encore le nom commercial SOCAR (6.1, anomalie #25).
 
 ### Texte réglementaire fondateur
 Tarif ministériel RC automobile — barème CIMA/Zone CEMAC par catégorie, zone, force fiscale (Essence/Diesel distincts), cylindrée (2-3 roues). Source brute : document PDF ministériel, triangulé avec le fichier GMCSA (8 écarts trouvés, 8 fois la lecture confirmée correcte).
@@ -1572,7 +1606,7 @@ Le palier le plus spécifique l'emporte (compagnie+catégorie précise avant com
 
 ### 3.4 — Carte rose
 
-**Fonction** *(à confirmer — définition issue de la connaissance générale du métier, non sourcée dans nos données)* : attestation de couverture RC pour circuler en zone CEMAC hors du pays d'immatriculation, pendant commercial de la sous-garantie `AUTO_RC__EXTENSION_CEMAC`.
+**Fonction** : attestation de couverture RC pour circuler en zone CEMAC hors du pays d'immatriculation, pendant commercial de la sous-garantie `AUTO_RC__EXTENSION_CEMAC`. **Corroborée par la base** : l'acte réglementaire n° 9 s'intitule « Extension territoriale CEMAC (Carte Rose) » (convention CIMA / zone CEMAC), et la RC rend l'Extension CEMAC obligatoire en lien ADDITIF (6.4). *Le lien exact entre cette garantie et le forfait de 1 000 FCFA d'AFRINS reste à confirmer.*
 
 **Calcul observé chez AFRINS** : forfait de 1 000 FCFA sur les 504 lignes lues, quelles que soient la catégorie, la zone et la durée ; hors assiette de TVA. Aucune autre compagnie vérifiée, aucune table dédiée dans notre schéma.
 
@@ -1805,13 +1839,15 @@ Table source : `site.bareme_dta` (schéma `site`, propriété historique de Prod
 
 ### 3.7 — Formules de souscription admises par compagnie
 
-**Ce qui existe, déjà documenté (v2.0)** : les formules IPT/IAC — un numéro de formule par compagnie, jamais comparable d'une compagnie à l'autre (Pilier 2 v2.0, section IPT/IAC).
+**Corrigé en v5.1.** La base contient **16 formules de souscription automobile** génériques, avec leur composition en garanties et leur famille de catégories : voir **6.6**. Ce sont des paquets de garanties selon l'âge du véhicule et son genre (par exemple, véhicule de moins de 3 ans : formule 1 = RC + DR + IPT ; formule 2 = + Vol, Incendie, Bris de glaces ; formule 3 = + Dommages).
 
-**Ce qui n'existe pas encore** : le "Produit" commercial transversal (Essentiel/Classique/Confort/Premium ou équivalent), qui combine plusieurs garanties en un seul choix pour le client — identifié comme chantier non résolu depuis le cahier des charges du 01/10/2026, toujours sans modèle de données ni donnée réelle à ce jour. C'est, de l'aveu même de Roger, la section la plus importante du RUT — et c'est celle où le système en sait le moins aujourd'hui.
+**Ce qui existe par ailleurs** (v2.0) : les niveaux de capital IPT/IAC propres à chaque compagnie, numérotés par compagnie et jamais comparables d'une compagnie à l'autre.
+
+**Ce qui n'existe pas encore** : des noms commerciaux (Essentiel, Classique, Confort, Premium), un regroupement des formules par compagnie, et la liste des formules réellement admises par chaque compagnie.
 
 ### 3.8 — Directives de souscription par compagnie
 
-**Non renseigné.** Aucune donnée disponible sur les règles d'acceptation, de refus, de zones couvertes ou de pièces exigées par compagnie — ni en base, ni fournie à cette session à ce jour. Lacune assumée depuis le v1.0 (Pilier 2.2), toujours ouverte.
+**Non renseigné en base** : aucune règle d'acceptation, de refus, de zones couvertes ni de pièces exigées par compagnie. **Une source existe pourtant** : la note de service n° 0012/22 de PROASSUR (WAFA Assurance), intitulée « tarif et conditions de souscription automobile » (acte n° 6, 7 pages, scan sans texte). Seul son tarif a été exploité ; ses **conditions de souscription n'ont pas été lues** (registre des sources, 6.11). Pour les autres compagnies, aucune source n'a été fournie.
 
 ### Ce que cette section ne peut pas encore garantir
 
@@ -1828,7 +1864,8 @@ L'objectif annoncé — calculer une Prime TTC comparable entre compagnies sur u
 | Dommages | **Non** |
 | Tierce, Vol véhicule, Incendie, Bris de glaces | **Partiel** — AUCUNE seulement en Cat.04A/B/C |
 | Vol des accessoires, Brigandage | Oui — AUCUNE (2,5 % ; 1,2 %) |
-| Accessoires, Fichier central, Carte rose | **Non établi** — valeurs connues chez AFRINS seul ; aucune décision n'a été prise de les promouvoir en valeurs génériques |
+| Accessoires | **Contradictoire** — 2 500 FCFA (`compagnie.accessoires_par_defaut`) ou 3 000 FCFA (`bareme_accessoire`, AUCUNE, branche Automobile) ; voir l'anomalie #29 |
+| Fichier central, Carte rose | **Non établi** — valeurs connues chez AFRINS seul ; aucune décision n'a été prise de les promouvoir en valeurs génériques |
 | TVA | Oui — 19,25 % |
 | DTA | Oui — `site.bareme_dta` (à purger de la redondance, anomalie #10) |
 
@@ -2147,6 +2184,551 @@ Le RUT ne peut calculer **aucune prime** hors automobile : pas de tarif en base,
 
 ---
 
+## Pilier 2 (v5.0) — Architecture cible : une table de tarif unique et ses concepts
+
+**Nature de cette section** : une conception, pas une implémentation. Elle décrit (1) l'état réel du schéma au 03/10/2026, relevé par inventaire, (2) la cible posée par Roger : **une seule table de tarif qui contient tout le tarif**, accompagnée de tables annexes qui décrivent chaque concept du métier de l'assureur, (3) les mécanismes et procédures stockées qui l'exploitent, (4) le chemin pour passer de l'un à l'autre. **Rien n'est modifié dans le système** : cette phase cartographie et conçoit. Les choix marqués « proposée » sont ceux de la session Tarification, retenus par défaut en l'absence de contre-ordre de Roger — **à valider**.
+
+### 5.1 — Principe et choix de conception
+
+**Principe (Roger, 03/10/2026)** : il y a une seule table de tarif ; elle contient tout le tarif. Pour que ses lignes soient lisibles, tous les éléments de description du métier l'accompagnent : chaque concept est décrit et stocké dans une table annexe. C'est un schéma « en étoile » : une table de faits (le tarif) entourée de tables de description (les concepts).
+
+Chaque choix ci-dessous est rattaché à l'incident qui le justifie :
+
+| # | Choix | Alternative écartée | Raison (incident fondateur) | Statut |
+|---|---|---|---|---|
+| C1 | Chaque coordonnée de lecture est une **colonne explicite**. Une coordonnée vide signifie « toutes les valeurs ». | Un champ JSON `criteres` | Le JSON a masqué la dimension « genre de véhicule » (anomalies #2/#3). Une colonne est typée, indexable, visible. Coût : ajouter une dimension demande une migration, ce qui est voulu (règle 7). | Proposée |
+| C2 | Les valeurs **officielles sont stockées telles que lues**. Les lois (zone 23/24 et 11/12, remorque, Vol partiel = Vol braquage) sont des **contrôles**, pas des sources de calcul. | Calculer la Zone B et C depuis la Zone A | Le tarif à lecture directe fait foi ; une dérivation donne des écarts d'un franc (arrondis) et ferait disparaître les 8 écarts réels aux lois, qui sont précisément ce que le RUT doit montrer. | Proposée |
+| C3 | Le calcul de la Prime TTC est une **suite d'étapes stockée en table**, lue par une procédure. | Formules écrites dans le code des fonctions | Principe « aucune donnée en dur » : l'assiette de TVA, les coefficients de durée, l'ordre des étapes sont des règles métier datées, appelées à changer. | Proposée |
+| C4 | Entrent dans la table tous les **montants, taux et coefficients** qui servent à une prime ou à une taxe. Les **conditions de garantie** (franchises, capitaux, âges) restent dans des tables de concepts. | Tout mettre dans la table | Une franchise est une condition de couverture, pas un prix. | Proposée |
+| C5 | Une ligne par énergie (Essence ou Diesel). | Deux jeux de bornes de puissance dans la même ligne (état actuel) | Une ligne ne dit qu'une chose. Conséquence : plus de lignes pour les catégories à puissance fiscale. | Proposée |
+| C6 | On ne supprime jamais : `actif`, dates de validité, statut de contrôle. | `DELETE` | Règle 4 ; historique réglementaire (DTA 2017-2023). | Décidée (règle 4) |
+| C7 | L'unicité est garantie par une **contrainte d'exclusion** sur toutes les coordonnées et la période. | Contrôles a posteriori | Les 12 doublons ALLIANZ/SUNU auraient été refusés à l'insertion. | Proposée |
+| C8 | Résolution : compagnie spécifique avant générique (règle 12), puis ligne la plus spécifique, puis la plus récente. **Égalité parfaite = échec explicite**, jamais de choix silencieux. | Choisir la première ligne trouvée | Cat.06 et 07 : plusieurs lignes aux critères identiques ; la fonction RC actuelle exige déjà un paramètre explicite. | Proposée |
+
+### 5.2 — État actuel du schéma (inventaire du 03/10/2026)
+
+40 objets dans le périmètre (schéma `tarification` et la table `site.bareme_dta`), regroupés par rôle. Nombre de lignes exact au moment de l'inventaire.
+
+| Rôle | Contenu | Tables et lignes |
+|---|---|---|
+| **Référentiel métier** | Ce que sont les branches, catégories, genres, compagnies, garanties | `branche` 9, `branche_categorie` 21, `categorie` 11, `sous_categorie` 18, `genre` 16, `genre_en_attente_validation` 0, `compagnie` 21, `compagnies` (vue) —, `garantie` 109, `sous_garantie` 571, `garantie_lien` 5 |
+| **Valeurs de tarification** | Les montants, taux et barèmes eux-mêmes | `tarif` 343, `bareme_tranche` 1 198, `bareme_accessoire` 110, `bareme_dta` 96, `taux_fiscalite` 1, `majoration_reduction` 6 |
+| **Règles de calcul et sources** | Comment une valeur s'utilise, et d'où elle vient | `regles_calcul` 6, `ref_base_calcul` 6, `acte_reglementaire` 15 |
+| **Offre commerciale et dénominations** | Les noms réels des garanties par compagnie | `offre_commerciale` 300, `equivalence_garantie` 385, `equivalence_garantie_sous_garantie` 616, `offre` 146, `detail_offre` 234 |
+| **Produits et formules** | Regroupements commerciaux de garanties | `produit` 9, `produit_sous_categorie` 34, `formule` 16, `formule_garantie` 78, `formule_categorie_mapping` 17 |
+| **Franchises** | Conditions de franchise et plafonds de réduction | `franchise` 9, `franchise_application` 36, `regles_reduction_franchise` 4 |
+| **Cotation (vide à date)** | Devis, polices et flottes : mécanique construite, jamais alimentée | `cotation` 0, `cotation_session` 0, `police_cotation` 0, `prime_element` 0, `flotte` 0, `derogation` 0 |
+| **Résidu** | Table hors convention | `tmp_benchmark_meta` 16 |
+
+**Le tarif aujourd'hui tient en deux tables** :
+
+- `tarif` (343 lignes) : l'en-tête — `categorie_code`, `criteres_objet`, `criteres_risque`, `date_debut_validite`, `date_fin_validite`, `garantie_code`, `id`, `id_acte_reglementaire`, `id_compagnie`, `id_garantie`, `id_offre_commerciale`, `id_regle_calcul`, `id_sous_categorie`, `id_sous_garantie`, `libelle`, `note`, `prime_minimum`, `source_page`, `statut`.
+- `bareme_tranche` (1 198 lignes) : les valeurs — `borne_max`, `borne_min`, `criteres`, `cylindree_max`, `cylindree_min`, `force_fiscale_max_diesel`, `force_fiscale_min_diesel`, `id`, `id_tarif`, `montant_fixe`, `note`, `prime_avec_remorque`, `prime_sans_remorque`, `prime_unique`, `source_page`, `surprime_matiere_inflammable`, `taux_pct`.
+
+Constats de structure :
+
+- Les valeurs sont réparties sur **cinq colonnes de montant** (`montant_fixe`, `taux_pct`, `prime_sans_remorque`, `prime_avec_remorque`, `prime_unique`, plus `surprime_matiere_inflammable`) selon le type de garantie, et les critères sur des **colonnes dédiées plus un champ JSON** `criteres`.
+- `tarif` porte **encore** `id_compagnie`, `id_garantie`, `id_sous_garantie` et `garantie_code`, redondants avec `id_offre_commerciale` (anomalie #21).
+- **Deux contraintes d'exclusion** coexistent sur `tarif` : l'ancienne (compagnie + code de garantie + catégorie + période) et la nouvelle (offre commerciale + catégorie + période).
+- Les autres tarifs sont **hors** de ces deux tables : accessoires (`bareme_accessoire`), DTA (`site.bareme_dta`), TVA (`taux_fiscalite`, une seule ligne), majorations (`majoration_reduction`). Fichier central, Carte rose et coefficients de durée n'ont **aucune table**.
+- Le concept « genre de véhicule » existe (`genre`, 16 lignes) mais **aucune colonne de `tarif` ni de `bareme_tranche` ne le référence** (anomalie #23).
+- Toute la mécanique de cotation (`cotation`, `cotation_session`, `police_cotation`, `prime_element`, `flotte`, `derogation`) est **vide**.
+
+**Règles de calcul existantes** (`regles_calcul`, 6 lignes ; contenu vérifié par l'export du 03/10/2026, détail en 6.8) :
+
+| Code | Mode | Base de calcul |
+|---|---|---|
+| `AUTO_BAREME_FF_ZONE` | BAREME_TRANCHE | GRILLE_ZONE_FORCE_FISCALE |
+| `DR_POURCENTAGE_RC` | TAUX_POURCENTAGE | PRIME_ELEMENT_MEME_POLICE |
+| `IPT_FORFAIT_PALIER` | MONTANT_FORFAITAIRE | CAPITAL_GARANTIE_CHOISI |
+| `NOMBRE_PLACES_FORFAIT_PAR_PLACE` | MONTANT_FORFAITAIRE | NOMBRE_PLACES_VEHICULE |
+| `TAUX_POURCENTAGE_SIMPLE` | TAUX_POURCENTAGE | VALEUR_ASSUREE_OBJET |
+| `VOL_TAUX_AGE_VEHICULE` | TAUX_POURCENTAGE | VALEUR_ASSUREE_OBJET |
+
+Elles couvrent le barème, les taux et les forfaits. **Elles ne couvrent pas** les coefficients (durée, zone, remorque), le palier de prime (accessoires), les montants fixes par contrat (Fichier central, Carte rose), les ajustements en pourcentage (majorations) ni la taxe sur assiette cumulée (TVA) : ces modes sont à créer (5.5).
+
+### 5.3 — La table de tarif cible
+
+Une ligne = **un fait tarifaire** : une valeur, ses coordonnées de lecture, sa période de validité et sa source. Colonnes proposées (les noms suivent les conventions : `id_nomchamp`, singulier, `code` généré par trigger) :
+
+| Groupe | Colonne | Rôle | Concept qui la décrit |
+|---|---|---|---|
+| Identité | `id_tarif`, `code` | Clé et code lisible généré par trigger (règle 3) | — |
+| Quoi | `id_element_tarifaire` | Ce qui est tarifé : une sous-garantie, un accessoire, une taxe, un coefficient, un ajustement | `element_tarifaire` |
+| Pour qui | `id_compagnie` | Compagnie ; 0 = générique (règle 12) | `compagnie` |
+|  | `id_offre_commerciale` | Renseignée quand l'élément est une garantie vendue : donne la dénomination réelle | `offre_commerciale` |
+| Coordonnées (vide = toutes) | `categorie_code` | Catégorie CIMA | `branche_categorie` |
+|  | `id_genre` | Genre de véhicule (benne, camion…) | `genre` |
+|  | `zone` | Zone A, B ou C | `dimension_tarifaire` |
+|  | `energie` | Essence ou Diesel (une ligne par énergie) | `dimension_tarifaire` |
+|  | `unite_puissance`, `puissance_min`, `puissance_max` | Force fiscale (CV) ou cylindrée (cm³), bornes incluses | `unite` |
+|  | `nombre_places`, `numero_formule` | Capacité ; option IPT/IAC propre à la compagnie | `dimension_tarifaire` |
+|  | `tonnage`, `rang_vehicule`, `nombre_cartes`, `type_vehicule_base` | Critères propres aux catégories 06, 07, 08 | `dimension_tarifaire` |
+|  | `avec_remorque`, `double_commande`, `rc_eleves` | Critères booléens | `dimension_tarifaire` |
+|  | `duree_jours`, `prime_nette_min`, `prime_nette_max` | Durée du contrat ; palier de prime nette (accessoires) | `dimension_tarifaire` |
+| | `age_vehicule_min`, `age_vehicule_max` | Âge du véhicule en années (taux Vol par tranche d'âge ; formules jusqu'à 3 ans et plus de 3 ans) | `dimension_tarifaire` |
+| Valeur | `valeur`, `id_unite` | Le montant, taux ou coefficient, et son unité (FCFA, %, coefficient, FCFA par place) | `unite` |
+|  | `id_regle_calcul` | Comment la valeur s'utilise | `regles_calcul` |
+| Validité et source | `date_debut_validite`, `date_fin_validite` | Période ; sans date explicite, celle du bordereau actif | — |
+|  | `id_acte_reglementaire`, `source_document`, `source_page` | Bordereau ou texte légal, fichier, page | `acte_reglementaire` |
+| Qualité | `actif`, `statut_controle`, `id_anomalie_tarifaire` | Jamais de suppression ; VERIFIE, A_CONFIRMER ou ANOMALIE ; lien vers le registre | `anomalie_tarifaire` |
+
+**Unicité** : une contrainte d'exclusion sur (compagnie, élément, toutes les coordonnées, période) remplace les deux contraintes actuelles.
+
+**Exemples de lignes** (valeurs issues des sections précédentes du RUT) :
+
+| Élément | Compagnie | Coordonnées | Valeur | Mode | Source |
+|---|---|---|---|---|---|
+| RC (base) | 0 (générique) | Cat.01, zone A, Essence, 7 à 10 CV, sans remorque | 70 877 FCFA | Lecture du barème | Barème ministériel, p.25 |
+| RC (base) | 0 (générique) | Cat.01, zone A, Essence, 7 à 10 CV, avec remorque | 77 964 FCFA | Lecture du barème | Barème ministériel, p.25 |
+| DR | ROYAL ONYX | toutes catégories | 2,5 % | Taux sur prime RC ajustée | Compléments DR |
+| Accessoires | AFRINS | durée 365 jours, prime nette supérieure à 100 000 | 3 150 FCFA | Palier de prime | Tarif AFRINS, règle de Roger — périmètre à confirmer (#11) |
+| TVA | 0 (générique) | aucune | 19,25 % | Taux sur assiette (prime nette + accessoires + Fichier central) | Trois sources (RUT 3.6) |
+
+Ordre de grandeur : environ 1 400 lignes à la migration (1 198 lignes de barème, 110 d'accessoires, quelques dizaines de taxes, coefficients et ajustements), avant le dédoublement par énergie. Estimation non calculée précisément. Le volume reste sans enjeu de performance.
+
+### 5.4 — Les tables de concepts
+
+Chaque coordonnée, chaque unité, chaque étape de calcul et chaque notion du métier a sa ligne dans une table annexe. Le tarif ne contient que des codes ; le sens est dans les concepts.
+
+| Table | Rôle | État |
+|---|---|---|
+| `compagnie`, `branche`, `branche_categorie`, `categorie`, `sous_categorie`, `genre` | Qui, quelle branche, quelle catégorie, quel genre de véhicule | Existent (21, 9, 21, 11, 18, 16 lignes) |
+| `garantie`, `sous_garantie`, `garantie_lien` | Les garanties canoniques et leurs dépendances (ex. DR dépend de RC) | Existent (109, 571, 5) |
+| `offre_commerciale`, `equivalence_garantie`, `equivalence_garantie_sous_garantie` | Le nom réel d'une garantie chez une compagnie, et sa composition | Existent (300, 385, 616) |
+| `acte_reglementaire` | Bordereau ou texte légal, avec sa période et ses abrogations | Existe (15) |
+| `regles_calcul`, `ref_base_calcul` | Mode de calcul et base de calcul | Existent (6, 6) ; modes manquants à créer |
+| `majoration_reduction`, `taux_fiscalite`, `franchise`, `franchise_application` | Ajustements, taux fiscaux, conditions de franchise | Existent, peu alimentées (6, 1, 9, 36) |
+| `element_tarifaire`, `type_element_tarifaire` | Ce qui est tarifé : garantie, accessoire, taxe, coefficient, ajustement ; une sous-garantie y est représentée par un lien | **À créer** |
+| `dimension_tarifaire` | Décrit chaque coordonnée (code, libellé, type, valeurs admises) et la rattache au glossaire | **À créer** |
+| `unite` | FCFA, pourcentage, coefficient, FCFA par place, CV, cm³, jours | **À créer** |
+| `etape_calcul` | La suite ordonnée des étapes de la Prime TTC (5.5) | **À créer** |
+| `loi_tarifaire` | Les lois vérifiées (zone, remorque…) : énoncé, périmètre, tolérance | **À créer** |
+| `anomalie_tarifaire` | Le registre des anomalies du RUT, dans la base | **À créer** |
+| `concept` | Glossaire du métier : définition, source, statut (établi ou « à confirmer ») | **À créer** |
+
+**Notions à définir dans le glossaire à date** : RC, DR, IAC, IPT, Dommages, Tierce, Vol, Incendie, Bris de glaces, accessoires, Fichier central (ASAC), Carte rose, DTA, TVA, prime nette, Prime TTC, zone, force fiscale, cylindrée, catégorie CIMA, genre, formule, bordereau, tarif à lecture directe, repli générique, compagnie générique. Les définitions viennent du RUT ; celles qui n'y sont pas sourcées (nature fiscale du DTA, fonction de la Carte rose) entrent avec le statut « à confirmer » (règle 11).
+
+### 5.5 — Mécanismes
+
+**Résolution d'un tarif** (une seule procédure pour tous les éléments) :
+
+1. On retient les lignes de l'élément demandé, **actives**, dont la période couvre la date du contrat.
+2. On retient celles de la compagnie demandée ; **à défaut, celles du générique** (règle 12).
+3. Pour chaque coordonnée, une ligne est éligible si sa valeur est vide ou égale à celle de la demande ; une plage de puissance vaut si la demande y tombe.
+4. Parmi les éligibles : la plus **spécifique** (le plus de coordonnées renseignées qui correspondent), puis la plus récente.
+5. Si deux lignes sont à égalité parfaite, ou si une coordonnée absente de la demande départagerait des candidats : **échec explicite** avec le nom du paramètre manquant.
+6. Si la ligne retenue a le statut `ANOMALIE`, la réponse n'est pas un montant mais la **réponse standard** du registre.
+
+**Calcul de la Prime TTC** : les étapes sont des lignes de `etape_calcul`, exécutées dans l'ordre. Étapes connues à date (formule vérifiée sur AFRINS, 504 lignes ; extensions aux autres compagnies et aux garanties facultatives **à confirmer**) :
+
+| Rang | Étape | Formule | Statut |
+|---|---|---|---|
+| 1 | RC de base | Lecture du barème (catégorie, zone, puissance, énergie, remorque…) | Établi |
+| 2 | Surprime matière inflammable | Lecture, si demandée (catégories 02 et 03) | Établi ; genre de véhicule à ajouter (#2/#3) |
+| 3 | Ajustements RC réglementaires | RC × (1 + somme des ajustements en %) | Établi |
+| 4 | DR | montant fixe + RC ajustée × taux | Établi |
+| 5 | IPT / IAC | Forfait, ou montant par place × nombre de places, par composante | Établi (17 compagnies) |
+| 6 | Garanties facultatives | Valeur assurée × taux ; **Vol partiel et Vol braquage s'ajoutent au Vol véhicule** (liens ADDITIF, 6.4) | Établi pour PROASSUR et ROYAL ONYX seulement |
+| 7 | Coefficient de durée | Appliqué à RC + DR + IPT annuels | Observé chez AFRINS seul |
+| 8 | Accessoires | Palier selon prime nette et durée | Règle à confirmer (#11) |
+| 9 | Fichier central | Montant fixe par contrat | Observé chez AFRINS seul |
+| 10 | Assiette de TVA | Prime nette + accessoires + Fichier central | Établi sur AFRINS |
+| 11 | TVA | 19,25 % × assiette | Établi (trois sources) |
+| 12 | Carte rose | Montant fixe par contrat, hors assiette de TVA | Observé chez AFRINS seul |
+| 13 | Prime TTC | Prime nette + accessoires + Fichier central + TVA + Carte rose | Établi sur AFRINS |
+| hors prime | DTA | Lu dans le barème DTA, ajouté à la quittance | Nature à confirmer |
+
+**Modes de calcul à créer** pour ces étapes : coefficient, palier de prime, montant fixe par contrat, ajustement en pourcentage, taxe sur assiette cumulée.
+
+**Contrôles** : chaque loi de `loi_tarifaire` a une procédure qui liste ses violations. Lois établies à date :
+
+| Loi | Énoncé | Conformité constatée |
+|---|---|---|
+| Zone | Zone B = Zone A × 23/24 ; Zone C = Zone A × 11/12 (toutes colonnes de prix) | 527 sur 535 valeurs (tolérance 0,5 %) |
+| Remorque | Avec remorque = sans remorque × coefficient de la catégorie (1,1 ; 1,2 ; 1,3) | 144 sur 144, arrondis écartés |
+| Vol | Taux Vol partiel = taux Vol braquage | 12 sur 12 (PROASSUR, ROYAL ONYX) |
+| Cat.04B | Deux régimes linéaires par nombre de places (+9 133 puis +6 576 FCFA par place) | Confirmée, 1 anomalie isolée (#4) |
+
+Une violation ne modifie jamais une valeur : elle alimente `anomalie_tarifaire` et fait passer la ligne en `A_CONFIRMER` ou `ANOMALIE`.
+
+**Lisibilité** : une vue `v_tarif_lisible` remplace chaque code par son libellé (compagnie, élément, catégorie, genre, unité, source) ; chaque colonne porte un commentaire pointant vers son concept ; le glossaire donne le sens métier. Une ligne se lit alors comme une phrase : « chez ROYAL ONYX, la Défense et Recours vaut 2,5 % de la RC ajustée, pour toutes catégories, depuis telle date, selon tel document ».
+
+### 5.6 — Procédures stockées
+
+**Existantes** (schéma `tarification`, inventaire du 03/10/2026) :
+
+| Procédure | Rôle | Remarque |
+|---|---|---|
+| `fn_calculer_prime_rc_automobile` | RC : lecture du barème selon catégorie, zone, puissance, énergie, remorque et critères propres aux catégories 06/07/08 | Passe par `offre_commerciale`. Sera remplacée par la résolution générale. |
+| `fn_calculer_prime_garantie_dependante` | Prime d'une garantie qui dépend d'une autre (DR : taux × prime RC) | Lit `garantie_lien` en mode ASSIETTE. |
+| `fn_resoudre_tarif_categorie` | Résolution « spécifique avant générique » d'une garantie facultative | Sa colonne de sortie `tarif_id` n'est pas alignée sur la règle 1 (visible à l'inventaire). Corps de la fonction non relu : si elle lit encore les colonnes redondantes de `tarif`, elle devra être réécrite. |
+| `fn_accessoires` | Accessoires selon compagnie, branche, catégorie, prime nette, durée | Lit `bareme_accessoire`. |
+| `fn_generer_code_offre_commerciale` | Génère `offre_commerciale.code` | Deux triggers (insertion, modification). |
+| `fn_controle_plafond_reduction_franchise` | Contrôle des plafonds de réduction de franchise | Trigger sur `prime_element`, table vide. |
+| `fn_generer_code_franchise` | Devait générer `franchise.code` | **Aucun trigger rattaché** dans le schéma d'après l'inventaire (#22). |
+| `fn_sync_categorie_depuis_site`, `fn_sync_categorie_supprimee_depuis_site`, `fn_detecter_ecart_genre` | Synchronisation avec le schéma `site` | Les deux premières propagent des évolutions de `site.usages_categories` (commentaire en base). Le déclencheur de la troisième n'est pas dans le schéma `tarification` : probablement côté `site`, non inventorié. |
+
+**Absente** : `fn_calculer_prime_nette_totale`, présentée comme l'API de prime pour myspace, **n'existe pas en base**. Elle a été écrite mais jamais déployée (anomalie #20). **Il n'existe aujourd'hui aucune procédure qui calcule une Prime nette ou TTC.**
+
+**Cibles** (non implémentées) :
+
+| Procédure cible | Rôle |
+|---|---|
+| `fn_resoudre_tarif(compagnie, élément, date, demande)` | La résolution décrite en 5.5 ; renvoie la ligne retenue, les candidates, la spécificité et le repli utilisé |
+| `fn_calculer_prime_ttc(demande)` | Lit `etape_calcul`, appelle la résolution à chaque étape, renvoie le détail ligne par ligne, le total et un statut (OK, ANOMALIE, INCOMPLET) ; produit l'API attendue par myspace |
+| `fn_controler_loi(code)` | Liste les violations d'une loi de `loi_tarifaire` |
+| `fn_controler_rut()` | Compare le RUT à la base et signale les écarts (dette « deux sources de vérité ») |
+| Triggers | Génération du `code`, journal des modifications, refus de suppression d'une ligne de tarif |
+
+### 5.7 — Passage de l'état actuel à la cible
+
+Où va chaque source :
+
+| Source actuelle | Lignes | Destination dans la cible |
+|---|---|---|
+| `tarif` + `bareme_tranche` | 343 + 1 198 | Lignes de la table cible : RC, DR, IPT/IAC, Dommages, Vol, Incendie, Bris de glaces. Les cinq colonnes de montant deviennent `valeur` + `id_unite` ; remorque et matière inflammable deviennent une coordonnée ou un élément |
+| `bareme_accessoire` | 110 | Lignes de l'élément Accessoires, avec palier de prime et durée |
+| `site.bareme_dta` | 96 | Lignes de l'élément DTA, **après purge** de la redondance (#10) : seul le barème général ministériel y entre |
+| `taux_fiscalite` | 1 | Lignes de l'élément TVA (19,25 %, à saisir : la ligne actuelle est illustrative) |
+| `majoration_reduction` | 6 | Lignes de l'élément Ajustement |
+| Fichier central, Carte rose, coefficients de durée | aucune table | Nouvelles lignes, valeurs AFRINS seules ; promotion en générique : décision de Roger en attente |
+| `franchise`, `franchise_application` | 9 + 36 | Restent des concepts (C4) |
+
+Retirés à la bascule : les colonnes redondantes de `tarif`, le champ JSON `criteres`, l'ancienne contrainte d'exclusion.
+
+**Étapes** (aucune n'est engagée) :
+
+1. Créer et charger les tables de concepts à partir du RUT.
+2. Créer la table de tarif cible **à côté** de l'existante.
+3. Charger par correspondance, avec contrôle de réconciliation : mêmes comptes, mêmes valeurs, ligne à ligne.
+4. Écrire la résolution et le calcul de la Prime TTC.
+5. Recetter, puis basculer les consommateurs (myspace) et retirer les anciennes tables après audit des dépendances (règles 5 et 6).
+6. Poser le contrôle automatique RUT ↔ base.
+
+**Tests de recette**, déjà disponibles :
+
+| Test | Contenu |
+|---|---|
+| RC | Les 712 lignes de `bareme_rc_complet.csv` retrouvées valeur par valeur. Les cas de référence du 01/10 n'ont pas été conservés dans le RUT : liste à reconstituer |
+| DR | 12 407,13 FCFA = 2,5 % de 496 285 FCFA de RC (test de la Phase 5, 02/10/2026) |
+| Prime TTC | Les 504 lignes du tarif AFRINS : la procédure doit retrouver chaque TTC à ±1 FCFA |
+| Lois | Les contrôles du tableau 5.5 doivent redonner les mêmes comptes de conformité |
+
+### 5.8 — Ce que cette conception ne résout pas
+
+- **Hors automobile** : aucune valeur à charger (4.9). Les coordonnées des autres branches (capital, âge…) ne sont pas définies.
+- **Produit transversal** (Essentiel, Classique…) : les tables `produit`, `formule` et `formule_garantie` existent (9, 16 et 78 lignes) mais le modèle de regroupement commercial n'est pas conçu ; ce n'est pas un prix.
+- **Valeurs génériques manquantes** (IAC, Dommages, Fichier central, Carte rose, accessoires) : l'architecture sait les accueillir, elle ne les invente pas.
+- **Données connues d'AFRINS seul** : la table les stockera, avec leur source, sans les généraliser (règle 10).
+- **Un seul point d'entrée** ne dispense pas de l'audit : tout renommage ou retrait reste soumis aux règles 5 et 6.
+
+---
+
+## Pilier 2 (v5.1) — Contenu des référentiels et des règles stockées en base
+
+**Nature de cette section** : le contenu réel des tables de référence et de règles, relevé par export le 03/10/2026, qui manquait au RUT (jusqu'à la v5.0, il n'en donnait que les comptes). Il permet de répondre sans requête. Les listes complètes sont en [annexe C](RUT_annexe_C_referentiels.md), [annexe D](RUT_annexe_D_denominations_par_compagnie.md) et [annexe E](RUT_annexe_E_accessoires.md). **Les valeurs sont celles de la base, qui peut différer des décisions prises hors base** (voir 6.1).
+
+### 6.1 — Compagnies
+
+| id | Code | Nom commercial en base | Actif site | Statut agrément |
+|---|---|---|---|---|
+| 0 | AUCUNE | Aucune (Mutuelle Pro Assurances) | True | ACTIF |
+| 1 | GMCSA | Garantie Mutuelle des Cadres | True | ACTIF |
+| 2 | NSIA | NSIA Cameroun | True | ACTIF |
+| 3 | AREA | AREA Assurances SA | True | ACTIF |
+| 4 | PROASSUR | Société Pro Assur | True | ACTIF |
+| 5 | CHANAS | Chanas Assurances SA | True | ACTIF |
+| 6 | BELIFE | Belife General Insurance | True | ACTIF |
+| 7 | CPA | CPA - Assurances | True | ACTIF |
+| 8 | ROYAL ONYX | Royal Onyx | True | ACTIF |
+| 9 | AFG | AFG Assurances Cameroun | True | ACTIF |
+| 10 | ACTIVA | Activa Assurances SA | True | ACTIF |
+| 11 | ALLIANZ | Allianz Assurances | True | ACTIF |
+| 12 | AGC | Assurances Générales du Cameroun | True | ACTIF |
+| 13 | ZENITHE | SOCAR | True | ACTIF |
+| 14 | SAAR | Société Africaine d'Assurance et de Réassurance SA | True | ACTIF |
+| 15 | SUNU | SUNU Assurances IARD Cameroun | True | ACTIF |
+| 16 | SANLAM | Sanlam Cameroun | True | ACTIF |
+| 17 | LDASA | LD Assurances SA | True | ACTIF |
+| 18 | AXA | AXA Assurances Cameroun | True | ACTIF |
+| 19 | AFRINS | Afri Insurance | True | ACTIF |
+| 21 | SAMIRIS | Alpha Assurances | True | ACTIF |
+
+Constats :
+
+- **SAMIRIS (id 21)** : la base indique `actif_site = true` et `statut_agrement = ACTIF`, alors que Roger l'a déclarée inactive le 03/10/2026. Son nom commercial en base est « Alpha Assurances ». **La base n'a pas été mise à jour** (anomalie #25).
+- **ZENITHE (id 13)** : le code a été renommé, mais le nom commercial reste « SOCAR » (anomalie #25).
+- **Aucune compagnie n'a de numéro ni de date d'agrément, ni de date de révocation** : ces colonnes sont vides pour les 21 lignes. L'id 20 n'existe pas.
+- **Accessoires par défaut : 2 500 FCFA pour les 21 compagnies** (colonne `accessoires_par_defaut`) — valeur retrouvée dans le tarif AFRINS. Mais le barème générique `bareme_accessoire` (AUCUNE, branche Automobile) donne **3 000 FCFA** : deux valeurs génériques concurrentes (anomalie #29).
+
+### 6.2 — Actes réglementaires et bordereaux (15)
+
+Chaque ligne de tarif renvoie à un acte. Un acte est un texte légal, une convention ou un barème interne de compagnie :
+
+| id | Référence | Type | Autorité | Signé le |
+|---|---|---|---|---|
+| 1 | N°00380/MINEF/DCE/A | ARRETE | MINISTERE_FINANCES | 1994-11-16 |
+| 6 | Note de service N°0012/22 | BAREME_INTERNE | PROASSUR SA (WAFA Assurance) | — |
+| 7 | Tarif Automobile Garantie facultative POOL (usages 04A/04B/04C) | CONVENTION | Pool TPV (GIE) | — |
+| 9 | Extension territoriale CEMAC (Carte Rose) | CONVENTION | CIMA / Zone CEMAC | — |
+| 10 | Tarif Automobile SUNU (barème interne, hors RC) | BAREME_INTERNE | SUNU | — |
+| 12 | Tarif Automobile SUNU - Vol (barème interne) | BAREME_INTERNE | SUNU | — |
+| 13 | Tarif Automobile Royal Onyx (barème interne) | BAREME_INTERNE | ROYAL ONYX INSURANCE | — |
+| 14 | Tarif Automobile Royal Onyx par catégorie (barème interne) | BAREME_INTERNE | ROYAL ONYX INSURANCE | — |
+| 15 | Franchises Automobile (standard et facultatives) | BAREME_INTERNE | Multi-compagnies (LDASA, GMCSA, SAAR) | — |
+| 18 | Individuelle Personnes Transportées / Accidents Conducteur (barèmes internes multi-compagnies) | BAREME_INTERNE | Multi-compagnies (17 compagnies + niveau générique) | — |
+| 19 | Brigandage et Vol des accessoires (barèmes internes multi-compagnies) | BAREME_INTERNE | Multi-compagnies (LDASA, SAAR, CPA + niveau générique) | — |
+| 22 | IAC/IPT décomposé par sous-garantie (Décès/IPP/Frais médicaux) | BAREME_INTERNE | Multi-compagnies (17 compagnies + niveau générique) | — |
+| 23 | Défense Recours — taux générique 5% RC/RTI | BAREME_INTERNE | Référentiel canonique (toutes compagnies par défaut) | — |
+| 24 | Défense Recours — 14 compagnies (forfait ou %RC, sans distinction de catégorie) | BAREME_INTERNE | Multi-compagnies (14 compagnies) | — |
+| 25 | Défense Recours — 5 compagnies complémentaires | BAREME_INTERNE | Multi-compagnies (AFRINS, ALLIANZ, ALPHA, AXA, SOCAR) | — |
+
+Territoire et devise : CM / XAF (15). Le texte fondateur du barème RC est l'**arrêté n° 00380/MINEF/DCE/A du 16/11/1994** (Ministère des Finances). La note de service n° 0012/22 de PROASSUR (WAFA Assurance) est l'acte n° 6 ; la convention du Pool TPV (usages 04A, 04B, 04C) est l'acte n° 7 ; l'**Extension territoriale CEMAC (Carte rose)** est l'acte n° 9, une convention CIMA / zone CEMAC.
+
+### 6.3 — Majorations et réductions (`majoration_reduction`, 6 lignes)
+
+| id | Compagnie | Garantie | Critère | Type | Taux % | Description |
+|---|---|---|---|---|---|---|
+| 1 | AUCUNE | RC / RESPONSABILITE_CIVILE_STRICTE | CATEGORIE_SOCIOPRO_FORTE_CIRCULATION | MAJORATION | 10 | Délégués médicaux, Agents publicitaires, Agents d'affaires — RC uniquement |
+| 2 | AUCUNE | RC / RESPONSABILITE_CIVILE_STRICTE | CONDUCTEUR_JEUNE_OU_PERMIS_RECENT | MAJORATION | 10 | Conducteur de moins de 25 ans OU permis de conduire de moins de 3 ans — RC uniquement |
+| 3 | AUCUNE | RC / RESPONSABILITE_CIVILE_STRICTE | CLERGE_FAIBLE_CIRCULATION | REDUCTION | -10 | Membres du clergé classés catégorie à faible circulation — RC uniquement |
+| 4 | SUNU | VOL / VOL_BRAQUAGE | DISPOSITIF_ALARME_ANTI_BRAQUAGE | REDUCTION | -20 | Installation d'un dispositif d'alarme ou de protection contre le braquage — Vol uniquement |
+| 5 | SUNU | VOL / VOL_PARTIEL | DISPOSITIF_ALARME_ANTI_BRAQUAGE | REDUCTION | -20 | Installation d'un dispositif d'alarme ou de protection contre le braquage — Vol uniquement |
+| 6 | SUNU | VOL / VOL_VEHICULE | DISPOSITIF_ALARME_ANTI_BRAQUAGE | REDUCTION | -20 | Installation d'un dispositif d'alarme ou de protection contre le braquage — Vol uniquement |
+
+Les trois premières s'appliquent à la **RC uniquement**, au niveau générique (toutes compagnies, repli règle 12) : +10 % pour les délégués médicaux, agents publicitaires et agents d'affaires ; +10 % pour un conducteur de moins de 25 ans ou un permis de moins de 3 ans ; −10 % pour le clergé classé à faible circulation. Les trois autres sont des **réductions de 20 % chez SUNU** sur le Vol (véhicule, partiel, braquage) en cas de dispositif d'alarme ou de protection contre le braquage. Toutes sont en vigueur depuis le 01/01/2000. **Règle de cumul non documentée** : additif ou multiplicatif — à confirmer.
+
+### 6.4 — Liens entre garanties (`garantie_lien`, 5 lignes)
+
+Un lien dit qu'une garantie en entraîne une autre. Deux modes : **ADDITIF** (les deux primes s'additionnent) et **ASSIETTE** (la prime de l'une est la base de l'autre).
+
+| id | Mode | Garantie déclenchante | Garantie déclenchée | Note de la base |
+|---|---|---|---|---|
+| 1 | ADDITIF | VOL / VOL_PARTIEL | VOL / VOL_VEHICULE | Vol Partiel stocke un différentiel — combiné = Vol Total + Vol Partiel |
+| 2 | ADDITIF | VOL / VOL_BRAQUAGE | VOL / VOL_VEHICULE | Vol Braquage stocke sa valeur pleine, indépendante — combiné = Vol Total + Vol Braquage |
+| 5 | ADDITIF | RC / RESPONSABILITE_CIVILE_STRICTE | RC / RECOURS_TIERS_INCENDIE | Obligatoire au choix de la RC (Roger, 30/09/2026) |
+| 6 | ADDITIF | RC / RESPONSABILITE_CIVILE_STRICTE | RC / EXTENSION_CEMAC | Obligatoire au choix de la RC (Roger, 30/09/2026) |
+| 7 | ASSIETTE | DEFENSE_RECOURS / DEFENSE_RECOURS | RC / RESPONSABILITE_CIVILE_STRICTE | Défense et recours Cat.6-10 (%RC) -- repris le 01/10/2026 apres abandon au profit de prime_elements, toujours inutilise |
+
+Conséquences pour le calcul :
+
+- **Choisir la RC rend obligatoires, en plus, le Recours des tiers après incendie et l'Extension CEMAC** (décision de Roger, 30/09/2026). La présence de l'Extension CEMAC dans la prime RC est à rapprocher de la Carte rose chez AFRINS (1 000 FCFA, 3.4) : le lien entre les deux n'est pas établi — **à confirmer**.
+- **Vol partiel et Vol braquage s'ajoutent au Vol véhicule** : la prime combinée vaut Vol véhicule + Vol partiel, ou Vol véhicule + Vol braquage. La base précise que le Vol partiel stocke un différentiel et le Vol braquage une valeur pleine ; les taux stockés sont pourtant égaux (loi Vol partiel = Vol braquage, 4.x). **Interprétation à confirmer.**
+- **La DR est calculée sur la prime RC** (mode ASSIETTE, catégories 6 à 10 en pourcentage). Le lien avait été abandonné au profit de `prime_element`, resté inutilisé, puis repris le 01/10/2026.
+
+### 6.5 — Franchises et réductions réglementaires
+
+**Franchises** (`franchise`, 9 lignes) — sur Tierce collision et Dommages par accident :
+
+| Garantie | Franchise | Caractère | Taux % |
+|---|---|---|---|
+| TIERCE_COLLISION / TIERCE_COLLISION | Franchise 10% (obligatoire) | OBLIGATOIRE | 10 |
+| TIERCE_COLLISION / TIERCE_COLLISION | Franchise 5% | OBLIGATOIRE | 5 |
+| TIERCE_COLLISION / TIERCE_COLLISION | 1% Valeur neuve actualisée | OBLIGATOIRE | 1 |
+| DOMMAGES_PAR_ACCIDENT / DOMMAGES_PAR_ACCIDENT | Franchise 30% (facultative) | FACULTATIVE | 30 |
+| DOMMAGES_PAR_ACCIDENT / DOMMAGES_PAR_ACCIDENT | Franchise 20% (facultative) | FACULTATIVE | 20 |
+| DOMMAGES_PAR_ACCIDENT / DOMMAGES_PAR_ACCIDENT | Franchise 10% (facultative) | FACULTATIVE | 10 |
+| DOMMAGES_PAR_ACCIDENT / DOMMAGES_PAR_ACCIDENT | Franchise 10% (obligatoire) | OBLIGATOIRE | 10 |
+| DOMMAGES_PAR_ACCIDENT / DOMMAGES_PAR_ACCIDENT | Franchise 5% | OBLIGATOIRE | 5 |
+| DOMMAGES_PAR_ACCIDENT / DOMMAGES_PAR_ACCIDENT | 1% Valeur neuve actualisée | OBLIGATOIRE | 1 |
+
+**Règles réglementaires** (`regles_reduction_franchise`, 4 lignes, catégorie 01) :
+
+| Règle | Caractère | Type | Taux min % | Taux max % | Source |
+|---|---|---|---|---|---|
+| Réduction pluralité 2 à 20 véhicules | FACULTATIVE | REDUCTION | 0 | 10 | Art.12(2)a |
+| Réduction pluralité plus de 20 véhicules | FACULTATIVE | REDUCTION | 0 | 15 | Art.12(2)b |
+| Franchise RC Catégorie 1/10B | OBLIGATOIRE | FRANCHISE | 5 | 5 | Page 24 — min 75 000 FCFA, non négociable |
+| Franchise avance sur recours | FACULTATIVE | FRANCHISE | 0 | 25 | Page 24 — reversée à l'assuré à l'aboutissement du recours |
+
+Lecture : une franchise RC obligatoire de 5 % avec un minimum de 75 000 FCFA, non négociable ; une franchise facultative d'avance sur recours de 0 à 25 %, reversée à l'assuré quand le recours aboutit (page 24 du texte) ; une **réduction pour pluralité de véhicules** jusqu'à 10 % pour 2 à 20 véhicules et jusqu'à 15 % au-delà de 20 (art. 12-2 a et b). Ces réductions concernent les flottes ; la base de calcul `SOMME_PRIMES_FLOTTE` existe (6.8).
+
+**Applications par compagnie** (`franchise_application`, 36 lignes, détail en annexe C) :
+
+| Compagnie | Lignes | Réductions de prime % | Catégories |
+|---|---|---|---|
+| GMCSA | 3 | — | 01 |
+| LDASA | 30 | — | 01, 02, 03, 04A, 04B, 04C, 06, 07ARC, 07SRC, 08, 09A, 10A, 10B, 10C |
+| SAAR | 3 | — | 01 |
+
+### 6.6 — Formules de souscription automobile (`formule`, 16 lignes)
+
+**Correction** : les versions v3.0 à v5.0 du RUT affirmaient que les formules n'avaient « aucune donnée ». C'est inexact : la base contient 16 formules et 78 liens formule/garantie. Ce qui n'existe pas, ce sont des noms commerciaux (Essentiel, Classique…) et un regroupement par compagnie.
+
+Une formule est un **paquet de garanties**, choisi selon l'âge du véhicule et son genre. Les formules sont génériques (sans compagnie).
+
+| id | Genre | Âge | N° | Libellé | Garanties (dans l'ordre) |
+|---|---|---|---|---|---|
+| 1 | DEUX_TROIS_ROUES | — | 1 | Formule unique 2-3 roues : RC/RTI + DR | RC_AUTO ; DEFENSE_RECOURS |
+| 2 | TAXI | — | 1 | Formule unique Taxi : RC/RTI + DR + IAC | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR |
+| 3 | ENGIN | — | 1 | Formule Engin 1 : RC/RTI + DR | RC_AUTO ; DEFENSE_RECOURS |
+| 4 | ENGIN | — | 2 | Formule Engin 2 : RC/RTI + DR + IAC | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR |
+| 5 | AUTRE | JUSQUA_3_ANS | 1 | Formule 1 (<=3 ans) : RC/RTI + DR + IPT | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_PERSONNES_TRANSPORTEES |
+| 6 | AUTRE | JUSQUA_3_ANS | 2 | Formule 2 (<=3 ans) : + Vol (véhicule+partiel) + Incendie + Bris de glaces | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_PERSONNES_TRANSPORTEES ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; BRIS_DE_GLACES |
+| 7 | AUTRE | JUSQUA_3_ANS | 3 | Formule 3 (<=3 ans) : + Vol (véhicule+partiel) + Incendie + Tierce Complète | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_PERSONNES_TRANSPORTEES ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; DOMMAGES_PAR_ACCIDENT |
+| 8 | AUTRE | PLUS_3_ANS | 1 | Formule 1 (>3 ans) : RC/RTI + DR + IPT | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_PERSONNES_TRANSPORTEES |
+| 9 | AUTRE | PLUS_3_ANS | 2 | Formule 2 (>3 ans) : + Vol (véhicule+partiel) + Incendie + Avance sur Recours | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_PERSONNES_TRANSPORTEES ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; AVANCE_RECOURS |
+| 10 | AUTRE | PLUS_3_ANS | 3 | Formule 3 (>3 ans) : + Vol (véhicule+partiel) + Incendie + Tierce Collision | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_PERSONNES_TRANSPORTEES ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; DOMMAGES_PAR_ACCIDENT |
+| 11 | AUTRE_IAC | JUSQUA_3_ANS | 1 | Formule 1 (<=3 ans, 04B/04C) : RC/RTI + DR + IAC | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR |
+| 12 | AUTRE_IAC | JUSQUA_3_ANS | 2 | Formule 2 (<=3 ans, 04B/04C) : + Vol (véhicule+partiel) + Incendie + Bris de glaces | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; BRIS_DE_GLACES |
+| 13 | AUTRE_IAC | JUSQUA_3_ANS | 3 | Formule 3 (<=3 ans, 04B/04C) : + Vol (véhicule+partiel) + Incendie + Tierce Complète | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; DOMMAGES_PAR_ACCIDENT |
+| 14 | AUTRE_IAC | PLUS_3_ANS | 1 | Formule 1 (>3 ans, 04B/04C) : RC/RTI + DR + IAC | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR |
+| 15 | AUTRE_IAC | PLUS_3_ANS | 2 | Formule 2 (>3 ans, 04B/04C) : + Vol (véhicule+partiel) + Incendie + Avance sur Recours | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; AVANCE_RECOURS |
+| 16 | AUTRE_IAC | PLUS_3_ANS | 3 | Formule 3 (>3 ans, 04B/04C) : + Vol (véhicule+partiel) + Incendie + Tierce Collision | RC_AUTO ; DEFENSE_RECOURS ; INDIVIDUELLE_ACCIDENTS_CONDUCTEUR ; VOL / VOL_VEHICULE ; VOL / VOL_PARTIEL ; INCENDIE / INCENDIE ; DOMMAGES_PAR_ACCIDENT |
+
+**Quelle famille de formules pour quelle catégorie** (`formule_categorie_mapping`) :
+
+| Famille de formules | Catégories |
+|---|---|
+| AUTRE | 01, 02, 03, 07ARC, 07SRC, 08, 10A, 10B, 10C |
+| AUTRE_IAC | 04B, 04C |
+| DEUX_TROIS_ROUES | 05, 05bis, 06 |
+| ENGIN | 09A, 09B |
+| TAXI | 04A |
+
+Lecture : les formules 1, 2 et 3 d'une famille « Autre » ajoutent progressivement Vol (véhicule et partiel), Incendie, puis Bris de glaces (formule 2, véhicule récent) ou Avance sur recours (formule 2, véhicule ancien), puis Dommages par accident (formule 3, présentée « Tierce complète » ou « Tierce collision » selon l'âge). La famille « Autre IAC » (04B, 04C) remplace l'IPT par l'IAC. **Ne pas confondre** avec les numéros de formule IPT/IAC de chaque compagnie (v2.0), qui désignent des niveaux de capital propres à la compagnie.
+
+### 6.7 — Produits et offres historiques
+
+| Code | Produit | Segment | Branche en base | Sous-catégories liées |
+|---|---|---|---|---|
+| AUCUN | Aucun / Non applicable | — | Aucune / Non applicable | 0 |
+| AUTO_MONO_VEHICULE | Assurance Automobile mono véhicule | PARTICULIERS | Automobile | 17 |
+| SANTE_MATERNITE | Santé & Maternité | PARTICULIERS | Maladie et assurances des personnes | 0 |
+| MULTIRISQUE_HABITATION | Multirisque Habitation | PARTICULIERS | Incendie & autres dommages | 0 |
+| VOYAGE_ASSISTANCE | Voyage & Assistance | PARTICULIERS | Transport, Corps et Facultés | 0 |
+| FLOTTES_AUTOMOBILE | Flottes Automobile | ENTREPRISES | Automobile | 17 |
+| SANTE_COLLECTIVE_SALARIES | Santé Collective Salariés | ENTREPRISES | Maladie et assurances des personnes | 0 |
+| RC_PRO_MULTIRISQUE | RC Pro & Multirisque | ENTREPRISES | Aucune / Non applicable | 0 |
+| TRANSPORT_MARCHANDISES | Transport de Marchandises | ENTREPRISES | Transport, Corps et Facultés | 0 |
+
+Il existe **trois structures** pour le nom commercial d'une garantie chez une compagnie : `offre` (146 lignes) avec `detail_offre` (234), `offre_commerciale` (300) et `equivalence_garantie` (385). La première est historique ; son champ `id_produit` n'est renseigné que sur 1 des 146 lignes. Elles ne sont pas rapprochées (anomalie #26). Le produit `RC_PRO_MULTIRISQUE` n'est rattaché à aucune branche (identifiant 0) ; seuls les deux produits automobile (mono véhicule et flottes) ont des sous-catégories liées (17 chacun).
+
+### 6.8 — Règles de calcul et bases de calcul
+
+**Règles** (`regles_calcul`, 6 lignes — contenu vérifié par l'export du 03/10/2026) :
+
+| Code | Mode | Base | Formule |
+|---|---|---|---|
+| AUTO_BAREME_FF_ZONE | BAREME_TRANCHE | GRILLE_ZONE_FORCE_FISCALE | lookup(force_fiscale, zone, avec_remorque) -> montant_fixe |
+| IPT_FORFAIT_PALIER | MONTANT_FORFAITAIRE | CAPITAL_GARANTIE_CHOISI | lookup(formule_choisie) -> montant_fixe |
+| TAUX_POURCENTAGE_SIMPLE | TAUX_POURCENTAGE | VALEUR_ASSUREE_OBJET | valeur_assuree x taux_pct |
+| VOL_TAUX_AGE_VEHICULE | TAUX_POURCENTAGE | VALEUR_ASSUREE_OBJET | valeur_assuree x taux_pct, tranche selon age_vehicule_annees |
+| NOMBRE_PLACES_FORFAIT_PAR_PLACE | MONTANT_FORFAITAIRE | NOMBRE_PLACES_VEHICULE | montant_fixe x nombre_places_vehicule |
+| DR_POURCENTAGE_RC | TAUX_POURCENTAGE | PRIME_ELEMENT_MEME_POLICE | prime_RC_deja_calculee x taux_pct -- subordonne a garantie_liens mode ASSIETTE |
+
+**Bases** (`ref_base_calcul`, 6 lignes) :
+
+| Code | Libellé | Description |
+|---|---|---|
+| SOMME_PRIMES_FLOTTE | Somme des primes d'une flotte | Dépend de la somme des primes de plusieurs polices regroupées |
+| GRILLE_ZONE_FORCE_FISCALE | Grille par zone/force fiscale/tonnage... | Lecture directe dans baremes_tranches, cas standard |
+| NOMBRE_PLACES_VEHICULE | Nombre de places du véhicule | Le montant stocké est un tarif PAR PLACE — la prime réelle est ce montant multiplié par le nombre de places du véhicule assuré. |
+| VALEUR_ASSUREE_OBJET | Valeur assurée de l'objet | Lit criteres_objet/caracteristiques_objet.valeur_assuree |
+| CAPITAL_GARANTIE_CHOISI | Capital de garantie choisi (palier) | Palier fixe choisi par le souscripteur — forfait, pas un pourcentage |
+| PRIME_ELEMENT_MEME_POLICE | Une autre ligne de prime de la même police | Dépend d'un prime_elements.id précédent |
+
+La règle `VOL_TAUX_AGE_VEHICULE` indique que le taux de Vol varie par **tranche d'âge du véhicule** : cette coordonnée n'existe pas encore dans le barème (elle est ajoutée à la table cible, 5.3). `taux_fiscalite` ne contient qu'une ligne « Aucun / non applicable » à 0 % : la TVA à 19,25 % n'y est pas.
+
+### 6.9 — Accessoires en base (`bareme_accessoire`, 110 lignes)
+
+Détail en [annexe E](RUT_annexe_E_accessoires.md). Résumé par compagnie :
+
+| Compagnie | Lignes | Montants distincts (FCFA) | Paliers | Branches |
+|---|---|---|---|---|
+| ACTIVA | 2 | 3 000 | aucun | AUTOMOBILE, SANTE |
+| AFG | 27 | 0, 3 000, 3 500, 5 000, 10 000, 20 000, 25 000, 50 000, 100 000 | plage | AUTOMOBILE, RC_GENERALE, RISQUES_TECHNIQUES, TRANSPORT |
+| AFRINS | 1 | 3 000 | aucun | toutes (vide) |
+| AGC | 4 | 5 000, 100 000 | plage | AUTOMOBILE |
+| ALLIANZ | 6 | 3 000, 5 000, 10 000, 20 000 | aucun, plage, signe | AUTOMOBILE |
+| AREA | 8 | 3 000, 7 000, 10 000, 15 000, 25 000, 40 000 | aucun, plage | AUTOMOBILE, CREDIT_CAUTIONS, INCENDIE, toutes (vide), RC_GENERALE, RISQUES_TECHNIQUES, SANTE, TRANSPORT |
+| AUCUNE | 2 | 1 000, 3 000 | aucun | AUTOMOBILE, toutes (vide) |
+| BELIFE | 3 | 3 000, 10 000, 25 000 | plage | toutes (vide) |
+| CHANAS | 4 | 3 000, 10 000, 20 000, 50 000 | aucun, plage | toutes (vide) |
+| CPA | 5 | 0, 3 000, 5 000 | aucun, plage, signe | AUTOMOBILE, toutes (vide) |
+| GMCSA | 17 | 0, 3 000, 5 000, 10 000, 15 000, 25 000, 50 000 | aucun, plage, signe | AUTOMOBILE, AVIATION, CREDIT_CAUTIONS, INCENDIE, toutes (vide), RC_GENERALE, RISQUES_TECHNIQUES, SANTE, TRANSPORT |
+| LDASA | 5 | 5 000, 10 000, 20 000, 25 000, 50 000 | plage | AUTOMOBILE |
+| NSIA | 4 | 3 000, 5 000, 10 000 | plage, signe | AUTOMOBILE |
+| PROASSUR | 5 | 2 500, 3 000, 5 000 | aucun | AUTOMOBILE, toutes (vide) |
+| ROYAL ONYX | 9 | 3 000, 4 000, 5 000 | aucun, plage, signe | AUTOMOBILE |
+| SAAR | 1 | 3 000 | aucun | toutes (vide) |
+| SANLAM | 1 | 3 000 | aucun | toutes (vide) |
+| SUNU | 6 | 3 000, 4 000, 5 000, 10 000 | aucun, plage | AUTOMOBILE |
+
+**Lecture** : « toutes (vide) » signifie que la branche n'est pas renseignée dans la ligne. **AFRINS n'a qu'une ligne**, à 3 000 FCFA, sans palier, sans branche, avec le risque source « [NON IDENTIFIEE] ». Le tarif AFRINS donne pourtant 2 500 FCFA d'accessoires (3 150 FCFA au-delà de 100 000 FCFA de prime nette, règle de Roger) **plus** un Fichier central de 1 000 ou 500 FCFA ; 3 000 FCFA est le montant de « Accessoires + Fichier ASAC » de la fiche Cat.4A. Le niveau générique (AUCUNE) porte 3 000 FCFA pour l'Automobile et 1 000 FCFA (inactif) pour « Green Assistance Conducteur » (anomalie #29).
+
+### 6.10 — Dénominations par compagnie (`equivalence_garantie`, 385 lignes)
+
+Liste complète en [annexe D](RUT_annexe_D_denominations_par_compagnie.md). Nombre de dénominations par compagnie :
+
+| Compagnie | Dénominations |
+|---|---|
+| CPA | 29 |
+| NSIA | 25 |
+| ALLIANZ | 24 |
+| LDASA | 24 |
+| AREA | 23 |
+| SUNU | 22 |
+| ZENITHE | 21 |
+| AUCUNE | 20 |
+| SAAR | 20 |
+| ROYAL ONYX | 18 |
+| AFG | 17 |
+| AGC | 17 |
+| GMCSA | 16 |
+| ACTIVA | 15 |
+| PROASSUR | 15 |
+| CHANAS | 15 |
+| SANLAM | 15 |
+| None | 14 |
+| AFRINS | 14 |
+| BELIFE | 13 |
+| SAMIRIS | 8 |
+
+### 6.11 — Registre des sources
+
+Les fichiers sur lesquels repose le RUT, leur nature, ce qu'on en a tiré et ce qui reste à faire. Jusqu'à la v5.0, 19 d'entre eux n'étaient pas cités.
+
+| Fichier | Nature | Taille | Exploitation |
+|---|---|---|---|
+| `Tarif_Ministériel.pdf` | Barème RC ministériel (arrêté n° 00380/MINEF/DCE/A du 16/11/1994) | 34 p., **scan sans texte** | Source de `bareme_rc_complet.csv` (712 lignes) |
+| `bareme_rc_complet.csv` | Extraction du barème RC | 712 lignes | Chargé en base ; base du RUT 2.3 |
+| `AFRI_INSURANCE_SA_-_TARIF_AUTOMOBILE_A_LECTURE_DIRECTE.pdf` | Tarif à lecture directe AFRINS : RC + DR + IPT, Cat.1 à 3 en zones A, B, C sur 5 durées, Cat.4A, Cat.5A | 22 p., texte | 504 lignes lues et vérifiées (RUT 3.1) ; seule source de la Prime TTC |
+| `NOTE_DE_SERVICE_N_0012_PORTANT_TARIF_ET_CONDITIONS_DE_SOUSCRIPTION_AUTOMOBILE_PROASSUR__WAFA_ASSURANCE_-2.pdf` | Note de service n° 0012/22 PROASSUR (WAFA) : tarif et conditions de souscription (acte n° 6) | 7 p., **scan sans texte** | Tarif exploité (DR PROASSUR) ; **conditions de souscription non exploitées** |
+| `Tarif_Automobile_Garantie_facultative_POOL.pdf` | Garanties facultatives du Pool TPV, usages 04A/04B/04C (acte n° 7) | 1 p., **scan sans texte** | Exploité (RUT 4.x, AUCUNE en Cat.04) |
+| `Tarif_Automobile_garanties_facultatives__2_.pdf` | Garanties facultatives automobile | 2 p., **scan sans texte** | Contenu non relu dans cette phase |
+| `Tarif_automobile_automatisé.csv` | Tarif automatisé GMCSA, colonne « Genre ou Classe », « Taux Taxes » 19,25 % | 5112 lignes | Source de la découverte du genre de véhicule (#2/#3) et de la TVA ; rapprochement avec la base non fait |
+| `Tarif_automobile_automatisé_autres.csv` | Tarif automatisé des autres compagnies (ALLIANZ, AREA, CPA, GMCSA, LDASA, PROASSUR, ROYAL ONYX, SUNU, générique) | 798 lignes | Non citée jusqu'à la v5.0 ; rapprochement avec la base non fait |
+| `Tarif_automobile_base_autres.csv` | Tarif de base des autres compagnies (30 colonnes, anciens noms de compagnies) | 338 lignes | Non citée jusqu'à la v5.0 ; rapprochement avec la base non fait |
+| `Garanties.csv` | Dénominations de garanties par compagnie, toutes branches | 878 lignes | Automobile : base ; hors automobile : annexe B |
+| `Garanties_canoniques.csv` | Garanties canoniques, colonne « Taux Taxes » à 0,00 % | 256 lignes | Sens de la colonne à clarifier (RUT 3.6) |
+| `Garanties_IAC_et_IPT.csv` | Garanties IAC et IPT par compagnie, avec colonnes de franchise | 89 lignes | Contenu non relu dans cette phase |
+| `Compléments_DR.csv` | Défense et recours : 5 compagnies complémentaires (AFRINS, ALLIANZ, ALPHA, AXA, SOCAR), acte n° 25 | 5 lignes | Exploité (RUT DR) |
+| `Franchises.csv` | Franchises Automobile (LDASA, GMCSA, SAAR), acte n° 15 | 36 lignes | Exploité (6.5) |
+| `Offre_commerciale_autre_source.csv` | Offres génériques de toutes les branches (compagnie 0) | 1205 lignes | Source du catalogue hors automobile (RUT 4.2) ; **ne contient aucun prix** |
+| `OFFRE_COMMERCIALE.sql` | Script SQL de l'offre commerciale | — | Contenu non relu dans cette phase |
+| `extraction_dta.csv` | Barème DTA (96 lignes, `site.bareme_dta`) | 96 lignes | Intégré (RUT 3.5) ; redondance à purger (#10) |
+| `livraison_bareme_accessoires_25092026__1_.md` | Livraison du barème des accessoires | — | Contexte de `bareme_accessoire` (6.9) |
+| `PASSATION_TARIFICATION_16082026.md` | Passation technique du 16/08 : système Genre → État → Usage → Catégorie, légende des codes catégorie CIMA | — | Contexte de la classification des véhicules |
+| `RETOUR_TARIFICATION_*_18082026.md (3 fichiers)` | Clôture du point 05-TRI ; bascule `id_genre` (questions de la Phase 3) ; précision sur le tricycle | — | Décisions d'août, non reprises dans le Pilier 3 |
+| `demande_accord_*_25092026.md, relance_accord_tarification_28092026.md, relance_flotte_99_26092026.md` | Accords entre sessions : compagnies (`compagnies` devenue une vue), barème des accessoires, code 99 (Flotte) | — | Décisions de coordination, non reprises dans le Pilier 3 ; état de l'accord Flotte 99 non vérifié |
+| `devis.js, index.html` | Code du site public | — | **Non analysés** : la logique de devis côté site reste à documenter |
+| `Tarifs à lecture directe Individuelle accidents (4 classeurs), MRH, Voyage` | Tarifs hors automobile | — | Écartés sur décision de Roger (4.8) |
+
+### 6.12 — Pièges de lecture des sources
+
+- **Deux PDF sont des scans sans couche texte** (le tarif ministériel et la note PROASSUR) : une extraction automatique ne renvoie rien ; il faut les lire visuellement, page par page.
+- **Les CSV sont en ISO-8859-1**, séparateur point-virgule ; une lecture en UTF-8 corrompt les accents.
+- **Colonnes dupliquées** : `Offre_commerciale_autre_source.csv` a deux colonnes `Obligatoire`, deux `Taux_TVA` (la première à 0,00, la seconde à 19,25) et deux `Taux_Taxe_Enregistrement`. Une lecture par nom de colonne n'en voit qu'une.
+- **Anciens noms de compagnie** dans les sources : ALPHA, BENEFICIAL, ATLANTIQUE, SOCAR, `<DOSSIERS>`, `<GENERIQUE>` ; ils se rapprochent de SAMIRIS, BELIFE, AFG, ZENITHE, AUCUNE.
+- **Valeurs par défaut sans sens** : assiette « Nombre passagers » hors transport de personnes ; durée maximale de couverture identique sur toutes les lignes ; accessoires de 2 500 FCFA par défaut pour les 21 compagnies.
+- **Copies** : les lignes hors automobile d'ALPHA sont une copie de GMCSA (4.4).
+- **Extraction du PDF AFRINS** : les milliers sont séparés par des espaces et des espaces insécables, ce qui fait fusionner des colonnes si on ne distingue pas un espace simple d'un espacement de tableau.
+- **La base peut différer des décisions** : SAMIRIS inactive, nom commercial de ZENITHE (6.1).
+
+---
+
 ## Pilier 3 — Mémoire : décisions et justifications
 
 | Date | Décision | Justification |
@@ -2170,13 +2752,20 @@ Le RUT ne peut calculer **aucune prime** hors automobile : pas de tarif en base,
 | 02/10 | Catalogue hors automobile vidé puis reconstruit depuis `Offre_commerciale_autre_source.csv` (88 garanties, 526 sous-garanties) | Ancien contenu d'août partiel et sans tarif ; Crédit et Cautions laissé vide faute de couverture dans cette source |
 | 03/10 | Hors automobile : cartographie sans calcul ; sources de prix (Individuelle accidents, MRH, Voyage) écartées ; Crédit et Cautions consigné comme information disponible ; codes de taxe en lacune ; listes volumineuses en annexes A et B | Décisions de Roger : le RUT enregistre l'état de la connaissance, il n'utilise pas des sources non validées |
 | 03/10 | Passage en v4.0 | Nouveau périmètre (hors automobile) ajouté sur la base de la v3.1 |
+| 03/10 | Architecture cible : une table de tarif unique en étoile avec tables de concepts ; coordonnées en colonnes explicites ; valeurs officielles stockées telles que lues, lois en contrôles ; calcul de la Prime TTC en étapes stockées | Principe posé par Roger (une seule table de tarif, concepts en annexes). Choix de conception C1 à C8 proposés par la session Tarification, à valider |
+| 03/10 | Passage en v5.0 | Ajout de la conception et de l'inventaire du schéma sur la base de la v4.0 |
+| 30/09 | Choisir la RC rend obligatoires le Recours des tiers après incendie et l'Extension CEMAC (liens ADDITIF) | Décision de Roger ; inscrite dans `garantie_lien` |
+| 01/10 | Lien DR → RC en mode ASSIETTE repris après abandon au profit de `prime_element` | `prime_element` est resté inutilisé (table vide) |
+| 01-02/10 | Nettoyages : suppression de `ACTIVA_ASSISTANCE` (nom de compagnie dans un code canonique) et d'une garantie `FRAIS_MEDICAUX` orpheline ; fusion de « Vol au garage mort » dans Vol véhicule ; purge des doublons `RC_AUTO__*` | Aucun nom de compagnie dans un code canonique ; une garantie orpheline n'a pas de tarif |
+| 02/10 | `GREEN ASSISTANCE CONDUCTEUR` rattachée à l'IAC (produit hybride) ; Extension CEMAC incluse dans les bouquets RC seulement, pas IPT/IAC | Choix de rattachement des bouquets, sur la base de leur composition réelle |
+| 03/10 | Passage en v5.1 : contenu des référentiels (6.1 à 6.10), registre des sources, annexes C, D, E ; corrections des sections 3.4, 3.7, 3.8 et du repli générique | Demande de Roger : le RUT doit répondre seul à toute question de tarification, sans requête |
 
 ---
 
 ## Pilier 4 — Pilotage
 
 ### Dettes identifiées sur ce périmètre
-- **197 des 300 `offre_commerciale` portent un libellé "PLACEHOLDER"** généré automatiquement en Phase 4, faute de vraie dénomination compagnie connue — le tarif associé reste correct, mais un écran de cotation basé dessus afficherait un nom provisoire.
+- **Seules 103 des 300 `offre_commerciale` sont rattachées à une dénomination réelle.** Les 197 autres se composent de 68 offres « PLACEHOLDER » créées en Phase 4 et d'offres de bouquets IAC/IPT/RC non rattachées à `equivalence_garantie` (136 constatées le 02/10) ; **la répartition exacte n'a pas été vérifiée** par requête. Un écran de cotation basé dessus afficherait, pour les placeholders, un nom provisoire.
 - **Dimension "genre de véhicule" manquante** (découverte 03/10/2026, via `Tarif_automobile_automatisé.csv`) — la surprime matière inflammable (et peut-être d'autres éléments) varie par genre (Benne/Camion/Camion+Remorque...) pour Cat.02/03 au moins, non capturée aujourd'hui. Cause des anomalies #2/#3. Vérifier si d'autres catégories sont concernées avant de modéliser.
 - **Format des tableaux du Pilier 2.3** — actuellement une colonne "Autres critères" en texte libre (JSON). Devrait devenir des colonnes explicites propres à chaque catégorie (nombre de places, remorque, RC élèves, genre de véhicule...) plutôt qu'un bloc texte — aurait rendu l'anomalie "genre de véhicule" visible immédiatement au lieu de la masquer. Restructuration non faite dans ce v1.0, risque trop élevé en fin de session.
 - Sous-catégories 04A/B/C, 05/05bis, 06, 07ARC/SRC, 09A/B, 10A/B/C : la logique de distinction entre elles n'est documentée nulle part de façon narrative — seulement implicite dans la structure du barème. À expliciter si une vraie règle écrite existe.
@@ -2196,9 +2785,19 @@ Le RUT ne peut calculer **aucune prime** hors automobile : pas de tarif en base,
 - **Table des codes de taxe 1 à 4** à obtenir (anomalie #15) ; applicabilité de la TVA à chaque branche à confirmer.
 - **Sources de prix écartées** (4.8) : à exploiter dans une version ultérieure, une fois validées ; commencer par vérifier la compagnie émettrice du MRH et du Voyage.
 - **Annexes A et B** : à committer avec le RUT, dans le même dossier.
+- **Valider les choix C1 à C8** (5.1) avant toute implémentation ; les points les plus structurants sont C1 (colonnes explicites), C2 (valeurs lues, lois en contrôles) et C3 (étapes en table).
+- **Lire visuellement les deux scans** (tarif ministériel : zones A/B/C, texte des majorations ; note PROASSUR : conditions de souscription) et consigner leur contenu.
+- **Lire les trois contenus non relus** (garanties facultatives n° 2, `Garanties_IAC_et_IPT.csv`, `OFFRE_COMMERCIALE.sql`) et **analyser `devis.js` / `index.html`** (logique de devis du site public).
+- **Rapprocher les sources et la base** : `Tarif_automobile_automatisé.csv` (GMCSA), `_autres.csv` et `base_autres.csv` contre `tarif` et `bareme_tranche`, pour savoir ce qui a été chargé.
+- **Mettre la base en accord avec les décisions** : SAMIRIS inactive, nom commercial de ZENITHE (#25). Hors périmètre de cette phase.
+- **Trancher la valeur générique des accessoires** (#29) : 2 500, 3 000, ou 2 500 + Fichier central ; puis corriger la ligne AFRINS « [NON IDENTIFIEE] ».
+- **Documenter la règle de cumul des majorations** (6.3) et l'interprétation du Vol partiel (différentiel) et du lien Extension CEMAC / Carte rose (6.4).
+- **Aucune API de Prime nette ou TTC n'existe** (#20) : c'est le chemin critique pour myspace ; la procédure cible `fn_calculer_prime_ttc` (5.6) la fournirait.
+- **Purger `site.bareme_dta`** (#10) avant de charger l'élément DTA dans la table cible.
+- **Reconstituer les cas de référence RC** de la session du 01/10 (5.7) : la liste que contenait une première rédaction de ce tableau s'est révélée non fiable (un des montants est absent du barème) et a été retirée.
 
-### Chantiers hors périmètre de cette v4.0 (RUT v4.n, périmètre étendu)
-Franchises (`franchise`, `franchise_application`, non branchées au calcul de la prime), majorations et réductions hors RC (dont la réduction Vol SUNU de −20 %), Produit transversal (Essentiel/Classique/Confort/Premium), bordereau comme entité datée, tarification hors automobile (aucun prix exploitable à ce stade).
+### Chantiers hors périmètre de cette v5.0 (RUT v5.n, périmètre étendu)
+Franchises (`franchise`, `franchise_application`, non branchées au calcul de la prime), majorations et réductions hors RC (dont la réduction Vol SUNU de −20 %), Produit transversal (Essentiel/Classique/Confort/Premium), bordereau comme entité datée, tarification hors automobile (aucun prix exploitable à ce stade), implémentation de l'architecture cible (5.7).
 
 ### Système d'évaluation de la performance
 *Non défini à ce stade — à construire avec Roger.*
@@ -2228,3 +2827,5 @@ Franchises (`franchise`, `franchise_application`, non branchées au calcul de la
 | 03/10/2026 | Session Tarification, décisions Roger | SAMIRIS déclarée inactive (`Actif = False`) ; règle des accessoires à 3 150 FCFA (annuel, prime nette > 100 000) consignée avec son périmètre à confirmer (anomalie #11) ; règle 12 « repli générique » ajoutée avec le tableau de ce qui existe réellement | Roger : à défaut d'information propre à une compagnie, l'information générique s'applique. Vérifié que la règle des accessoires est confirmée dans son bloc (Zone B Cat.1) mais contredite par 57 autres lignes du même document, d'où « périmètre à confirmer » plutôt que « résolu » |
 | 03/10/2026 | Session Tarification | Passage en **v3.1** : la v3.0, déclarée livrée par Roger, a été modifiée ensuite sans changer d'étiquette (SAMIRIS inactive, règle 12 « repli générique » et tableau de couverture, règle des accessoires à 3 150 FCFA). Ces ajouts constituent la v3.1 ; la v3.0 telle que livrée correspond à l'état précédant ces modifications | Convention de Roger : les jalons de version sont des étapes figées. Une version livrée ne se modifie pas silencieusement. Erreur d'étiquetage signalée par Roger et corrigée |
 | 03/10/2026 | Session Tarification, décisions Roger | **RUT v4.0** : cartographie des branches hors automobile (catalogue 88 garanties / 526 sous-garanties, dénominations `Garanties.csv`, Crédit et Cautions consigné, paramètres d'offre, taxes, sources de prix écartées), annexes A et B, anomalies #13 à #19 | Roger : intégrer les autres branches avec l'information disponible, sans utiliser les tarifs à lecture directe. Constats imprévus : les lignes hors automobile d'ALPHA/SAMIRIS sont une copie de GMCSA (225/225), et l'assiette « Nombre passagers » est une valeur par défaut |
+| 03/10/2026 | Session Tarification, demande Roger | **RUT v5.0** : inventaire du schéma (40 objets), conception de la table de tarif unique et de ses concepts, mécanismes (résolution, étapes de la Prime TTC, contrôles, lisibilité), procédures existantes et cibles, chemin de migration ; anomalies #20 à #24. Relecture critique avant livraison : liste de 10 cas de test RC retirée (un montant absent du barème), provenance des règles de calcul et des fonctions précisée | Roger : une seule table de tarif contenant tout le tarif, concepts décrits dans des tables annexes. Constat imprévu : `fn_calculer_prime_nette_totale` n'a jamais été déployée, il n'existe aucune procédure de Prime nette ou TTC |
+| 03/10/2026 | Session Tarification, demande Roger | **RUT v5.1** : export des référentiels, contenu réel des tables (compagnies, 15 actes, majorations, liens de garanties, franchises, 16 formules, 9 produits, règles de calcul vérifiées, accessoires, dénominations), registre de 23 sources, pièges de lecture, annexes C, D, E ; anomalies #25 à #29 ; corrections 3.4, 3.7, 3.8, repli générique, étape 6 de la Prime TTC | Roger : le RUT est la mémoire de la base et doit répondre seul à toute question. Constats imprévus : les formules de souscription existent en base (le RUT affirmait le contraire), la base ne reflète pas la décision SAMIRIS inactive, et les accessoires ont une valeur par défaut de 2 500 FCFA pour les 21 compagnies |
