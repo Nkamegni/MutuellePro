@@ -10,7 +10,7 @@
 //   npm install argon2
 //   (nodemailer est déjà présent — server.js l'utilise déjà)
 //
-// Prérequis : table site.verification_email_tokens créée (voir
+// Prérequis : table site.jeton créée (voir
 // 003_helpdesk_volet2_verification_email.sql).
 //
 // Intégration dans server.js (2 lignes, à ajouter juste après celles de
@@ -87,7 +87,7 @@ async function envoyerEmailBienvenueEtVerification(pool, email, token, idUtilisa
     // (déjà lui-même non-bloquant côté route, voir plus bas).
     try {
         await pool.query(
-            `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+            `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
              VALUES ($1, $2, $3, $4)`,
             [infoEnvoi.messageId, email, 'confirmation_email', String(idUtilisateur)]
         );
@@ -149,7 +149,7 @@ module.exports = function (pool) {
             // garantir sa cohérence avec le compte qui vient d'être créé.
             const token = crypto.randomBytes(32).toString('hex');
             await client.query(
-                `INSERT INTO site.verification_email_tokens (token, id_utilisateur) VALUES ($1, $2)`,
+                `INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'VERIFICATION_EMAIL', 'client', $2)`,
                 [token, compte.id_utilisateur]
             );
 

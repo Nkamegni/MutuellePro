@@ -29,9 +29,7 @@ module.exports = function (pool) {
             await client.query('BEGIN');
 
             const resultat = await client.query(
-                `SELECT id_utilisateur, date_expiration
-                 FROM site.verification_email_tokens
-                 WHERE token = $1`,
+                `SELECT id_compte AS id_utilisateur, date_expiration FROM site.jeton WHERE token = $1 AND code_nature_jeton = 'VERIFICATION_EMAIL' AND type_compte = 'client'`,
                 [token]
             );
 
@@ -43,7 +41,7 @@ module.exports = function (pool) {
             const { id_utilisateur, date_expiration } = resultat.rows[0];
 
             if (new Date(date_expiration) < new Date()) {
-                await client.query('DELETE FROM site.verification_email_tokens WHERE token = $1', [token]);
+                await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
                 await client.query('COMMIT');
                 return res.status(410).send('<h1>Ce lien de vérification a expiré (48h). Merci de vous reconnecter pour en recevoir un nouveau.</h1>');
             }
@@ -53,7 +51,7 @@ module.exports = function (pool) {
                 [id_utilisateur]
             );
             // Jeton à usage unique — supprimé après utilisation.
-            await client.query('DELETE FROM site.verification_email_tokens WHERE token = $1', [token]);
+            await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
 
             await client.query('COMMIT');
 

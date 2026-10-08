@@ -32,9 +32,7 @@ module.exports = function (pool) {
         try {
             const resultat = await pool.query(
                 `SELECT t.date_expiration, TRIM(COALESCE(s.prenom, '') || ' ' || s.nom) AS nom_complet
-                 FROM site.activation_staff_tokens t
-                 JOIN site.staff s ON s.id_staff = t.id_staff
-                 WHERE t.token = $1`,
+                 FROM site.jeton t JOIN site.staff s ON s.id_staff = t.id_compte WHERE t.token = $1 AND t.code_nature_jeton = 'ACTIVATION' AND t.type_compte = 'staff'`,
                 [token]
             );
             if (resultat.rowCount === 0) {
@@ -67,9 +65,9 @@ module.exports = function (pool) {
             const { id_staff, nom, prenom, email_validation } = resultat.rows[0];
             const nomComplet = prenom ? `${prenom} ${nom}` : nom;
 
-            await pool.query('DELETE FROM site.activation_staff_tokens WHERE id_staff = $1', [id_staff]);
+            await pool.query(`DELETE FROM site.jeton WHERE code_nature_jeton = 'ACTIVATION' AND type_compte = 'staff' AND id_compte = $1`, [id_staff]);
             const token = crypto.randomBytes(32).toString('hex');
-            await pool.query('INSERT INTO site.activation_staff_tokens (token, id_staff) VALUES ($1, $2)', [token, id_staff]);
+            await pool.query(`INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'ACTIVATION', 'staff', $2)`, [token, id_staff]);
 
             const lien = `https://mutuelleproassurances.com/activation-staff.html?token=${token}`;
             mailTransporter.sendMail({
@@ -82,7 +80,7 @@ module.exports = function (pool) {
                 // Messagerie) -- même motif non-bloquant que l'envoi
                 // lui-même, jamais d'impact sur la réponse HTTP.
                 pool.query(
-                    `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                    `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                      VALUES ($1, $2, $3, $4)`,
                     [info.messageId, email_validation, 'activation_staff', String(id_staff)]
                 ).catch((err) => console.error('[POST /api/staff/renvoyer-activation] Erreur journalisation no-reply (ignorée) :', err));
@@ -113,7 +111,7 @@ module.exports = function (pool) {
             await client.query('BEGIN');
 
             const resultat = await client.query(
-                'SELECT id_staff, date_expiration FROM site.activation_staff_tokens WHERE token = $1',
+                `SELECT id_compte AS id_staff, date_expiration FROM site.jeton WHERE token = $1 AND code_nature_jeton = 'ACTIVATION' AND type_compte = 'staff'`,
                 [token]
             );
             if (resultat.rowCount === 0) {
@@ -123,14 +121,14 @@ module.exports = function (pool) {
 
             const { id_staff, date_expiration } = resultat.rows[0];
             if (new Date(date_expiration) < new Date()) {
-                await client.query('DELETE FROM site.activation_staff_tokens WHERE token = $1', [token]);
+                await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
                 await client.query('COMMIT');
                 return res.status(410).json({ succes: false, erreurs: ['ce lien a expiré, contactez un administrateur'] });
             }
 
             const hache = await argon2.hash(mot_de_passe, { type: argon2.argon2id });
             await client.query('UPDATE site.staff SET mot_de_passe_hache = $1, mot_de_passe_defini = true WHERE id_staff = $2', [hache, id_staff]);
-            await client.query('DELETE FROM site.activation_staff_tokens WHERE token = $1', [token]);
+            await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
 
             await client.query('COMMIT');
             return res.status(200).json({ succes: true });

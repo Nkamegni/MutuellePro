@@ -13,10 +13,98 @@ const argon2 = require('argon2');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const requireStaffAuth = require('../middleware/requireStaffAuth');
-const { creerBoiteMail } = require('../lib/ispconfig');
+const { creerBoiteMail, modifierMotDePasseBoiteMail } = require('../lib/ispconfig');
+const { motDePasseRobuste } = require('../lib/reinitialisationMdp');
+const { envoyerLienReinitialisationBoiteMail } = require('../lib/reinitialisationBoiteMail');
 const { chiffrer } = require('../lib/chiffrement');
 const requireStaffRole = require('../middleware/requireStaffRole');
 const { gabaritEmail, corpsActivation } = require('../lib/gabaritEmail');
+const Ajv = require('ajv');
+
+// Registre système (18/09/2026) -- validation limitée aux branches
+// critiques connues, pas de "required" sur des branches spéculatives ;
+// le schéma s'étend au fur et à mesure que de vraies branches
+// critiques sont ajoutées au registre.
+// strict:false (19/09/2026, urgent -- crash au démarrage) : ce schéma
+// sert désormais 2 usages (validation Ajv + affichage json-editor), qui
+// partagent le mot-clé "format" avec des significations différentes.
+// Ajv en mode strict (par défaut) PLANTE, pas seulement avertit, sur un
+// format qu'il ne reconnaît pas (ex. "checkbox", propre à json-editor) --
+// désactivé ici pour ne pas faire dépendre le démarrage du serveur d'un
+// mot-clé qui ne le concerne pas. La validation réelle des valeurs
+// (type, minimum, required...) n'est pas affectée par ce réglage.
+const ajv = new Ajv({ allErrors: true, strict: false });
+function champPeremptionRole(libelleRole) {
+    return {
+        type: 'object', title: libelleRole, options: { object_layout: 'grid', collapsed: true },
+        properties: {
+            actif: { type: 'boolean', format: 'checkbox', title: 'Appliquer la péremption', default: true },
+            duree_jours: { type: 'integer', minimum: 1, title: 'Durée avant expiration (jours)', default: 90 }
+        }
+    };
+}
+function champTelephone(libelle) {
+    return {
+        type: 'object', title: libelle, options: { object_layout: 'grid', collapsed: true },
+        required: ['libelle_fr', 'numero'],
+        properties: {
+            libelle_fr: { type: 'string', minLength: 1, title: 'Description (usage interne)' },
+            numero: { type: 'string', pattern: '^\\+?[0-9 ]{6,}$', title: 'Numéro affiché' }
+        }
+    };
+}
+const schemaParametresSite = {
+    type: 'object',
+    title: 'Registre système',
+    properties: {
+        securite: {
+            type: 'object', title: 'Sécurité', options: { collapsed: true },
+            properties: {
+                peremption_mots_de_passe: {
+                    type: 'object', title: 'Péremption des mots de passe', options: { collapsed: true },
+                    description: 'Durée avant expiration du mot de passe, par type de compte.',
+                    properties: {
+                        client: champPeremptionRole('Comptes Client'),
+                        staff: champPeremptionRole('Comptes Personnel'),
+                        partenaire: champPeremptionRole('Comptes Partenaire')
+                    }
+                }
+            }
+        },
+        contacts: {
+            type: 'object', title: 'Contacts', options: { collapsed: true },
+            properties: {
+                telephoniques: {
+                    type: 'object', title: 'Numéros de téléphone (site public)', options: { collapsed: true },
+                    description: 'Numéros affichés à différents endroits du site public.',
+                    properties: {
+                        entete_appel: champTelephone('En-tête — lien Appeler'),
+                        entete_whatsapp: champTelephone('En-tête — bouton WhatsApp'),
+                        hero_cta_whatsapp: champTelephone('Bandeau d\'accueil — Échanger sur WhatsApp'),
+                        assistant_ia_cta: champTelephone('Assistant IA — bouton WhatsApp'),
+                        assistance_appel: champTelephone('Section Assistance — Appeler maintenant'),
+                        assistance_whatsapp: champTelephone('Section Assistance — Discuter sur WhatsApp'),
+                        footer_icone: champTelephone('Pied de page — icône WhatsApp'),
+                        footer_texte: champTelephone('Pied de page — numéro en toutes lettres'),
+                        bulle_flottante: champTelephone('Bulle WhatsApp flottante'),
+                        sinistre_whatsapp: champTelephone('Déclaration de sinistre — message WhatsApp')
+                    }
+                }
+            }
+        },
+        formulaires: {
+            type: 'object', title: 'Formulaires', options: { collapsed: true },
+            properties: {
+                villes: {
+                    type: 'array', title: 'Villes proposées', minItems: 1, options: { collapsed: true },
+                    description: 'Liste déroulante des villes dans les formulaires du site public.',
+                    items: { type: 'string', title: 'Ville' }
+                }
+            }
+        }
+    }
+};
+const validateParametresSite = ajv.compile(schemaParametresSite);
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -36,7 +124,7 @@ async function envoyerEmailActivationStaff(pool, idStaff, emailValidation, nomCo
         });
         try {
             await pool.query(
-                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                  VALUES ($1, $2, $3, $4)`,
                 [infoEnvoi.messageId, emailValidation, 'activation_personnel', String(idStaff)]
             );
@@ -78,11 +166,69 @@ module.exports = function (pool) {
         }
     });
 
+    // Registre système (18/09/2026, remplace parametres-securite du
+    // 14/09) -- un seul arbre JSON opaque pour tout paramètre ayant un
+    // consommateur réel (sécurité, contacts téléphoniques publics,
+    // listes de formulaires). GET ouvert à administrateur+superadmin,
+    // PUT réservé à superadmin -- aucun mécanisme de permission
+    // déléguable par branche n'existe réellement dans ce projet
+    // (vérifié contre requireStaffRole et matrice_roles_permissions_
+    // 12092026.md), donc pas de RBAC par branche pour cette v1.
+    router.get('/parametres-site', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        try {
+            const r = await pool.query('SELECT valeurs, date_maj FROM site.parametre_site WHERE id_parametre_site = 1');
+            return res.status(200).json({ succes: true, valeurs: r.rows[0]?.valeurs || {}, date_maj: r.rows[0]?.date_maj, schema: schemaParametresSite });
+        } catch (err) {
+            console.error('[GET /api/staff/parametres-site] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
+    router.put('/parametres-site', requireStaffAuth, requireStaffRole(['superadmin']), async (req, res) => {
+        const { valeurs, date_maj_chargee } = req.body;
+        const idStaff = req.session.id_staff; // ce projet n'utilise pas req.user
+
+        const estValide = validateParametresSite(valeurs);
+        if (!estValide) {
+            return res.status(400).json({ succes: false, erreurs: validateParametresSite.errors });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const actuel = await client.query('SELECT valeurs, date_maj FROM site.parametre_site WHERE id_parametre_site = 1 FOR UPDATE');
+            if (actuel.rows[0].date_maj.toISOString() !== date_maj_chargee) {
+                await client.query('ROLLBACK');
+                return res.status(409).json({ succes: false, message: 'Modifié entretemps par un autre utilisateur. Rechargez avant de réessayer.' });
+            }
+            const anciennesValeurs = actuel.rows[0].valeurs;
+
+            await client.query('UPDATE site.parametre_site SET valeurs = $1, date_maj = now(), modifie_par = $2 WHERE id_parametre_site = 1', [valeurs, idStaff]);
+
+            await client.query(
+                `INSERT INTO site.historique_parametre_site (id_staff, valeurs_avant, valeurs_apres, adresse_ip)
+                 VALUES ($1, $2, $3, $4)`,
+                [idStaff, anciennesValeurs, valeurs, req.ip]
+            );
+
+            await client.query('COMMIT');
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('[PUT /api/staff/parametres-site] Erreur base de données :', err);
+            return res.status(500).json({ succes: false, message: 'Erreur lors de la sauvegarde.' });
+        } finally {
+            client.release();
+        }
+    });
+
     router.get('/personnel', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         try {
             const resultat = await pool.query(
                 `SELECT s.id_staff, s.matricule, s.nom, s.prenom, s.email, s.email_validation, s.telephone, s.statut_compte,
                         s.mot_de_passe_defini, s.est_compte_racine, s.suppression_reservee_racine,
+                        s.mot_de_passe_n_expire_jamais, s.doit_changer_mot_de_passe,
                         (s.imap_mot_de_passe_chiffre IS NOT NULL) AS boite_mail_configuree,
                         r.code_role, r.libelle_fr AS role_libelle_fr
                  FROM site.staff s
@@ -146,7 +292,7 @@ module.exports = function (pool) {
             const nouveauStaff = insere.rows[0];
 
             const token = crypto.randomBytes(32).toString('hex');
-            await client.query('INSERT INTO site.activation_staff_tokens (token, id_staff) VALUES ($1, $2)', [token, nouveauStaff.id_staff]);
+            await client.query(`INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'ACTIVATION', 'staff', $2)`, [token, nouveauStaff.id_staff]);
 
             await client.query('COMMIT');
 
@@ -191,7 +337,7 @@ module.exports = function (pool) {
 
     router.patch('/personnel/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idStaff = parseInt(req.params.id, 10);
-        const { nom, prenom, telephone, date_naissance, adresse, id_role, statut_compte, email_validation } = req.body;
+        const { nom, prenom, telephone, date_naissance, adresse, id_role, statut_compte, email_validation, mot_de_passe_n_expire_jamais, doit_changer_mot_de_passe } = req.body;
 
         if (!Number.isInteger(idStaff)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
@@ -221,9 +367,17 @@ module.exports = function (pool) {
                      adresse = COALESCE($5, adresse),
                      id_role = COALESCE($6, id_role),
                      statut_compte = COALESCE($7, statut_compte),
-                     email_validation = COALESCE($8, email_validation)
-                 WHERE id_staff = $9`,
-                [nom || null, prenom || null, telephone || null, date_naissance || null, adresse || null, id_role || null, statut_compte || null, email_validation || null, idStaff]
+                     email_validation = COALESCE($8, email_validation),
+                     mot_de_passe_n_expire_jamais = COALESCE($9, mot_de_passe_n_expire_jamais),
+                     doit_changer_mot_de_passe = COALESCE($10, doit_changer_mot_de_passe)
+                 WHERE id_staff = $11`,
+                [
+                    nom || null, prenom || null, telephone || null, date_naissance || null, adresse || null,
+                    id_role || null, statut_compte || null, email_validation || null,
+                    typeof mot_de_passe_n_expire_jamais === 'boolean' ? mot_de_passe_n_expire_jamais : null,
+                    typeof doit_changer_mot_de_passe === 'boolean' ? doit_changer_mot_de_passe : null,
+                    idStaff,
+                ]
             );
             return res.status(200).json({ succes: true });
         } catch (err) {
@@ -237,9 +391,51 @@ module.exports = function (pool) {
     // de créer le compte, jamais après coup (01/09/2026, demande de Roger).
     router.post('/personnel/:id/provisionner-boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idStaff = parseInt(req.params.id, 10);
+        const { nouveau_mot_de_passe } = req.body || {};
         if (!Number.isInteger(idStaff)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
         }
+        // Option 3 (14/09/2026) -- un mot de passe fourni explicitement par
+        // un administrateur est un geste délibéré : on ne bloque jamais ce
+        // cas avec le 409 "déjà configurée", contrairement au mode
+        // automatique ci-dessous. Sert le cas où root a modifié le mot de
+        // passe directement dans ISPConfig (notre base ne peut plus le
+        // deviner) -- l'administrateur reprend la main explicitement.
+        if (nouveau_mot_de_passe !== undefined && nouveau_mot_de_passe !== null && nouveau_mot_de_passe !== '') {
+            if (!motDePasseRobuste(nouveau_mot_de_passe)) {
+                return res.status(400).json({ succes: false, erreurs: ['le mot de passe doit contenir au moins 10 caractères, avec une lettre, un chiffre et un caractère spécial'] });
+            }
+            try {
+                const compte = await pool.query('SELECT email, nom, prenom FROM site.staff WHERE id_staff = $1', [idStaff]);
+                if (compte.rowCount === 0) {
+                    return res.status(404).json({ succes: false, erreurs: ['compte introuvable'] });
+                }
+                const { email, nom, prenom } = compte.rows[0];
+                const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
+                try {
+                    // La boîte existe déjà dans ISPConfig -- cas attendu le
+                    // plus fréquent (root a changé le mot de passe d'une
+                    // boîte existante).
+                    await modifierMotDePasseBoiteMail({ email, motDePasse: nouveau_mot_de_passe });
+                } catch (err) {
+                    // "Aucune boîte mail trouvée pour l'email" (message exact
+                    // du script PHP) -- la boîte n'existe pas du tout côté
+                    // ISPConfig, on la crée avec ce mot de passe plutôt que
+                    // d'échouer.
+                    if (/Aucune boîte mail trouvée/i.test(err.message || '')) {
+                        await creerBoiteMail({ email, motDePasse: nouveau_mot_de_passe, nomAffiche });
+                    } else {
+                        throw err;
+                    }
+                }
+                await pool.query('UPDATE site.staff SET imap_mot_de_passe_chiffre = $1 WHERE id_staff = $2', [chiffrer(nouveau_mot_de_passe), idStaff]);
+                return res.status(200).json({ succes: true });
+            } catch (err) {
+                console.error('[POST /api/staff/personnel/:id/provisionner-boite-mail] Erreur (mot de passe fourni) :', err);
+                return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
+            }
+        }
+
         try {
             const compte = await pool.query('SELECT email, nom, prenom, imap_mot_de_passe_chiffre FROM site.staff WHERE id_staff = $1', [idStaff]);
             if (compte.rowCount === 0) {
@@ -264,6 +460,33 @@ module.exports = function (pool) {
             return res.status(200).json({ succes: true });
         } catch (err) {
             console.error('[POST /api/staff/personnel/:id/provisionner-boite-mail] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
+        }
+    });
+
+    // Option 2 (14/09/2026) -- envoie un lien de réinitialisation de la
+    // boîte mail à l'adresse de validation personnelle du titulaire
+    // (pas l'email professionnel lui-même -- s'il est justement bloqué
+    // hors de sa boîte, il ne peut pas y accéder).
+    router.post('/personnel/:id/envoyer-reinitialisation-boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        const idStaff = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idStaff)) {
+            return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        }
+        try {
+            const compte = await pool.query('SELECT email, email_validation, nom, prenom FROM site.staff WHERE id_staff = $1', [idStaff]);
+            if (compte.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['compte introuvable'] });
+            }
+            const { email, email_validation, nom, prenom } = compte.rows[0];
+            const nomComplet = prenom ? `${prenom} ${nom}` : nom;
+            await envoyerLienReinitialisationBoiteMail({
+                pool, mailTransporter, typeCompte: 'staff', idCompte: idStaff,
+                email: email_validation || email, nomComplet,
+            });
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/staff/personnel/:id/envoyer-reinitialisation-boite-mail] Erreur :', err);
             return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
         }
     });

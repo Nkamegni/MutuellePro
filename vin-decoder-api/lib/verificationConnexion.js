@@ -32,9 +32,8 @@ async function genererEtEnvoyerCode({ pool, mailTransporter, typeCompte, idCompt
     const dateExpiration = new Date(Date.now() + DUREE_VALIDITE_MS);
 
     await pool.query(
-        `INSERT INTO site.codes_verification_connexion (type_compte, id_compte, code, date_expiration)
-         VALUES ($1, $2, $3, $4)`,
-        [typeCompte, idCompte, code, dateExpiration]
+        `INSERT INTO site.code_verification (code_nature_jeton, type_compte, id_compte, code) VALUES ('CONNEXION', $1, $2, $3)`,
+        [typeCompte, idCompte, code]
     );
 
     // Envoi de l'email -- ICI volontairement attendu (pas non-bloquant
@@ -63,12 +62,12 @@ async function genererEtEnvoyerCode({ pool, mailTransporter, typeCompte, idCompt
     // lui-même (ci-dessus) est critique.
     try {
         await pool.query(
-            `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+            `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
              VALUES ($1, $2, $3, $4)`,
             [infoEnvoi.messageId, email, 'code_connexion', referenceCompte || null]
         );
     } catch (err) {
-        console.error('[genererEtEnvoyerCode] Erreur journalisation no_reply_messages_envoyes (ignorée) :', err);
+        console.error('[genererEtEnvoyerCode] Erreur journalisation no_reply_message_envoye (ignorée) :', err);
     }
 }
 
@@ -78,8 +77,7 @@ async function genererEtEnvoyerCode({ pool, mailTransporter, typeCompte, idCompt
 // proprement a cause de la fermeture sur req/res propre a chaque route).
 async function verifierCode({ pool, typeCompte, idCompte, code }) {
     const resultat = await pool.query(
-        `SELECT id_code, date_expiration, tentatives, utilise FROM site.codes_verification_connexion
-         WHERE type_compte = $1 AND id_compte = $2 AND utilise = false
+        `SELECT id_code_verification AS id_code, date_expiration, tentatives, utilise FROM site.code_verification WHERE code_nature_jeton = 'CONNEXION' AND type_compte = $1 AND id_compte = $2 AND utilise = false
          ORDER BY date_creation DESC LIMIT 1`,
         [typeCompte, idCompte]
     );
@@ -97,19 +95,19 @@ async function verifierCode({ pool, typeCompte, idCompte, code }) {
     }
 
     const correspondance = await pool.query(
-        `SELECT id_code FROM site.codes_verification_connexion WHERE id_code = $1 AND code = $2`,
+        `SELECT id_code_verification AS id_code FROM site.code_verification WHERE id_code_verification = $1 AND code = $2`,
         [ligne.id_code, code]
     );
 
     if (correspondance.rowCount === 0) {
         await pool.query(
-            `UPDATE site.codes_verification_connexion SET tentatives = tentatives + 1 WHERE id_code = $1`,
+            `UPDATE site.code_verification SET tentatives = tentatives + 1 WHERE id_code_verification = $1`,
             [ligne.id_code]
         );
         return { valide: false, motif: 'code_incorrect' };
     }
 
-    await pool.query(`UPDATE site.codes_verification_connexion SET utilise = true WHERE id_code = $1`, [ligne.id_code]);
+    await pool.query(`UPDATE site.code_verification SET utilise = true WHERE id_code_verification = $1`, [ligne.id_code]);
     return { valide: true };
 }
 

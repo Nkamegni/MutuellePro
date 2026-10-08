@@ -28,7 +28,7 @@ async function envoyerEmailActivationPartenaire(pool, idPartenaire, emailNotific
         });
         try {
             await pool.query(
-                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                  VALUES ($1, $2, $3, $4)`,
                 [infoEnvoi.messageId, emailNotification, 'activation_compte_partenaire', String(idPartenaire)]
             );
@@ -60,18 +60,18 @@ async function creerPartenaireEtActiver(client, { email, email_notification, nom
     const partenaire = inserePartenaire.rows[0];
 
     for (const idType of id_types_partenaire) {
-        await client.query('INSERT INTO site.partenaire_types (id_partenaire, id_type_partenaire) VALUES ($1, $2)', [partenaire.id_partenaire, idType]);
+        await client.query('INSERT INTO site.partenaire_type (id_partenaire, id_type_partenaire) VALUES ($1, $2)', [partenaire.id_partenaire, idType]);
     }
 
     for (const contact of contacts) {
         await client.query(
-            'INSERT INTO site.partenaire_contacts (id_partenaire, nom, prenom, fonction, telephone, est_defaut) VALUES ($1, $2, $3, $4, $5, $6)',
+            'INSERT INTO site.partenaire_contact (id_partenaire, nom, prenom, fonction, telephone, est_defaut) VALUES ($1, $2, $3, $4, $5, $6)',
             [partenaire.id_partenaire, contact.nom, contact.prenom || null, contact.fonction || null, contact.telephone || null, !!contact.est_defaut]
         );
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    await client.query('INSERT INTO site.activation_partenaire_tokens (token, id_partenaire) VALUES ($1, $2)', [token, partenaire.id_partenaire]);
+    await client.query(`INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'ACTIVATION', 'partenaire', $2)`, [token, partenaire.id_partenaire]);
 
     return { partenaire, token };
 }

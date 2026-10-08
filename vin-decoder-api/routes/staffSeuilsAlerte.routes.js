@@ -3,7 +3,7 @@
 // Routes : GET /api/staff/seuils-alerte, POST /api/staff/seuils-alerte
 // =====================================================================
 // Catégorie 2 (infrastructure data dashboard), item priorisé n°1.
-// Prérequis : table site.seuils_alerte_staff créée
+// Prérequis : table site.seuil_alerte_staff créée
 // (voir migration_seuils_alerte_staff.sql) AVANT le montage de ce routeur.
 // =====================================================================
 
@@ -28,7 +28,7 @@ module.exports = function (pool) {
     router.get('/seuils-alerte', requireStaffAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT code_seuil, valeur FROM site.seuils_alerte_staff WHERE id_staff = $1`,
+                `SELECT code_seuil, valeur FROM site.seuil_alerte_staff WHERE id_staff = $1`,
                 [req.session.id_staff]
             );
             const seuils = { ...VALEUR_DEFAUT };
@@ -52,7 +52,7 @@ module.exports = function (pool) {
 
         try {
             await pool.query(
-                `INSERT INTO site.seuils_alerte_staff (id_staff, code_seuil, valeur)
+                `INSERT INTO site.seuil_alerte_staff (id_staff, code_seuil, valeur)
                  VALUES ($1, $2, $3)
                  ON CONFLICT (id_staff, code_seuil) DO UPDATE SET valeur = $3, date_maj = now()`,
                 [req.session.id_staff, code_seuil, valeur]

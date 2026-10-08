@@ -18,6 +18,7 @@
 // =====================================================================
 
 const express = require('express');
+const messageDemandeInitiale = require('../lib/demandeInitiale');
 const argon2 = require('argon2');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -66,9 +67,7 @@ module.exports = function (pool) {
         try {
             const resultat = await pool.query(
                 `SELECT t.date_expiration, TRIM(COALESCE(p.prenom, '') || ' ' || p.nom) AS nom_complet
-                 FROM site.activation_partenaire_tokens t
-                 JOIN site.partenaires p ON p.id_partenaire = t.id_partenaire
-                 WHERE t.token = $1`,
+                 FROM site.jeton t JOIN site.partenaires p ON p.id_partenaire = t.id_compte WHERE t.token = $1 AND t.code_nature_jeton = 'ACTIVATION' AND t.type_compte = 'partenaire'`,
                 [token]
             );
             if (resultat.rowCount === 0) {
@@ -100,7 +99,7 @@ module.exports = function (pool) {
                 `SELECT p.id_partenaire, p.matricule, p.email, p.email_notification, p.telephone, p.mot_de_passe_hache, p.nom, p.prenom, p.statut_compte,
                         COALESCE(string_agg(tp.libelle_fr, ', ' ORDER BY tp.libelle_fr), '') AS types_libelles
                  FROM site.partenaires p
-                 LEFT JOIN site.partenaire_types pty ON pty.id_partenaire = p.id_partenaire
+                 LEFT JOIN site.partenaire_type pty ON pty.id_partenaire = p.id_partenaire
                  LEFT JOIN site.type_partenaire tp ON tp.id_type_partenaire = pty.id_type_partenaire
                  WHERE p.email = $1
                  GROUP BY p.id_partenaire`,
@@ -171,7 +170,7 @@ module.exports = function (pool) {
                 `SELECT p.id_partenaire, p.matricule, p.email, p.email_notification, p.nom, p.prenom,
                         COALESCE(string_agg(tp.libelle_fr, ', ' ORDER BY tp.libelle_fr), '') AS types_libelles
                  FROM site.partenaires p
-                 LEFT JOIN site.partenaire_types pty ON pty.id_partenaire = p.id_partenaire
+                 LEFT JOIN site.partenaire_type pty ON pty.id_partenaire = p.id_partenaire
                  LEFT JOIN site.type_partenaire tp ON tp.id_type_partenaire = pty.id_type_partenaire
                  WHERE p.id_partenaire = $1
                  GROUP BY p.id_partenaire`,
@@ -186,14 +185,14 @@ module.exports = function (pool) {
             let derniereConnexionPrecedente = null;
             try {
                 const precedente = await pool.query(
-                    `SELECT date_connexion, adresse_ip FROM site.historique_connexions
+                    `SELECT date_connexion, adresse_ip FROM site.historique_connexion
                      WHERE type_compte = 'partenaire' AND id_compte = $1
                      ORDER BY date_connexion DESC LIMIT 1`,
                     [id_compte]
                 );
                 if (precedente.rowCount > 0) derniereConnexionPrecedente = precedente.rows[0];
             } catch (err) {
-                console.error('[POST /api/partenaire/connexion/verifier-code] Erreur lecture historique_connexions :', err);
+                console.error('[POST /api/partenaire/connexion/verifier-code] Erreur lecture historique_connexion :', err);
             }
 
             // Péremption (14/09/2026) -- voir même commentaire dans staffAuth.routes.js.
@@ -217,13 +216,13 @@ module.exports = function (pool) {
 
                 try {
                     const inseree = await pool.query(
-                        `INSERT INTO site.historique_connexions (type_compte, id_compte, adresse_ip)
-                         VALUES ('partenaire', $1, $2) RETURNING id_historique`,
+                        `INSERT INTO site.historique_connexion (type_compte, id_compte, adresse_ip)
+                         VALUES ('partenaire', $1, $2) RETURNING id_historique_connexion`,
                         [partenaire.id_partenaire, req.ip]
                     );
-                    req.session.id_historique_connexion = inseree.rows[0].id_historique;
+                    req.session.id_historique_connexion = inseree.rows[0].id_historique_connexion;
                 } catch (err) {
-                    console.error('[POST /api/partenaire/connexion/verifier-code] Erreur écriture historique_connexions :', err);
+                    console.error('[POST /api/partenaire/connexion/verifier-code] Erreur écriture historique_connexion :', err);
                 }
 
                 mailTransporter.sendMail({
@@ -241,7 +240,7 @@ module.exports = function (pool) {
                     })),
                 }).then((info) => {
                     pool.query(
-                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                        `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                          VALUES ($1, $2, $3, $4)`,
                         [info.messageId, partenaire.email_notification || partenaire.email, 'notification_connexion_partenaire', partenaire.matricule]
                     ).catch((err) => console.error('[POST /api/partenaire/connexion/verifier-code] Erreur journalisation no-reply (ignorée) :', err));
@@ -323,12 +322,12 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                `SELECT id_historique, date_connexion, adresse_ip FROM site.historique_connexions
+                `SELECT id_historique_connexion, date_connexion, adresse_ip FROM site.historique_connexion
                  WHERE type_compte = 'partenaire' AND id_compte = $1
                  ORDER BY date_connexion DESC LIMIT 20`,
                 [req.session.id_partenaire]
             );
-            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique === req.session.id_historique_connexion }));
+            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique_connexion === req.session.id_historique_connexion }));
             return res.status(200).json({ succes: true, connexions });
         } catch (err) {
             console.error('[GET /api/partenaire/mes-connexions] Erreur base de données :', err);
@@ -431,7 +430,7 @@ module.exports = function (pool) {
                         st.code_statut_ticket, st.libelle_fr AS statut_libelle_fr,
                         t.contenu, t.date_creation, t.date_maj,
                         EXISTS(
-                            SELECT 1 FROM site.messages_dossier m
+                            SELECT 1 FROM site.message_dossier m
                             WHERE m.id_ticket = t.id_ticket AND m.type_auteur IN ('client', 'staff') AND m.visible_client = true AND m.lu_par_partenaire = false
                         ) AS a_message_non_lu
                  FROM site.tickets t
@@ -468,7 +467,7 @@ module.exports = function (pool) {
             await client.query('BEGIN');
 
             const resultat = await client.query(
-                'SELECT id_partenaire, date_expiration FROM site.activation_partenaire_tokens WHERE token = $1',
+                `SELECT id_compte AS id_partenaire, date_expiration FROM site.jeton WHERE token = $1 AND code_nature_jeton = 'ACTIVATION' AND type_compte = 'partenaire'`,
                 [token]
             );
             if (resultat.rowCount === 0) {
@@ -478,14 +477,14 @@ module.exports = function (pool) {
 
             const { id_partenaire, date_expiration } = resultat.rows[0];
             if (new Date(date_expiration) < new Date()) {
-                await client.query('DELETE FROM site.activation_partenaire_tokens WHERE token = $1', [token]);
+                await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
                 await client.query('COMMIT');
                 return res.status(410).json({ succes: false, erreurs: ['ce lien a expiré, contactez Mutuelle Pro Assurances'] });
             }
 
             const hache = await argon2.hash(mot_de_passe, { type: argon2.argon2id });
             await client.query('UPDATE site.partenaires SET mot_de_passe_hache = $1, mot_de_passe_defini = true WHERE id_partenaire = $2', [hache, id_partenaire]);
-            await client.query('DELETE FROM site.activation_partenaire_tokens WHERE token = $1', [token]);
+            await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
 
             await client.query('COMMIT');
             return res.status(200).json({ succes: true });
@@ -527,10 +526,10 @@ module.exports = function (pool) {
 
             // Les anciens jetons de ce partenaire sont invalidés avant
             // d'en émettre un nouveau — un seul lien valide à la fois.
-            await pool.query('DELETE FROM site.activation_partenaire_tokens WHERE id_partenaire = $1', [id_partenaire]);
+            await pool.query(`DELETE FROM site.jeton WHERE code_nature_jeton = 'ACTIVATION' AND type_compte = 'partenaire' AND id_compte = $1`, [id_partenaire]);
 
             const token = crypto.randomBytes(32).toString('hex');
-            await pool.query('INSERT INTO site.activation_partenaire_tokens (token, id_partenaire) VALUES ($1, $2)', [token, id_partenaire]);
+            await pool.query(`INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'ACTIVATION', 'partenaire', $2)`, [token, id_partenaire]);
 
             const lien = `https://mutuelleproassurances.com/activation-partenaire.html?token=${token}`;
             mailTransporter.sendMail({
@@ -540,7 +539,7 @@ module.exports = function (pool) {
                 html: gabaritEmail('Activez votre compte partenaire', corpsActivation({ nomComplet, typeCompte: 'partenaire', lien })),
             }).then((info) => {
                 pool.query(
-                    `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                    `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                      VALUES ($1, $2, $3, $4)`,
                     [info.messageId, email_notification, 'activation_partenaire', String(id_partenaire)]
                 ).catch((err) => console.error('[POST /api/partenaire/renvoyer-activation] Erreur journalisation no-reply (ignorée) :', err));
@@ -570,18 +569,18 @@ module.exports = function (pool) {
         if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
         try {
             const resultat = await pool.query(
-                `SELECT md.id_message, md.type_auteur, md.contenu, md.date_creation, md.visible_client, md.modifie, md.date_modification,
+                `SELECT md.id_message_dossier, md.type_auteur, md.contenu, md.date_creation, md.visible_client, md.modifie, md.date_modification,
                         md.lu_par_client, md.lu_par_staff, md.lu_par_partenaire,
                         md.date_lecture_client, md.date_lecture_staff, md.date_lecture_partenaire,
                         COALESCE(u.email, s.email, p.email) AS email_auteur
-                 FROM site.messages_dossier md
+                 FROM site.message_dossier md
                  LEFT JOIN site.utilisateurs u ON md.type_auteur = 'client' AND u.id_utilisateur = md.id_auteur
                  LEFT JOIN site.staff s ON md.type_auteur = 'staff' AND s.id_staff = md.id_auteur
                  LEFT JOIN site.partenaires p ON md.type_auteur = 'partenaire' AND p.id_partenaire = md.id_auteur
                  WHERE md.id_ticket = $1 AND md.visible_client = true ORDER BY md.date_creation ASC`,
                 [idTicket]
             );
-            return res.status(200).json({ succes: true, messages: resultat.rows });
+            return res.status(200).json({ succes: true, messages: [...(await messageDemandeInitiale(pool, idTicket)), ...resultat.rows] });
         } catch (err) {
             console.error('[GET /api/partenaire/mes-dossiers/:id/messages] Erreur :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
@@ -599,11 +598,11 @@ module.exports = function (pool) {
         try {
             const visibleClientFinal = visible_client !== false;
             const resultat = await pool.query(
-                `INSERT INTO site.messages_dossier (id_ticket, type_auteur, id_auteur, contenu, visible_client)
-                 VALUES ($1, 'partenaire', $2, $3, $4) RETURNING id_message, date_creation`,
+                `INSERT INTO site.message_dossier (id_ticket, type_auteur, id_auteur, contenu, visible_client)
+                 VALUES ($1, 'partenaire', $2, $3, $4) RETURNING id_message_dossier, date_creation`,
                 [idTicket, req.session.id_partenaire, contenu.trim(), visibleClientFinal]
             );
-            const message = { id_message: resultat.rows[0].id_message, id_ticket: idTicket, type_auteur: 'partenaire', contenu: contenu.trim(), date_creation: resultat.rows[0].date_creation, visible_client: visibleClientFinal };
+            const message = { id_message_dossier: resultat.rows[0].id_message_dossier, id_ticket: idTicket, type_auteur: 'partenaire', contenu: contenu.trim(), date_creation: resultat.rows[0].date_creation, visible_client: visibleClientFinal };
 
             // Correctif de sécurité (16/09/2026) -- même faille, même
             // principe que staffTickets.routes.js.
@@ -642,6 +641,22 @@ module.exports = function (pool) {
         }
     });
 
+    router.patch('/mes-dossiers/:id/messages/lu', async (req, res) => {
+        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
+        const idTicket = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        const dossier = await dossierAssigneAuPartenaire(pool, idTicket, req.session.id_partenaire);
+        if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
+        try {
+            await pool.query(`UPDATE site.message_dossier SET lu_par_partenaire = true, date_lecture_partenaire = COALESCE(date_lecture_partenaire, now()) WHERE id_ticket = $1 AND type_auteur IN ('client', 'staff') AND visible_client = true`, [idTicket]);
+            if (global.ioMessagerie) global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:lu', { par: 'partenaire' });
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[PATCH /api/partenaire/mes-dossiers/:id/messages/lu] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
     router.patch('/mes-dossiers/:id/messages/:idMessage', async (req, res) => {
         if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
         const idTicket = parseInt(req.params.id, 10);
@@ -657,7 +672,7 @@ module.exports = function (pool) {
         if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
         try {
             const existant = await pool.query(
-                `SELECT id_auteur, visible_client, date_lecture_client, date_lecture_staff FROM site.messages_dossier WHERE id_message = $1 AND id_ticket = $2 AND type_auteur = 'partenaire'`,
+                `SELECT id_auteur, visible_client, date_lecture_client, date_lecture_staff FROM site.message_dossier WHERE id_message_dossier = $1 AND id_ticket = $2 AND type_auteur = 'partenaire'`,
                 [idMessage, idTicket]
             );
             if (existant.rowCount === 0) {
@@ -673,11 +688,11 @@ module.exports = function (pool) {
                 return res.status(409).json({ succes: false, erreurs: ['ce message a déjà été lu depuis plus de 30 secondes, il ne peut plus être corrigé'] });
             }
             const resultat = await pool.query(
-                `UPDATE site.messages_dossier SET contenu = $1, modifie = true, date_modification = now()
-                 WHERE id_message = $2 RETURNING date_modification`,
+                `UPDATE site.message_dossier SET contenu = $1, modifie = true, date_modification = now()
+                 WHERE id_message_dossier = $2 RETURNING date_modification`,
                 [contenu.trim(), idMessage]
             );
-            const message = { id_message: idMessage, id_ticket: idTicket, contenu: contenu.trim(), date_modification: resultat.rows[0].date_modification };
+            const message = { id_message_dossier: idMessage, id_ticket: idTicket, contenu: contenu.trim(), date_modification: resultat.rows[0].date_modification };
 
             if (global.ioMessagerie) {
                 if (existant.rows[0].visible_client) {
@@ -699,27 +714,12 @@ module.exports = function (pool) {
         }
     });
 
-    router.patch('/mes-dossiers/:id/messages/lu', async (req, res) => {
-        if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
-        const idTicket = parseInt(req.params.id, 10);
-        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
-        const dossier = await dossierAssigneAuPartenaire(pool, idTicket, req.session.id_partenaire);
-        if (!dossier) return res.status(404).json({ succes: false, erreurs: ['dossier introuvable'] });
-        try {
-            await pool.query(`UPDATE site.messages_dossier SET lu_par_partenaire = true, date_lecture_partenaire = COALESCE(date_lecture_partenaire, now()) WHERE id_ticket = $1 AND type_auteur IN ('client', 'staff') AND visible_client = true`, [idTicket]);
-            if (global.ioMessagerie) global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:lu', { par: 'partenaire' });
-            return res.status(200).json({ succes: true });
-        } catch (err) {
-            console.error('[PATCH /api/partenaire/mes-dossiers/:id/messages/lu] Erreur :', err);
-            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
-        }
-    });
 
     router.get('/mes-dossiers/messages-non-lus', async (req, res) => {
         if (!req.session || !req.session.id_partenaire) return res.status(401).json({ succes: false, erreurs: ['authentification requise'] });
         try {
             const resultat = await pool.query(
-                `SELECT COUNT(*)::int AS total FROM site.messages_dossier m
+                `SELECT COUNT(*)::int AS total FROM site.message_dossier m
                  JOIN site.tickets t ON t.id_ticket = m.id_ticket
                  WHERE t.id_partenaire_assigne = $1 AND m.type_auteur IN ('client', 'staff') AND m.visible_client = true AND m.lu_par_partenaire = false`,
                 [req.session.id_partenaire]

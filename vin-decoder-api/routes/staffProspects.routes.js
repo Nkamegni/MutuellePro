@@ -176,8 +176,8 @@ module.exports = function (pool) {
         const idProspect = parseInt(req.params.id, 10);
         try {
             const resultat = await pool.query(
-                `SELECT i.id_interaction, i.type_interaction, i.contenu, i.date_interaction, TRIM(COALESCE(s.prenom, '') || ' ' || s.nom) AS staff_nom
-                 FROM site.interactions_prospect i
+                `SELECT i.id_interaction_prospect, i.type_interaction, i.contenu, i.date_interaction, TRIM(COALESCE(s.prenom, '') || ' ' || s.nom) AS staff_nom
+                 FROM site.interaction_prospect i
                  LEFT JOIN site.staff s ON s.id_staff = i.id_staff
                  WHERE i.id_prospect = $1
                  ORDER BY i.date_interaction DESC`,
@@ -198,9 +198,9 @@ module.exports = function (pool) {
         }
         try {
             const resultat = await pool.query(
-                `INSERT INTO site.interactions_prospect (id_prospect, id_staff, type_interaction, contenu)
+                `INSERT INTO site.interaction_prospect (id_prospect, id_staff, type_interaction, contenu)
                  VALUES ($1, $2, $3, $4)
-                 RETURNING id_interaction, date_interaction`,
+                 RETURNING id_interaction_prospect, date_interaction`,
                 [idProspect, req.session.id_staff, type_interaction, contenu]
             );
             await pool.query('UPDATE site.prospects SET date_maj = now() WHERE id_prospect = $1', [idProspect]);

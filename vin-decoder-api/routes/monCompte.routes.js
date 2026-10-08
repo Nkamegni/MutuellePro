@@ -199,12 +199,12 @@ module.exports = function (pool) {
     router.get('/connexions', requireAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT id_historique, date_connexion, adresse_ip FROM site.historique_connexions
+                `SELECT id_historique_connexion, date_connexion, adresse_ip FROM site.historique_connexion
                  WHERE type_compte = 'client' AND id_compte = $1
                  ORDER BY date_connexion DESC LIMIT 20`,
                 [req.session.id_utilisateur]
             );
-            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique === req.session.id_historique_connexion }));
+            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique_connexion === req.session.id_historique_connexion }));
             return res.status(200).json({ succes: true, connexions });
         } catch (err) {
             console.error('[GET /api/mon-compte/connexions] Erreur base de données :', err);

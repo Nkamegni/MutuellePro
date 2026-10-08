@@ -14,12 +14,14 @@
 // =====================================================================
 
 const express = require('express');
+const crypto = require('crypto');
 const argon2 = require('argon2');
 const nodemailer = require('nodemailer');
 const { gabaritEmail, corpsConnexionReussie } = require('../lib/gabaritEmail');
 const { analyserNavigateur, analyserSysteme } = require('../lib/analyseurUserAgent');
 const { genererEtEnvoyerCode, verifierCode } = require('../lib/verificationConnexion');
 const { masquerEmail, masquerTelephone } = require('../lib/masquage');
+const { verifierPeremptionMotDePasse } = require('../lib/peremptionMdp');
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -168,14 +170,35 @@ module.exports = function (pool) {
             let derniereConnexionPrecedente = null;
             try {
                 const precedente = await pool.query(
-                    `SELECT date_connexion, adresse_ip FROM site.historique_connexions
+                    `SELECT date_connexion, adresse_ip FROM site.historique_connexion
                      WHERE type_compte = 'client' AND id_compte = $1
                      ORDER BY date_connexion DESC LIMIT 1`,
                     [id_compte]
                 );
                 if (precedente.rowCount > 0) derniereConnexionPrecedente = precedente.rows[0];
             } catch (err) {
-                console.error('[POST /api/connexion/verifier-code] Erreur lecture historique_connexions :', err);
+                console.error('[POST /api/connexion/verifier-code] Erreur lecture historique_connexion :', err);
+            }
+
+            // Péremption (14/09/2026) -- même principe que Personnel/
+            // Partenaire, étendu à Client à la demande de Roger ("si c'est
+            // un compte utilisateur, cela devrait obéir au même principe"),
+            // mais n'expire jamais = TRUE par défaut pour Client (colonne
+            // ajoutée avec ce défaut inversé en migration -- la plupart des
+            // Clients ne seront donc jamais concernés, sauf activation
+            // explicite par un administrateur). Table de jetons différente
+            // de Personnel/Partenaire (site.jeton,
+            // pas de colonne type_compte -- Client uniquement).
+            const peremption = await verifierPeremptionMotDePasse({ pool, tableCompte: 'site.utilisateurs', colonneId: 'id_utilisateur', idCompte: id_compte, role: 'client' });
+            if (peremption.doitChanger) {
+                const token = crypto.randomBytes(32).toString('hex');
+                await pool.query(
+                    `INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'REINITIALISATION_MDP', 'client', $2)`,
+                    [token, id_compte]
+                );
+                return res.status(200).json({
+                    succes: true, doit_changer_mdp: true, motif: peremption.motif, token,
+                });
             }
 
             req.session.regenerate(async (err) => {
@@ -193,13 +216,13 @@ module.exports = function (pool) {
 
                 try {
                     const inseree = await pool.query(
-                        `INSERT INTO site.historique_connexions (type_compte, id_compte, adresse_ip)
-                         VALUES ('client', $1, $2) RETURNING id_historique`,
+                        `INSERT INTO site.historique_connexion (type_compte, id_compte, adresse_ip)
+                         VALUES ('client', $1, $2) RETURNING id_historique_connexion`,
                         [compte.id_utilisateur, req.ip]
                     );
-                    req.session.id_historique_connexion = inseree.rows[0].id_historique;
+                    req.session.id_historique_connexion = inseree.rows[0].id_historique_connexion;
                 } catch (err) {
-                    console.error('[POST /api/connexion/verifier-code] Erreur écriture historique_connexions :', err);
+                    console.error('[POST /api/connexion/verifier-code] Erreur écriture historique_connexion :', err);
                 }
 
                 const nomAffiche = [compte.prenom, compte.nom].filter(Boolean).join(' ') || compte.email;
@@ -218,7 +241,7 @@ module.exports = function (pool) {
                     })),
                 }).then((info) => {
                     pool.query(
-                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                        `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                          VALUES ($1, $2, $3, $4)`,
                         [info.messageId, compte.email, 'notification_connexion_client', String(compte.id_utilisateur)]
                     ).catch((err) => console.error('[POST /api/connexion/verifier-code] Erreur journalisation no-reply (ignorée) :', err));

@@ -123,7 +123,7 @@ async function lireEmail(user, pass, uid) {
 
 // Récupère UIDVALIDITY (dossier) et Message-ID (message) sans marquer le
 // message comme lu ni en modifier l'état -- utilisé uniquement par la
-// création de tâche (site.emails_cache), pas par l'affichage.
+// création de tâche (site.email_cache), pas par l'affichage.
 async function obtenirMetadonneesPourTache(user, pass, uid, dossier = 'INBOX') {
     const client = creerClient(user, pass);
     let resultat = null;

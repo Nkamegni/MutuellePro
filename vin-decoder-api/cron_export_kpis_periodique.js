@@ -73,8 +73,9 @@ async function executerExportPeriodique() {
     console.log(`[${new Date().toISOString()}] Export périodique des KPI -- démarrage`);
     try {
         const destinataires = await pool.query(
-            `SELECT email, TRIM(COALESCE(prenom, '') || ' ' || nom) AS nom FROM site.staff
-             WHERE code_role IN ('administrateur', 'superadmin') AND statut_compte = 'actif'`
+            `SELECT s.email, TRIM(COALESCE(s.prenom, '') || ' ' || s.nom) AS nom FROM site.staff s
+             JOIN site.role_staff r ON r.id_role = s.id_role
+             WHERE r.code_role IN ('administrateur', 'superadmin') AND s.statut_compte = 'actif'`
         );
         if (destinataires.rows.length === 0) {
             console.log('Aucun destinataire administrateur/superadmin actif -- export non envoyé.');
@@ -88,7 +89,7 @@ async function executerExportPeriodique() {
         // req simulé plutôt qu'une vraie requête HTTP (ce script n'en a
         // pas) : construireDonneesKpis lit req.query.periode et
         // req.session directement, même signature que la route HTTP.
-        // id_staff: null -> aucune ligne dans seuils_alerte_staff pour
+        // id_staff: null -> aucune ligne dans seuil_alerte_staff pour
         // cet id -> seuil par défaut (0j), cohérent avec une synthèse
         // globale non liée à un staff précis. code_role: 'administrateur'
         // -> la feuille Administration (tâches par responsable, prospects

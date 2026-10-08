@@ -5,7 +5,7 @@
 // Bascule en un clic (demande explicite de Roger, 21/08/2026) : crée le
 // compte Client à partir des données déjà connues du prospect, sans
 // ressaisie, et envoie un email de bienvenue réutilisant le mécanisme
-// EXISTANT de réinitialisation de mot de passe (site.reinitialisation_mdp_tokens
+// EXISTANT de réinitialisation de mot de passe (site.jeton
 // + reinitialisation.html) plutôt qu'un nouveau système parallèle.
 //
 // Les tables restent séparées (site.prospects / site.utilisateurs) —
@@ -99,7 +99,7 @@ module.exports = function (pool) {
             if (!compteReutilise) {
                 const token = crypto.randomBytes(32).toString('hex');
                 await client.query(
-                    'INSERT INTO site.reinitialisation_mdp_tokens (token, id_utilisateur) VALUES ($1, $2)',
+                    `INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'REINITIALISATION_MDP', 'client', $2)`,
                     [token, idUtilisateur]
                 );
 
@@ -120,7 +120,7 @@ module.exports = function (pool) {
                     // se résoudre après la libération de la connexion
                     // transactionnelle (COMMIT/release juste après ici).
                     pool.query(
-                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                        `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                          VALUES ($1, $2, $3, $4)`,
                         [info.messageId, prospect.email, 'bienvenue_promotion', String(idUtilisateur)]
                     ).catch((err) => console.error('[promouvoir-client] Erreur journalisation no-reply (ignorée) :', err));

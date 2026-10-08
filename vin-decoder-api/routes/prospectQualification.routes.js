@@ -14,7 +14,7 @@
 // Aucune nouvelle route de validation n'a donc été créée.
 //
 // Recherche : strictement interne (site.prospects, site.tickets déjà
-// lié, site.interactions_prospect, site.utilisateurs si déjà promu) --
+// lié, site.interaction_prospect, site.utilisateurs si déjà promu) --
 // jamais de recherche web, conformément à la loi camerounaise n°2024/017
 // (autorisation préalable requise pour tout transfert de données à
 // l'étranger).
@@ -62,7 +62,7 @@ module.exports = function (pool) {
                 ? pool.query('SELECT * FROM site.tickets WHERE id_ticket = $1', [prospect.id_ticket_origine])
                 : Promise.resolve({ rows: [] }),
             pool.query(
-                `SELECT type_interaction, contenu, date_interaction FROM site.interactions_prospect
+                `SELECT type_interaction, contenu, date_interaction FROM site.interaction_prospect
                  WHERE id_prospect = $1 ORDER BY date_interaction ASC`,
                 [idProspect]
             ),
@@ -186,9 +186,9 @@ ${JSON.stringify(anonymiserContexte(contexte), null, 2)}`;
             };
 
             const insere = await pool.query(
-                `INSERT INTO site.interactions_prospect (id_prospect, id_staff, type_interaction, contenu)
+                `INSERT INTO site.interaction_prospect (id_prospect, id_staff, type_interaction, contenu)
                  VALUES ($1, $2, 'qualification', $3::jsonb)
-                 RETURNING id_interaction, date_interaction`,
+                 RETURNING id_interaction_prospect, date_interaction`,
                 [idProspect, req.session.id_staff, JSON.stringify(contenuInteraction)]
             );
             await pool.query('UPDATE site.prospects SET date_maj = now() WHERE id_prospect = $1', [idProspect]);

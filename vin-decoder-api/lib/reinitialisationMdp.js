@@ -22,7 +22,7 @@ function motDePasseRobuste(mdp) {
 async function envoyerLienReinitialisation({ pool, mailTransporter, typeCompte, idCompte, email, nomComplet }) {
     const token = crypto.randomBytes(32).toString('hex');
     await pool.query(
-        'INSERT INTO site.tokens_reinitialisation_mdp (token, type_compte, id_compte) VALUES ($1, $2, $3)',
+        `INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'REINITIALISATION_MDP', $2, $3)`,
         [token, typeCompte, idCompte]
     );
 
@@ -41,7 +41,7 @@ async function envoyerLienReinitialisation({ pool, mailTransporter, typeCompte, 
     // recevoir son lien de réinitialisation.
     try {
         await pool.query(
-            `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+            `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
              VALUES ($1, $2, $3, $4)`,
             [infoEnvoi.messageId, email, `reinitialisation_mdp_${typeCompte}`, String(idCompte)]
         );
@@ -69,7 +69,7 @@ async function appliquerReinitialisation({ pool, typeCompte, token, motDePasse, 
         await client.query('BEGIN');
 
         const resultat = await client.query(
-            'SELECT id_compte, date_expiration FROM site.tokens_reinitialisation_mdp WHERE token = $1 AND type_compte = $2',
+            `SELECT id_compte, date_expiration FROM site.jeton WHERE token = $1 AND type_compte = $2 AND code_nature_jeton = 'REINITIALISATION_MDP'`,
             [token, typeCompte]
         );
         if (resultat.rowCount === 0) {
@@ -79,15 +79,23 @@ async function appliquerReinitialisation({ pool, typeCompte, token, motDePasse, 
 
         const { id_compte, date_expiration } = resultat.rows[0];
         if (new Date(date_expiration) < new Date()) {
-            await client.query('DELETE FROM site.tokens_reinitialisation_mdp WHERE token = $1', [token]);
+            await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
             await client.query('COMMIT');
             return { succes: false, statut: 410, erreurs: ['ce lien a expiré, merci de refaire une demande'] };
         }
 
         const hache = await argon2.hash(motDePasse, { type: argon2.argon2id });
-        await client.query(`UPDATE ${tableCompte} SET mot_de_passe_hache = $1 WHERE ${colonneId} = $2`, [hache, id_compte]);
+        // Péremption (14/09/2026) -- tout changement de mot de passe remet
+        // le compteur à zéro et lève l'obligation de changement forcé,
+        // quelle que soit la raison du changement (lien reçu par email,
+        // ou changement forcé après péremption -- ce même chemin de code
+        // sert les deux, voir routes/staffAuth.routes.js).
+        await client.query(
+            `UPDATE ${tableCompte} SET mot_de_passe_hache = $1, date_dernier_changement_mdp = now(), doit_changer_mot_de_passe = false WHERE ${colonneId} = $2`,
+            [hache, id_compte]
+        );
 
-        await client.query('DELETE FROM site.tokens_reinitialisation_mdp WHERE token = $1', [token]);
+        await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
 
         // Révocation de toutes les sessions actives -- chaque rôle a sa
         // propre table de session (trouvé le 03/09/2026 : site.session
@@ -108,4 +116,17 @@ async function appliquerReinitialisation({ pool, typeCompte, token, motDePasse, 
     }
 }
 
-module.exports = { envoyerLienReinitialisation, appliquerReinitialisation, motDePasseRobuste };
+// Péremption (14/09/2026) -- génère un jeton SANS envoyer d'email :
+// l'utilisateur vient de prouver son identité (mot de passe + code 2FA),
+// pas besoin de repasser par la boîte mail. Réutilise la même table et
+// le même appliquerReinitialisation() que le flux "mot de passe oublié".
+async function genererTokenChangementForce({ pool, typeCompte, idCompte }) {
+    const token = crypto.randomBytes(32).toString('hex');
+    await pool.query(
+        `INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'REINITIALISATION_MDP', $2, $3)`,
+        [token, typeCompte, idCompte]
+    );
+    return token;
+}
+
+module.exports = { envoyerLienReinitialisation, appliquerReinitialisation, motDePasseRobuste, genererTokenChangementForce };

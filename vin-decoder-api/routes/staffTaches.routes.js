@@ -63,13 +63,13 @@ module.exports = function (pool) {
                 let cacheExistant = null;
                 if (meta.messageId) {
                     cacheExistant = await client.query(
-                        'SELECT id_email_cache FROM site.emails_cache WHERE message_id_rfc = $1 AND id_staff = $2',
+                        'SELECT id_email_cache FROM site.email_cache WHERE message_id_rfc = $1 AND id_staff = $2',
                         [meta.messageId, req.session.id_staff]
                     );
                 }
                 if (!cacheExistant || cacheExistant.rowCount === 0) {
                     cacheExistant = await client.query(
-                        'SELECT id_email_cache FROM site.emails_cache WHERE id_staff = $1 AND dossier_imap = $2 AND uid_imap = $3',
+                        'SELECT id_email_cache FROM site.email_cache WHERE id_staff = $1 AND dossier_imap = $2 AND uid_imap = $3',
                         [req.session.id_staff, dossier, uid_imap]
                     );
                 }
@@ -78,7 +78,7 @@ module.exports = function (pool) {
                     idEmailCache = cacheExistant.rows[0].id_email_cache;
                 } else {
                     const insertionCache = await client.query(
-                        `INSERT INTO site.emails_cache (id_staff, dossier_imap, uid_imap, uidvalidity, message_id_rfc, derniere_synchro)
+                        `INSERT INTO site.email_cache (id_staff, dossier_imap, uid_imap, uidvalidity, message_id_rfc, derniere_synchro)
                          VALUES ($1, $2, $3, $4, $5, now()) RETURNING id_email_cache`,
                         [req.session.id_staff, dossier, uid_imap, meta.uidvalidity, meta.messageId]
                     );

@@ -57,7 +57,7 @@ module.exports = function (pool) {
             const token = crypto.randomBytes(32).toString('hex');
 
             await pool.query(
-                'INSERT INTO site.reinitialisation_mdp_tokens (token, id_utilisateur) VALUES ($1, $2)',
+                `INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'REINITIALISATION_MDP', 'client', $2)`,
                 [token, compte.id_utilisateur]
             );
 
@@ -73,7 +73,7 @@ module.exports = function (pool) {
                 `,
             }).then((info) => {
                 pool.query(
-                    `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                    `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                      VALUES ($1, $2, $3, $4)`,
                     [info.messageId, compte.email, 'reinitialisation_mdp_client', String(compte.id_utilisateur)]
                 ).catch((err) => console.error('[POST /api/mot-de-passe-oublie] Erreur journalisation no-reply (ignorée) :', err));
@@ -104,7 +104,7 @@ module.exports = function (pool) {
             await client.query('BEGIN');
 
             const resultat = await client.query(
-                'SELECT id_utilisateur, date_expiration FROM site.reinitialisation_mdp_tokens WHERE token = $1',
+                `SELECT id_compte AS id_utilisateur, date_expiration FROM site.jeton WHERE token = $1 AND code_nature_jeton = 'REINITIALISATION_MDP' AND type_compte = 'client'`,
                 [token]
             );
             if (resultat.rowCount === 0) {
@@ -114,16 +114,23 @@ module.exports = function (pool) {
 
             const { id_utilisateur, date_expiration } = resultat.rows[0];
             if (new Date(date_expiration) < new Date()) {
-                await client.query('DELETE FROM site.reinitialisation_mdp_tokens WHERE token = $1', [token]);
+                await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
                 await client.query('COMMIT');
                 return res.status(410).json({ succes: false, erreurs: ['ce lien a expiré, merci de refaire une demande'] });
             }
 
             const hache = await argon2.hash(mot_de_passe, { type: argon2.argon2id });
-            await client.query('UPDATE site.utilisateurs SET mot_de_passe_hache = $1 WHERE id_utilisateur = $2', [hache, id_utilisateur]);
+            // Péremption (14/09/2026) -- même discipline que Personnel/
+            // Partenaire (lib/reinitialisationMdp.js) : tout changement de
+            // mot de passe remet le compteur à zéro et lève l'obligation
+            // de changement forcé.
+            await client.query(
+                'UPDATE site.utilisateurs SET mot_de_passe_hache = $1, date_dernier_changement_mdp = now(), doit_changer_mot_de_passe = false WHERE id_utilisateur = $2',
+                [hache, id_utilisateur]
+            );
 
             // Jeton à usage unique — supprimé après utilisation.
-            await client.query('DELETE FROM site.reinitialisation_mdp_tokens WHERE token = $1', [token]);
+            await client.query('DELETE FROM site.jeton WHERE token = $1', [token]);
 
             // Révocation de toutes les sessions actives de ce compte — un
             // mot de passe compromis (raison probable d'une réinitialisation)

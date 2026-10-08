@@ -14,6 +14,7 @@
 // =====================================================================
 
 const express = require('express');
+const messageDemandeInitiale = require('../lib/demandeInitiale');
 const nodemailer = require('nodemailer');
 const requireStaffAuth = require('../middleware/requireStaffAuth');
 const requireStaffRole = require('../middleware/requireStaffRole');
@@ -51,7 +52,7 @@ async function notifierClientChangementStatut(pool, emailClient, codeTicket, nou
         });
         try {
             await pool.query(
-                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                  VALUES ($1, $2, $3, $4)`,
                 [infoEnvoi.messageId, emailClient, 'mise_a_jour_ticket', codeTicket]
             );
@@ -104,7 +105,7 @@ module.exports = function (pool) {
                     t.date_creation,
                     t.date_maj,
                     EXISTS(
-                        SELECT 1 FROM site.messages_dossier m
+                        SELECT 1 FROM site.message_dossier m
                         WHERE m.id_ticket = t.id_ticket AND m.type_auteur IN ('client', 'partenaire') AND m.lu_par_staff = false
                     ) AS a_message_non_lu
                  FROM site.tickets t
@@ -260,18 +261,18 @@ module.exports = function (pool) {
         if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
         try {
             const resultat = await pool.query(
-                `SELECT md.id_message, md.type_auteur, md.contenu, md.date_creation, md.visible_client, md.modifie, md.date_modification,
+                `SELECT md.id_message_dossier, md.type_auteur, md.contenu, md.date_creation, md.visible_client, md.modifie, md.date_modification,
                         md.lu_par_client, md.lu_par_staff, md.lu_par_partenaire,
                         md.date_lecture_client, md.date_lecture_staff, md.date_lecture_partenaire,
                         COALESCE(u.email, s.email, p.email) AS email_auteur
-                 FROM site.messages_dossier md
+                 FROM site.message_dossier md
                  LEFT JOIN site.utilisateurs u ON md.type_auteur = 'client' AND u.id_utilisateur = md.id_auteur
                  LEFT JOIN site.staff s ON md.type_auteur = 'staff' AND s.id_staff = md.id_auteur
                  LEFT JOIN site.partenaires p ON md.type_auteur = 'partenaire' AND p.id_partenaire = md.id_auteur
                  WHERE md.id_ticket = $1 ORDER BY md.date_creation ASC`,
                 [idTicket]
             );
-            return res.status(200).json({ succes: true, messages: resultat.rows });
+            return res.status(200).json({ succes: true, messages: [...(await messageDemandeInitiale(pool, idTicket)), ...resultat.rows] });
         } catch (err) {
             console.error('[GET /api/staff/tickets/:id/messages] Erreur :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
@@ -289,11 +290,11 @@ module.exports = function (pool) {
 
             const visibleClientFinal = visible_client !== false; // par défaut true (réponse au client)
             const resultat = await pool.query(
-                `INSERT INTO site.messages_dossier (id_ticket, type_auteur, id_auteur, contenu, visible_client)
-                 VALUES ($1, 'staff', $2, $3, $4) RETURNING id_message, date_creation`,
+                `INSERT INTO site.message_dossier (id_ticket, type_auteur, id_auteur, contenu, visible_client)
+                 VALUES ($1, 'staff', $2, $3, $4) RETURNING id_message_dossier, date_creation`,
                 [idTicket, req.session.id_staff, contenu.trim(), visibleClientFinal]
             );
-            const message = { id_message: resultat.rows[0].id_message, id_ticket: idTicket, type_auteur: 'staff', contenu: contenu.trim(), date_creation: resultat.rows[0].date_creation, visible_client: visibleClientFinal };
+            const message = { id_message_dossier: resultat.rows[0].id_message_dossier, id_ticket: idTicket, type_auteur: 'staff', contenu: contenu.trim(), date_creation: resultat.rows[0].date_creation, visible_client: visibleClientFinal };
 
             // Correctif de sécurité (16/09/2026, signalé par la session Git —
             // faille active en production) : une note interne ne doit
@@ -339,6 +340,19 @@ module.exports = function (pool) {
     // son propre message, jamais un autre. Émission socket ciblée comme
     // pour l'envoi (visible_client conditionne la diffusion, même
     // logique que le correctif de sécurité du 16/09).
+    router.patch('/tickets/:id/messages/lu', requireStaffAuth, async (req, res) => {
+        const idTicket = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        try {
+            await pool.query(`UPDATE site.message_dossier SET lu_par_staff = true, date_lecture_staff = COALESCE(date_lecture_staff, now()) WHERE id_ticket = $1 AND type_auteur IN ('client', 'partenaire')`, [idTicket]);
+            if (global.ioMessagerie) global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:lu', { par: 'staff' });
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[PATCH /api/staff/tickets/:id/messages/lu] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
+        }
+    });
+
     router.patch('/tickets/:id/messages/:idMessage', requireStaffAuth, async (req, res) => {
         const idTicket = parseInt(req.params.id, 10);
         const idMessage = parseInt(req.params.idMessage, 10);
@@ -352,7 +366,7 @@ module.exports = function (pool) {
         try {
             const existant = await pool.query(
                 `SELECT id_auteur, visible_client, date_lecture_client, date_lecture_staff, date_lecture_partenaire
-                 FROM site.messages_dossier WHERE id_message = $1 AND id_ticket = $2 AND type_auteur = 'staff'`,
+                 FROM site.message_dossier WHERE id_message_dossier = $1 AND id_ticket = $2 AND type_auteur = 'staff'`,
                 [idMessage, idTicket]
             );
             if (existant.rowCount === 0) {
@@ -368,11 +382,11 @@ module.exports = function (pool) {
                 return res.status(409).json({ succes: false, erreurs: ['ce message a déjà été lu depuis plus de 30 secondes, il ne peut plus être corrigé'] });
             }
             const resultat = await pool.query(
-                `UPDATE site.messages_dossier SET contenu = $1, modifie = true, date_modification = now()
-                 WHERE id_message = $2 RETURNING date_modification`,
+                `UPDATE site.message_dossier SET contenu = $1, modifie = true, date_modification = now()
+                 WHERE id_message_dossier = $2 RETURNING date_modification`,
                 [contenu.trim(), idMessage]
             );
-            const message = { id_message: idMessage, id_ticket: idTicket, contenu: contenu.trim(), date_modification: resultat.rows[0].date_modification };
+            const message = { id_message_dossier: idMessage, id_ticket: idTicket, contenu: contenu.trim(), date_modification: resultat.rows[0].date_modification };
 
             if (global.ioMessagerie) {
                 if (existant.rows[0].visible_client) {
@@ -394,25 +408,13 @@ module.exports = function (pool) {
         }
     });
 
-    router.patch('/tickets/:id/messages/lu', requireStaffAuth, async (req, res) => {
-        const idTicket = parseInt(req.params.id, 10);
-        if (!Number.isInteger(idTicket)) return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
-        try {
-            await pool.query(`UPDATE site.messages_dossier SET lu_par_staff = true, date_lecture_staff = COALESCE(date_lecture_staff, now()) WHERE id_ticket = $1 AND type_auteur IN ('client', 'partenaire')`, [idTicket]);
-            if (global.ioMessagerie) global.ioMessagerie.to(`ticket:${idTicket}`).emit('message:lu', { par: 'staff' });
-            return res.status(200).json({ succes: true });
-        } catch (err) {
-            console.error('[PATCH /api/staff/tickets/:id/messages/lu] Erreur :', err);
-            return res.status(500).json({ succes: false, erreurs: ['erreur serveur'] });
-        }
-    });
 
     // Non filtré par assignation (comptage total, pas par agent) --
     // cohérent avec GET /tickets déjà ouvert à tout staff sans distinction.
     router.get('/messages-clients-non-lus', requireStaffAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT COUNT(*)::int AS total FROM site.messages_dossier
+                `SELECT COUNT(*)::int AS total FROM site.message_dossier
                  WHERE type_auteur IN ('client', 'partenaire') AND lu_par_staff = false`
             );
             return res.status(200).json({ succes: true, total: resultat.rows[0].total });

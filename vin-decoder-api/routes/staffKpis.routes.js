@@ -20,7 +20,7 @@
 //
 // Catégorie 2 / item priorisé n°1 (04/09/2026) :
 //   - taches_en_retard respecte désormais le seuil personnalisé du staff
-//     (site.seuils_alerte_staff, code 'tache_retard_jours'), configurable
+//     (site.seuil_alerte_staff, code 'tache_retard_jours'), configurable
 //     via GET/POST /api/staff/seuils-alerte. Sans ligne en base pour ce
 //     staff, comportement strictement inchangé (0 jour de marge).
 //     seuil_retard_jours_applique exposé dans la réponse pour affichage.
@@ -29,7 +29,7 @@
 //   - evolution_tickets_non_assignes / evolution_taches_en_attente /
 //     evolution_taches_en_retard / evolution_clients_actifs /
 //     evolution_partenaires_actifs : comparaison vs le dernier snapshot
-//     disponible (site.snapshot_kpis_quotidien, alimenté par
+//     disponible (site.snapshot_kpi_quotidien, alimenté par
 //     cron_snapshot_kpis_quotidien.js). Lecture protégée séparément du
 //     reste du endpoint : si la table n'existe pas encore (migration pas
 //     déployée) ou si aucun snapshot n'a encore été pris, ces 5 champs
@@ -98,7 +98,7 @@ const MAPPING_COMPARATIF = {
 // silencieusement au-delà de cette fenêtre.
 async function snapshotProcheDe(pool, dateFin) {
     const resultat = await pool.query(
-        `SELECT * FROM site.snapshot_kpis_quotidien
+        `SELECT * FROM site.snapshot_kpi_quotidien
          WHERE date_snapshot <= $1 AND date_snapshot >= $1::date - interval '3 days'
          ORDER BY date_snapshot DESC LIMIT 1`,
         [dateFin]
@@ -136,7 +136,7 @@ async function construireDonneesKpis(pool, req) {
     // Absence de ligne = comportement historique inchangé (0 jour
     // de marge, soit date_echeance < now() strictement).
     const seuilRetard = await pool.query(
-        `SELECT valeur FROM site.seuils_alerte_staff WHERE id_staff = $1 AND code_seuil = 'tache_retard_jours'`,
+        `SELECT valeur FROM site.seuil_alerte_staff WHERE id_staff = $1 AND code_seuil = 'tache_retard_jours'`,
         [req.session.id_staff]
     );
     const joursMargeRetard = seuilRetard.rows[0] ? seuilRetard.rows[0].valeur : 0;
@@ -243,7 +243,7 @@ async function construireDonneesKpis(pool, req) {
     };
     try {
         const dernierSnapshot = await pool.query(
-            `SELECT * FROM site.snapshot_kpis_quotidien ORDER BY date_snapshot DESC LIMIT 1`
+            `SELECT * FROM site.snapshot_kpi_quotidien ORDER BY date_snapshot DESC LIMIT 1`
         );
         if (dernierSnapshot.rowCount > 0) {
             const s = dernierSnapshot.rows[0];

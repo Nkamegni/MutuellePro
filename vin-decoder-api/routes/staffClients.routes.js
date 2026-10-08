@@ -17,7 +17,8 @@ module.exports = function (pool) {
     router.get('/clients', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT id_utilisateur, email, telephone, nom, prenom, statut_compte, email_verifie, telephone_verifie, date_creation, date_derniere_connexion
+                `SELECT id_utilisateur, email, telephone, nom, prenom, statut_compte, email_verifie, telephone_verifie, date_creation, date_derniere_connexion,
+                        mot_de_passe_n_expire_jamais, doit_changer_mot_de_passe
                  FROM site.utilisateurs
                  ORDER BY date_creation DESC
                  LIMIT 500`
@@ -31,15 +32,28 @@ module.exports = function (pool) {
 
     router.patch('/clients/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idUtilisateur = parseInt(req.params.id, 10);
-        const { statut_compte } = req.body;
+        const { statut_compte, mot_de_passe_n_expire_jamais, doit_changer_mot_de_passe } = req.body;
         if (!Number.isInteger(idUtilisateur)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
         }
-        if (!['actif', 'suspendu'].includes(statut_compte)) {
+        if (statut_compte !== undefined && !['actif', 'suspendu'].includes(statut_compte)) {
             return res.status(400).json({ succes: false, erreurs: ['statut_compte invalide'] });
         }
         try {
-            const resultat = await pool.query('UPDATE site.utilisateurs SET statut_compte = $1 WHERE id_utilisateur = $2 RETURNING id_utilisateur', [statut_compte, idUtilisateur]);
+            const resultat = await pool.query(
+                `UPDATE site.utilisateurs
+                 SET statut_compte = COALESCE($1, statut_compte),
+                     mot_de_passe_n_expire_jamais = COALESCE($2, mot_de_passe_n_expire_jamais),
+                     doit_changer_mot_de_passe = COALESCE($3, doit_changer_mot_de_passe)
+                 WHERE id_utilisateur = $4
+                 RETURNING id_utilisateur`,
+                [
+                    statut_compte || null,
+                    typeof mot_de_passe_n_expire_jamais === 'boolean' ? mot_de_passe_n_expire_jamais : null,
+                    typeof doit_changer_mot_de_passe === 'boolean' ? doit_changer_mot_de_passe : null,
+                    idUtilisateur,
+                ]
+            );
             if (resultat.rowCount === 0) {
                 return res.status(404).json({ succes: false, erreurs: ['client introuvable'] });
             }

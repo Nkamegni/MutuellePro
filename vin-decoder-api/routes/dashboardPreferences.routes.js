@@ -71,7 +71,7 @@ module.exports = function (pool, config) {
     router.get('/dashboard-preferences', config.middleware, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT nom_vue, disposition, est_active FROM site.preferences_dashboard
+                `SELECT nom_vue, disposition, est_active FROM site.preference_dashboard
                  WHERE type_compte = $1 AND id_compte = $2 ORDER BY nom_vue`,
                 [config.typeCompte, req.session[config.champSessionId]]
             );
@@ -102,15 +102,15 @@ module.exports = function (pool, config) {
             let nomVueCible = nom_vue;
             if (!nomVueCible) {
                 const actuelle = await pool.query(
-                    `SELECT nom_vue FROM site.preferences_dashboard WHERE type_compte = $1 AND id_compte = $2 AND est_active = true`,
+                    `SELECT nom_vue FROM site.preference_dashboard WHERE type_compte = $1 AND id_compte = $2 AND est_active = true`,
                     [config.typeCompte, idCompte]
                 );
                 nomVueCible = actuelle.rows[0] ? actuelle.rows[0].nom_vue : 'Défaut';
             }
             await pool.query(
-                `INSERT INTO site.preferences_dashboard (type_compte, id_compte, nom_vue, disposition, est_active)
+                `INSERT INTO site.preference_dashboard (type_compte, id_compte, nom_vue, disposition, est_active)
                  VALUES ($1::varchar, $2::int, $3, $4::jsonb, NOT EXISTS (
-                     SELECT 1 FROM site.preferences_dashboard WHERE type_compte = $1::varchar AND id_compte = $2::int
+                     SELECT 1 FROM site.preference_dashboard WHERE type_compte = $1::varchar AND id_compte = $2::int
                  ))
                  ON CONFLICT (type_compte, id_compte, nom_vue) DO UPDATE SET disposition = $4::jsonb, date_maj = now()`,
                 [config.typeCompte, idCompte, nomVueCible, JSON.stringify(disposition)]
@@ -132,11 +132,11 @@ module.exports = function (pool, config) {
         try {
             await client.query('BEGIN');
             await client.query(
-                `UPDATE site.preferences_dashboard SET est_active = false WHERE type_compte = $1 AND id_compte = $2`,
+                `UPDATE site.preference_dashboard SET est_active = false WHERE type_compte = $1 AND id_compte = $2`,
                 [config.typeCompte, idCompte]
             );
             const resultat = await client.query(
-                `UPDATE site.preferences_dashboard SET est_active = true
+                `UPDATE site.preference_dashboard SET est_active = true
                  WHERE type_compte = $1 AND id_compte = $2 AND nom_vue = $3 RETURNING nom_vue`,
                 [config.typeCompte, idCompte, nom_vue]
             );
@@ -163,14 +163,14 @@ module.exports = function (pool, config) {
         const idCompte = req.session[config.champSessionId];
         try {
             const compte = await pool.query(
-                `SELECT COUNT(*)::int AS total FROM site.preferences_dashboard WHERE type_compte = $1 AND id_compte = $2`,
+                `SELECT COUNT(*)::int AS total FROM site.preference_dashboard WHERE type_compte = $1 AND id_compte = $2`,
                 [config.typeCompte, idCompte]
             );
             if (compte.rows[0].total <= 1) {
                 return res.status(400).json({ succes: false, erreurs: ['impossible de supprimer la dernière vue restante'] });
             }
             const resultat = await pool.query(
-                `DELETE FROM site.preferences_dashboard WHERE type_compte = $1 AND id_compte = $2 AND nom_vue = $3 RETURNING est_active`,
+                `DELETE FROM site.preference_dashboard WHERE type_compte = $1 AND id_compte = $2 AND nom_vue = $3 RETURNING est_active`,
                 [config.typeCompte, idCompte, nomVue]
             );
             if (resultat.rowCount === 0) {
@@ -178,9 +178,9 @@ module.exports = function (pool, config) {
             }
             if (resultat.rows[0].est_active) {
                 await pool.query(
-                    `UPDATE site.preferences_dashboard SET est_active = true
+                    `UPDATE site.preference_dashboard SET est_active = true
                      WHERE type_compte = $1::varchar AND id_compte = $2::int AND nom_vue = (
-                         SELECT nom_vue FROM site.preferences_dashboard WHERE type_compte = $1::varchar AND id_compte = $2::int ORDER BY nom_vue LIMIT 1
+                         SELECT nom_vue FROM site.preference_dashboard WHERE type_compte = $1::varchar AND id_compte = $2::int ORDER BY nom_vue LIMIT 1
                      )`,
                     [config.typeCompte, idCompte]
                 );

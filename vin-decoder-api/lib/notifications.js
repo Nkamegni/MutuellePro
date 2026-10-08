@@ -3,7 +3,7 @@
 // La coordination avec la session Messagerie n'a jamais abouti à du code
 // (confirmé absent le 15/09) -- construit ici en autonome, réutilise le
 // patron nodemailer déjà en place partout ailleurs dans ce projet, et la
-// table de journalisation déjà existante (site.no_reply_messages_envoyes).
+// table de journalisation déjà existante (site.no_reply_message_envoye).
 // =====================================================================
 
 const nodemailer = require('nodemailer');
@@ -40,7 +40,7 @@ async function envoyerNotificationExterne(pool, { destinataireEmail, destinatair
         });
         try {
             await pool.query(
-                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                  VALUES ($1, $2, $3, $4)`,
                 [infoEnvoi.messageId, destinataireEmail, typeEvenement, contexte.codeTicket]
             );

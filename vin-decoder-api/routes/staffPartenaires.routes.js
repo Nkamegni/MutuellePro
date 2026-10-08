@@ -12,7 +12,8 @@ const requireStaffAuth = require('../middleware/requireStaffAuth');
 const requireStaffRole = require('../middleware/requireStaffRole');
 const { gabaritEmail, corpsActivation } = require('../lib/gabaritEmail');
 const { chiffrer } = require('../lib/chiffrement');
-const { creerBoiteMail } = require('../lib/ispconfig');
+const { creerBoiteMail, modifierMotDePasseBoiteMail } = require('../lib/ispconfig');
+const { envoyerLienReinitialisationBoiteMail } = require('../lib/reinitialisationBoiteMail');
 
 const ROLES_ECRITURE = ['gestionnaire', 'administrateur', 'superadmin'];
 
@@ -37,7 +38,7 @@ async function envoyerEmailActivationPartenaire(pool, idPartenaire, emailNotific
         // l'envoi lui-même.
         try {
             await pool.query(
-                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                  VALUES ($1, $2, $3, $4)`,
                 [infoEnvoi.messageId, emailNotification, 'activation_compte_partenaire', String(idPartenaire)]
             );
@@ -72,18 +73,18 @@ async function creerPartenaireEtActiver(client, { email, email_notification, nom
     const partenaire = inserePartenaire.rows[0];
 
     for (const idType of id_types_partenaire) {
-        await client.query('INSERT INTO site.partenaire_types (id_partenaire, id_type_partenaire) VALUES ($1, $2)', [partenaire.id_partenaire, idType]);
+        await client.query('INSERT INTO site.partenaire_type (id_partenaire, id_type_partenaire) VALUES ($1, $2)', [partenaire.id_partenaire, idType]);
     }
 
     for (const contact of contacts) {
         await client.query(
-            'INSERT INTO site.partenaire_contacts (id_partenaire, nom, prenom, fonction, telephone, est_defaut) VALUES ($1, $2, $3, $4, $5, $6)',
+            'INSERT INTO site.partenaire_contact (id_partenaire, nom, prenom, fonction, telephone, est_defaut) VALUES ($1, $2, $3, $4, $5, $6)',
             [partenaire.id_partenaire, contact.nom, contact.prenom || null, contact.fonction || null, contact.telephone || null, !!contact.est_defaut]
         );
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    await client.query('INSERT INTO site.activation_partenaire_tokens (token, id_partenaire) VALUES ($1, $2)', [token, partenaire.id_partenaire]);
+    await client.query(`INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'ACTIVATION', 'partenaire', $2)`, [token, partenaire.id_partenaire]);
 
     return { partenaire, token };
 }
@@ -96,9 +97,9 @@ async function renvoyerActivation(pool, idPartenaire) {
     if (infos.rows[0].mot_de_passe_defini) return { succes: false, erreur: 'ce compte est déjà activé' };
     if (!infos.rows[0].email_notification) return { succes: false, erreur: 'aucune adresse de notification enregistrée pour ce partenaire' };
 
-    await pool.query('DELETE FROM site.activation_partenaire_tokens WHERE id_partenaire = $1', [idPartenaire]);
+    await pool.query(`DELETE FROM site.jeton WHERE code_nature_jeton = 'ACTIVATION' AND type_compte = 'partenaire' AND id_compte = $1`, [idPartenaire]);
     const token = crypto.randomBytes(32).toString('hex');
-    await pool.query('INSERT INTO site.activation_partenaire_tokens (token, id_partenaire) VALUES ($1, $2)', [token, idPartenaire]);
+    await pool.query(`INSERT INTO site.jeton (token, code_nature_jeton, type_compte, id_compte) VALUES ($1, 'ACTIVATION', 'partenaire', $2)`, [token, idPartenaire]);
     const nomAffiche = infos.rows[0].prenom ? `${infos.rows[0].prenom} ${infos.rows[0].nom}` : infos.rows[0].nom;
     await envoyerEmailActivationPartenaire(pool, idPartenaire, infos.rows[0].email_notification, nomAffiche, token);
     return { succes: true };
@@ -112,7 +113,7 @@ module.exports = function (pool) {
             const resultat = await pool.query(
                 `SELECT tp.id_type_partenaire, tp.code, tp.libelle_fr, cp.libelle_fr AS categorie_libelle_fr, cp.code_lettre
                  FROM site.type_partenaire tp
-                 JOIN site.categorie_partenaire cp ON cp.id_categorie = tp.id_categorie
+                 JOIN site.categorie_partenaire cp ON cp.id_categorie_partenaire = tp.id_categorie_partenaire
                  ORDER BY cp.code_lettre, tp.code`
             );
             return res.status(200).json({ succes: true, types: resultat.rows });
@@ -211,17 +212,18 @@ module.exports = function (pool) {
         try {
             const resultat = await pool.query(
                 `SELECT p.id_partenaire, p.matricule, p.nom, p.prenom, p.email, p.email_notification, p.telephone, p.statut_compte, p.mot_de_passe_defini,
+                        p.mot_de_passe_n_expire_jamais, p.doit_changer_mot_de_passe,
                         (p.imap_mot_de_passe_chiffre IS NOT NULL) AS boite_mail_configuree,
                         COALESCE(array_agg(DISTINCT pt.id_type_partenaire) FILTER (WHERE pt.id_type_partenaire IS NOT NULL), '{}') AS id_types_partenaire,
                         COALESCE(string_agg(DISTINCT tp.code || ' ' || tp.libelle_fr, ', ' ORDER BY tp.code || ' ' || tp.libelle_fr), '') AS types_libelles,
                         COALESCE(
-                            json_agg(DISTINCT jsonb_build_object('id_contact', pc.id_contact, 'nom', pc.nom, 'prenom', pc.prenom, 'fonction', pc.fonction, 'telephone', pc.telephone, 'est_defaut', pc.est_defaut))
-                            FILTER (WHERE pc.id_contact IS NOT NULL), '[]'
+                            json_agg(DISTINCT jsonb_build_object('id_partenaire_contact', pc.id_partenaire_contact, 'nom', pc.nom, 'prenom', pc.prenom, 'fonction', pc.fonction, 'telephone', pc.telephone, 'est_defaut', pc.est_defaut))
+                            FILTER (WHERE pc.id_partenaire_contact IS NOT NULL), '[]'
                         ) AS contacts
                  FROM site.partenaires p
-                 LEFT JOIN site.partenaire_types pt ON pt.id_partenaire = p.id_partenaire
+                 LEFT JOIN site.partenaire_type pt ON pt.id_partenaire = p.id_partenaire
                  LEFT JOIN site.type_partenaire tp ON tp.id_type_partenaire = pt.id_type_partenaire
-                 LEFT JOIN site.partenaire_contacts pc ON pc.id_partenaire = p.id_partenaire
+                 LEFT JOIN site.partenaire_contact pc ON pc.id_partenaire = p.id_partenaire
                  GROUP BY p.id_partenaire
                  ORDER BY p.nom, p.prenom`
             );
@@ -234,7 +236,7 @@ module.exports = function (pool) {
 
     router.patch('/partenaires/:id', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
-        const { nom, prenom, telephone, email_notification, id_types_partenaire, contacts, statut_compte } = req.body;
+        const { nom, prenom, telephone, email_notification, id_types_partenaire, contacts, statut_compte, mot_de_passe_n_expire_jamais, doit_changer_mot_de_passe } = req.body;
 
         if (!Number.isInteger(idPartenaire)) {
             return res.status(400).json({ succes: false, erreurs: ['id de partenaire invalide'] });
@@ -264,23 +266,30 @@ module.exports = function (pool) {
                      prenom = COALESCE($2, prenom),
                      telephone = COALESCE($3, telephone),
                      email_notification = COALESCE($4, email_notification),
-                     statut_compte = COALESCE($5, statut_compte)
-                 WHERE id_partenaire = $6`,
-                [nom || null, prenom || null, telephone || null, email_notification || null, statut_compte || null, idPartenaire]
+                     statut_compte = COALESCE($5, statut_compte),
+                     mot_de_passe_n_expire_jamais = COALESCE($6, mot_de_passe_n_expire_jamais),
+                     doit_changer_mot_de_passe = COALESCE($7, doit_changer_mot_de_passe)
+                 WHERE id_partenaire = $8`,
+                [
+                    nom || null, prenom || null, telephone || null, email_notification || null, statut_compte || null,
+                    typeof mot_de_passe_n_expire_jamais === 'boolean' ? mot_de_passe_n_expire_jamais : null,
+                    typeof doit_changer_mot_de_passe === 'boolean' ? doit_changer_mot_de_passe : null,
+                    idPartenaire,
+                ]
             );
 
             if (Array.isArray(id_types_partenaire) && id_types_partenaire.length > 0) {
-                await client.query('DELETE FROM site.partenaire_types WHERE id_partenaire = $1', [idPartenaire]);
+                await client.query('DELETE FROM site.partenaire_type WHERE id_partenaire = $1', [idPartenaire]);
                 for (const idType of id_types_partenaire) {
-                    await client.query('INSERT INTO site.partenaire_types (id_partenaire, id_type_partenaire) VALUES ($1, $2)', [idPartenaire, idType]);
+                    await client.query('INSERT INTO site.partenaire_type (id_partenaire, id_type_partenaire) VALUES ($1, $2)', [idPartenaire, idType]);
                 }
             }
 
             if (Array.isArray(contacts) && contacts.length > 0) {
-                await client.query('DELETE FROM site.partenaire_contacts WHERE id_partenaire = $1', [idPartenaire]);
+                await client.query('DELETE FROM site.partenaire_contact WHERE id_partenaire = $1', [idPartenaire]);
                 for (const contact of contacts) {
                     await client.query(
-                        'INSERT INTO site.partenaire_contacts (id_partenaire, nom, prenom, fonction, telephone, est_defaut) VALUES ($1, $2, $3, $4, $5, $6)',
+                        'INSERT INTO site.partenaire_contact (id_partenaire, nom, prenom, fonction, telephone, est_defaut) VALUES ($1, $2, $3, $4, $5, $6)',
                         [idPartenaire, contact.nom, contact.prenom || null, contact.fonction || null, contact.telephone || null, !!contact.est_defaut]
                     );
                 }
@@ -392,9 +401,40 @@ module.exports = function (pool) {
     // sans jamais créer la boîte côté serveur mail.
     router.post('/partenaires/:id/provisionner-boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
+        const { nouveau_mot_de_passe } = req.body || {};
         if (!Number.isInteger(idPartenaire)) {
             return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
         }
+        // Option 3 (14/09/2026) -- même motif que Personnel, voir le
+        // commentaire complet dans staffPersonnel.routes.js.
+        if (nouveau_mot_de_passe !== undefined && nouveau_mot_de_passe !== null && nouveau_mot_de_passe !== '') {
+            if (String(nouveau_mot_de_passe).length < 8) {
+                return res.status(400).json({ succes: false, erreurs: ['le mot de passe doit contenir au moins 8 caractères'] });
+            }
+            try {
+                const compte = await pool.query('SELECT email, nom, prenom FROM site.partenaires WHERE id_partenaire = $1', [idPartenaire]);
+                if (compte.rowCount === 0) {
+                    return res.status(404).json({ succes: false, erreurs: ['partenaire introuvable'] });
+                }
+                const { email, nom, prenom } = compte.rows[0];
+                const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
+                try {
+                    await modifierMotDePasseBoiteMail({ email, motDePasse: nouveau_mot_de_passe });
+                } catch (err) {
+                    if (/Aucune boîte mail trouvée/i.test(err.message || '')) {
+                        await creerBoiteMail({ email, motDePasse: nouveau_mot_de_passe, nomAffiche });
+                    } else {
+                        throw err;
+                    }
+                }
+                await pool.query('UPDATE site.partenaires SET imap_mot_de_passe_chiffre = $1 WHERE id_partenaire = $2', [chiffrer(nouveau_mot_de_passe), idPartenaire]);
+                return res.status(200).json({ succes: true });
+            } catch (err) {
+                console.error('[POST /api/staff/partenaires/:id/provisionner-boite-mail] Erreur (mot de passe fourni) :', err);
+                return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
+            }
+        }
+
         try {
             const compte = await pool.query('SELECT email, nom, prenom, imap_mot_de_passe_chiffre FROM site.partenaires WHERE id_partenaire = $1', [idPartenaire]);
             if (compte.rowCount === 0) {
@@ -417,6 +457,32 @@ module.exports = function (pool) {
             return res.status(200).json({ succes: true });
         } catch (err) {
             console.error('[POST /api/staff/partenaires/:id/provisionner-boite-mail] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
+        }
+    });
+
+    // Option 2 (14/09/2026) -- voir même commentaire dans staffPersonnel.routes.js.
+    // Envoie à email_notification (adresse externe du partenaire), jamais
+    // à la boîte mail interne elle-même -- même raison que pour Personnel.
+    router.post('/partenaires/:id/envoyer-reinitialisation-boite-mail', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        const idPartenaire = parseInt(req.params.id, 10);
+        if (!Number.isInteger(idPartenaire)) {
+            return res.status(400).json({ succes: false, erreurs: ['id invalide'] });
+        }
+        try {
+            const compte = await pool.query('SELECT email, email_notification, nom, prenom FROM site.partenaires WHERE id_partenaire = $1', [idPartenaire]);
+            if (compte.rowCount === 0) {
+                return res.status(404).json({ succes: false, erreurs: ['partenaire introuvable'] });
+            }
+            const { email, email_notification, nom, prenom } = compte.rows[0];
+            const nomComplet = prenom ? `${prenom} ${nom}` : nom;
+            await envoyerLienReinitialisationBoiteMail({
+                pool, mailTransporter, typeCompte: 'partenaire', idCompte: idPartenaire,
+                email: email_notification || email, nomComplet,
+            });
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/staff/partenaires/:id/envoyer-reinitialisation-boite-mail] Erreur :', err);
             return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur'] });
         }
     });
@@ -447,10 +513,171 @@ module.exports = function (pool) {
         }
     });
 
+    // -------------------------------------------------------------
+    // Import CSV v3 (03/09/2026, nom_complet éliminé) :
+    //
+    //   nom;prenom;email;email_notification;telephone;codes_types;contacts
+    //
+    // codes_types : codes (ex: A01) séparés par virgule et/ou plage avec
+    // tiret (ex: "E03-E04,E08,E09").
+    // contacts : un ou plusieurs blocs {nom;prenom;fonction;telephone},
+    // séparés par point-virgule ENTRE blocs, le contact par défaut porte
+    // un "*" juste après son accolade fermante. Exemple :
+    //   {Nkamegni Noupeu;Roger;CEO;+237697717334}*;{Assistant;Jean;Support;+237698888888}
+    // -------------------------------------------------------------
+    function parserLigneCsv(ligne) {
+        const champs = [];
+        let champActuel = '';
+        let dansGuillemets = false;
+        for (let i = 0; i < ligne.length; i++) {
+            const car = ligne[i];
+            if (car === '"') {
+                if (dansGuillemets && ligne[i + 1] === '"') { champActuel += '"'; i++; }
+                else dansGuillemets = !dansGuillemets;
+            } else if (car === ';' && !dansGuillemets) {
+                champs.push(champActuel.trim());
+                champActuel = '';
+            } else {
+                champActuel += car;
+            }
+        }
+        champs.push(champActuel.trim());
+        return champs;
+    }
+
+    // "E03-E04,E08,E09" -> ['E03','E04','E08','E09']
+    function developperCodesTypes(specification) {
+        const codes = new Set();
+        const morceaux = specification.split(',').map((m) => m.trim()).filter(Boolean);
+        for (const morceau of morceaux) {
+            if (morceau.includes('-')) {
+                const [debut, fin] = morceau.split('-').map((c) => c.trim().toUpperCase());
+                const lettre = debut.charAt(0);
+                const numDebut = parseInt(debut.slice(1), 10);
+                const numFin = parseInt(fin.slice(1), 10);
+                if (fin.charAt(0) !== lettre || isNaN(numDebut) || isNaN(numFin) || numFin < numDebut) {
+                    throw new Error(`plage invalide « ${morceau} »`);
+                }
+                for (let n = numDebut; n <= numFin; n++) {
+                    codes.add(lettre + String(n).padStart(2, '0'));
+                }
+            } else {
+                codes.add(morceau.toUpperCase());
+            }
+        }
+        return Array.from(codes);
+    }
+
+    // "{Nom;Prenom;Fonction;Tel}*;{Nom2;Prenom2;Fonction2;Tel2}" -> [{...,est_defaut:true}, {...}]
+    function parserContacts(specification) {
+        const contacts = [];
+        const regex = /\{([^}]*)\}(\*)?/g;
+        let correspondance;
+        while ((correspondance = regex.exec(specification)) !== null) {
+            const [nom, prenom, fonction, telephone] = correspondance[1].split(';').map((c) => c.trim());
+            contacts.push({ nom, prenom, fonction, telephone, est_defaut: !!correspondance[2] });
+        }
+        return contacts;
+    }
+
+    router.post('/partenaires/import', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
+        const { contenu_csv } = req.body;
+        if (!contenu_csv || typeof contenu_csv !== 'string') {
+            return res.status(400).json({ succes: false, erreurs: ['contenu_csv requis'] });
+        }
+
+        const lignes = contenu_csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lignes.length < 2) {
+            return res.status(400).json({ succes: false, erreurs: ['fichier vide ou sans données'] });
+        }
+
+        const enteteAttendue = ['nom', 'prenom', 'email', 'email_notification', 'telephone', 'codes_types', 'contacts'];
+        const entete = parserLigneCsv(lignes[0]).map((c) => c.toLowerCase());
+        if (JSON.stringify(entete) !== JSON.stringify(enteteAttendue)) {
+            return res.status(400).json({ succes: false, erreurs: [`en-tête invalide — attendu : ${enteteAttendue.join(';')}`] });
+        }
+
+        const typesRef = await pool.query('SELECT id_type_partenaire, code FROM site.type_partenaire');
+        const typeParCode = new Map(typesRef.rows.map((t) => [t.code, t.id_type_partenaire]));
+
+        const resultats = { crees: [], erreurs: [] };
+
+        for (let i = 1; i < lignes.length; i++) {
+            const numeroLigne = i + 1;
+            const champs = parserLigneCsv(lignes[i]);
+            const [nom, prenom, email, email_notification, telephone, codesTypesStr, contactsStr] = champs;
+
+            if (!nom || !email || !email_notification || !codesTypesStr || !contactsStr) {
+                resultats.erreurs.push(`Ligne ${numeroLigne} : nom, email, email_notification, codes_types et contacts sont obligatoires`);
+                continue;
+            }
+
+            let codesTypes, contacts;
+            try {
+                codesTypes = developperCodesTypes(codesTypesStr);
+                contacts = parserContacts(contactsStr);
+            } catch (err) {
+                resultats.erreurs.push(`Ligne ${numeroLigne} : ${err.message}`);
+                continue;
+            }
+
+            if (contacts.length === 0 || !contacts.some((c) => c.est_defaut)) {
+                resultats.erreurs.push(`Ligne ${numeroLigne} : un contact par défaut doit être désigné (voir le « * »)`);
+                continue;
+            }
+
+            const idsTypes = [];
+            let codeInconnu = null;
+            for (const code of codesTypes) {
+                const id = typeParCode.get(code);
+                if (!id) { codeInconnu = code; break; }
+                idsTypes.push(id);
+            }
+            if (codeInconnu) {
+                resultats.erreurs.push(`Ligne ${numeroLigne} : code de type inconnu « ${codeInconnu} »`);
+                continue;
+            }
+
+            const nomAffiche = prenom ? `${prenom} ${nom}` : nom;
+
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const { partenaire, token } = await creerPartenaireEtActiver(client, {
+                    email, email_notification, nom, prenom: prenom || null, telephone, id_types_partenaire: idsTypes, contacts
+                });
+                await client.query('COMMIT');
+
+                envoyerEmailActivationPartenaire(pool, partenaire.id_partenaire, email_notification, nomAffiche, token);
+                resultats.crees.push({ email, nom: nomAffiche });
+            } catch (err) {
+                await client.query('ROLLBACK');
+                if (err.code === '23505') {
+                    resultats.erreurs.push(`Ligne ${numeroLigne} : un partenaire existe déjà avec l'email ${email}`);
+                } else {
+                    console.error(`[POST /api/staff/partenaires/import] Erreur ligne ${numeroLigne} :`, err);
+                    resultats.erreurs.push(`Ligne ${numeroLigne} : erreur serveur`);
+                }
+            } finally {
+                client.release();
+            }
+        }
+
+        if (resultats.crees.length > 0) {
+            await pool.query(
+                `INSERT INTO site.journal_audit (id_staff, action, table_concernee, donnees_apres, adresse_ip)
+                 VALUES ($1, 'partenaire.import_csv', 'partenaires', $2::jsonb, $3)`,
+                [req.session.id_staff, JSON.stringify({ nombre_crees: resultats.crees.length }), req.ip]
+            );
+        }
+
+        return res.status(200).json({ succes: true, ...resultats });
+    });
+
     // Renvoi du lien d'activation, à l'initiative du staff — utilisé par
     // l'action groupée "Renvoyer le lien d'activation" sur les comptes
     // "En attente d'activation".
-    router.post('/partenaires/:id/renvoyer-activation', requireStaffAuth, requireStaffRole(['administrateur']), async (req, res) => {
+    router.post('/partenaires/:id/renvoyer-activation', requireStaffAuth, requireStaffRole(['administrateur', 'superadmin']), async (req, res) => {
         const idPartenaire = parseInt(req.params.id, 10);
         if (!Number.isInteger(idPartenaire)) {
             return res.status(400).json({ succes: false, erreurs: ['id de partenaire invalide'] });

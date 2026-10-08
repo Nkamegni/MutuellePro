@@ -19,7 +19,9 @@ const { gabaritEmail, corpsConnexionReussie } = require('../lib/gabaritEmail');
 const { analyserNavigateur, analyserSysteme } = require('../lib/analyseurUserAgent');
 const { genererEtEnvoyerCode, verifierCode } = require('../lib/verificationConnexion');
 const { masquerEmail, masquerTelephone } = require('../lib/masquage');
-const { envoyerLienReinitialisation, appliquerReinitialisation } = require('../lib/reinitialisationMdp');
+const { envoyerLienReinitialisation, appliquerReinitialisation, genererTokenChangementForce } = require('../lib/reinitialisationMdp');
+const { verifierPeremptionMotDePasse } = require('../lib/peremptionMdp');
+const { appliquerReinitialisationBoiteMail } = require('../lib/reinitialisationBoiteMail');
 
 const mailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -161,14 +163,26 @@ module.exports = function (pool) {
             let derniereConnexionPrecedente = null;
             try {
                 const precedente = await pool.query(
-                    `SELECT date_connexion, adresse_ip FROM site.historique_connexions
+                    `SELECT date_connexion, adresse_ip FROM site.historique_connexion
                      WHERE type_compte = 'staff' AND id_compte = $1
                      ORDER BY date_connexion DESC LIMIT 1`,
                     [id_compte]
                 );
                 if (precedente.rowCount > 0) derniereConnexionPrecedente = precedente.rows[0];
             } catch (err) {
-                console.error('[POST /api/staff/connexion/verifier-code] Erreur lecture historique_connexions :', err);
+                console.error('[POST /api/staff/connexion/verifier-code] Erreur lecture historique_connexion :', err);
+            }
+
+            // Péremption (14/09/2026) -- vérifié APRÈS le code 2FA (identité
+            // déjà prouvée) mais AVANT toute session : un mot de passe
+            // expiré ou un changement forcé bloque l'accès tant qu'il n'est
+            // pas changé, pas seulement un avertissement affiché après coup.
+            const peremption = await verifierPeremptionMotDePasse({ pool, tableCompte: 'site.staff', colonneId: 'id_staff', idCompte: id_compte, role: 'staff' });
+            if (peremption.doitChanger) {
+                const token = await genererTokenChangementForce({ pool, typeCompte: 'staff', idCompte: id_compte });
+                return res.status(200).json({
+                    succes: true, doit_changer_mdp: true, motif: peremption.motif, token,
+                });
             }
 
             req.session.regenerate(async (err) => {
@@ -188,13 +202,13 @@ module.exports = function (pool) {
 
                 try {
                     const inseree = await pool.query(
-                        `INSERT INTO site.historique_connexions (type_compte, id_compte, adresse_ip)
-                         VALUES ('staff', $1, $2) RETURNING id_historique`,
+                        `INSERT INTO site.historique_connexion (type_compte, id_compte, adresse_ip)
+                         VALUES ('staff', $1, $2) RETURNING id_historique_connexion`,
                         [staff.id_staff, req.ip]
                     );
-                    req.session.id_historique_connexion = inseree.rows[0].id_historique;
+                    req.session.id_historique_connexion = inseree.rows[0].id_historique_connexion;
                 } catch (err) {
-                    console.error('[POST /api/staff/connexion/verifier-code] Erreur écriture historique_connexions :', err);
+                    console.error('[POST /api/staff/connexion/verifier-code] Erreur écriture historique_connexion :', err);
                 }
 
                 // "Connexion réussie" — ajoutée ici (02/09/2026), n'existait
@@ -215,7 +229,7 @@ module.exports = function (pool) {
                     })),
                 }).then((info) => {
                     pool.query(
-                        `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                        `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                          VALUES ($1, $2, $3, $4)`,
                         [info.messageId, staff.email_validation || staff.email, 'notification_connexion_staff', staff.matricule]
                     ).catch((err) => console.error('[POST /api/staff/connexion/verifier-code] Erreur journalisation no-reply (ignorée) :', err));
@@ -304,12 +318,12 @@ module.exports = function (pool) {
     router.get('/mes-connexions', requireStaffAuth, async (req, res) => {
         try {
             const resultat = await pool.query(
-                `SELECT id_historique, date_connexion, adresse_ip FROM site.historique_connexions
+                `SELECT id_historique_connexion, date_connexion, adresse_ip FROM site.historique_connexion
                  WHERE type_compte = 'staff' AND id_compte = $1
                  ORDER BY date_connexion DESC LIMIT 20`,
                 [req.session.id_staff]
             );
-            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique === req.session.id_historique_connexion }));
+            const connexions = resultat.rows.map((c) => ({ ...c, est_courante: c.id_historique_connexion === req.session.id_historique_connexion }));
             return res.status(200).json({ succes: true, connexions });
         } catch (err) {
             console.error('[GET /api/staff/mes-connexions] Erreur base de données :', err);
@@ -378,6 +392,26 @@ module.exports = function (pool) {
         } catch (err) {
             console.error('[POST /api/staff/reinitialiser-mot-de-passe] Erreur base de données :', err);
             return res.status(500).json({ succes: false, erreurs: ['erreur serveur, veuillez réessayer'] });
+        }
+    });
+
+    // Option 2 (14/09/2026) -- réinitialisation de la BOÎTE MAIL (ISPConfig),
+    // pas du mot de passe de connexion myspace.html -- deux identifiants
+    // distincts, voir lib/reinitialisationBoiteMail.js.
+    router.post('/reinitialiser-boite-mail', async (req, res) => {
+        const { token, mot_de_passe, mot_de_passe_confirmation } = req.body;
+        try {
+            const resultat = await appliquerReinitialisationBoiteMail({
+                pool, typeCompte: 'staff', token, motDePasse: mot_de_passe, motDePasseConfirmation: mot_de_passe_confirmation,
+                tableCompte: 'site.staff', colonneId: 'id_staff',
+            });
+            if (!resultat.succes) {
+                return res.status(resultat.statut).json({ succes: false, erreurs: resultat.erreurs });
+            }
+            return res.status(200).json({ succes: true });
+        } catch (err) {
+            console.error('[POST /api/staff/reinitialiser-boite-mail] Erreur :', err);
+            return res.status(500).json({ succes: false, erreurs: [err.message || 'erreur serveur, veuillez réessayer'] });
         }
     });
 

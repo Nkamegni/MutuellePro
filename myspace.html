@@ -45,9 +45,64 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.09.22-a
-    Dernière modification : 22/09/2026
+    Version actuelle    : 2026.10.06-b
+    Dernière modification : 06/10/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
+
+    Résumé de cette version :
+      - Production & Souscription (session « Production & Souscription »,
+        2026.10.06-b, INCLUT intégralement la 2026.10.06-a ci-dessous) :
+        décodage VIN -- une mini-fiche par véhicule trouvé (marque, modèle,
+        VIN, énergie, puissance, confiance) dans un conteneur à ascenseurs,
+        5 fiches par page, pagination au-delà ; « Aucun ne convient »
+        ramène à la saisie manuelle. VERSION_ECRAN inchangée (2026-09-30-a).
+      - Production & Souscription : valeur par défaut du champ
+        « Expiration » corrigée à effet + 1 an - 1 jour (dernier jour
+        couvert, vocabulaire de Roger du 03/10/2026) au lieu d'effet +
+        1 an (qui est l'ÉCHÉANCE, l'anniversaire). Trois endroits :
+        valeur initiale, changement de la date d'effet, renouvellement
+        depuis l'Échéancier. Nouvelle fonction retirerUnJourIso (même
+        mécanique UTC qu'ajouterUnAnIso). Aucun changement de route ni
+        de base. À déployer AVANT CORRECTIF_FN_ACCESSOIRES_04102026.sql.
+
+    Résumé de cette version :
+      - Production & Souscription : proposition automatique des
+        accessoires dans « Nouveau Mouvement » (compagnie, branche,
+        prime nette et durée), calculée par le serveur
+        (tarification.fn_frais_accessoires), reprise tant que le gestionnaire
+        ne l'a pas modifiée à la main, avec un lien pour y revenir
+
+    Résumé de cette version :
+      - Production & Souscription, Lot P1bis : Émissions & DTA devient le
+        registre des MOUVEMENTS (affaires nouvelles NAF, renouvellements
+        REN, avenants sur police existante obligatoire), « Nouveau
+        Mouvement » (25 natures du système source, ODC/RCOM écartées),
+        décompte TVA (sur prime nette + accessoires + fichier central) /
+        fichier central / carte rose / DTA calculé par le serveur, DTA par véhicule et par exercice (note DGI), numéro de
+        police Pxx AAAA BR NNNN ; « Renouvellements » devient
+        « Échéancier » ; plus aucune boîte de dialogue (sous-formulaires
+        rétractables) ; moteur de tableau partagé : totaux, filtres
+        comparatifs (>, <, =, a..b), 5 lignes par page, CSV « ; » ou
+        « , », impression de toutes les lignes filtrées. Routes :
+        mouvements.routes.js (nouveau), production.routes.js inchangé
+
+    Résumé de cette version :
+      - Production & Souscription, Lot P1 : socle site.contrats.
+        Émissions & DTA (registre des contrats émis + création d'un
+        contrat ; DTA au lot P2) et Renouvellements (échéances, suivi,
+        renouvellement) déverrouillés côté Personnel ; Mes contrats
+        (Client, visibilité limitée à son compte). Routes
+        production.routes.js, moteur creerRenduTableau réutilisé.
+        Sinistres SLA et Reversements & Bordereaux restent verrouillés
+        (lots suivants, même socle)
+
+    Résumé de cette version :
+      - Lot 1 (unification ergonomique) intégré -- moteur partagé des
+        5 tableaux (creerRenduTableau) : panneau de filtres coulissant,
+        bascule Tableau/Fiches, export CSV (BOM UTF-8), impression.
+        Page pilote Personnel avec rendu Fiches soigné, repli générique
+        pour les 4 autres pages. CSS carte-fiche-libelle/valeur ajouté
+        (utilisées dans le lot livré, jamais définies)
 
     Résumé de cette version :
       - Lot F — signalement visuel (titre d'onglet + badge d'icône
@@ -568,6 +623,7 @@
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; background:#f8fafc; color:var(--navy); }
     header { background:var(--navy); color:white; padding:10px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; position:sticky; top:0; z-index:1000; }
+    #entete-impression, #zone-impression, #pied-impression { display:none; } /* visible uniquement à l'impression -- voir @media print */
     header h1 { font-size:15px; margin:0; font-weight:800; display:flex; align-items:center; gap:10px; }
     header img.logo { height:32px; width:auto; background:white; border-radius:6px; padding:2px 6px; }
     #identite { font-size:12px; color:#cbd5e1; }
@@ -591,6 +647,13 @@
     .texte-mobile { display:none; }
     .conteneur-vue-connexion h2 { font-size:16px; margin:0 0 8px; }
     .conteneur-vue-connexion p.sous-titre { font-size:12px; color:var(--gray); margin:0 0 20px; }
+    /* 26/09/2026 -- .sous-titre n'était stylé que pour l'écran de connexion ;
+       sur les pages de l'application (Échéancier, Émissions & DTA, Mes
+       contrats...), le paragraphe retombait sur le rendu par défaut du
+       navigateur -- texte noir, grande taille -- d'où un en-tête qui
+       écrasait le contenu utile. Largeur bornée : une légende se lit sur
+       une ligne courte, pas sur toute la largeur d'un écran de laptop. */
+    .page p.sous-titre { font-size:12px; color:var(--gray); line-height:1.5; margin:2px 0 14px; max-width:640px; }
     .toggle-type { display:flex; gap:8px; margin-bottom:20px; background:#f1f5f9; border-radius:10px; padding:4px; }
     .toggle-type button { flex:1; border:none; background:transparent; padding:8px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; color:var(--gray); }
     .toggle-type button.actif { background:white; color:var(--navy); box-shadow:0 1px 3px rgba(0,0,0,0.1); }
@@ -616,7 +679,14 @@
     .menu-item.actif { background:#f5f3ff; color:var(--purple); border-left-color:var(--purple); font-weight:700; }
     .menu-item-grise { color:var(--gray) !important; cursor:not-allowed !important; font-size:11px; }
     .menu-item-grise:hover { background:none !important; }
-    main.contenu { flex:1; padding:28px; }
+    main.contenu { flex:1; padding:28px; min-width:0; }
+    /* 26/09/2026 -- sans min-width:0, un élément flex refuse par défaut de
+       rétrécir sous la largeur minimale de son contenu (ici, un tableau
+       large plusieurs niveaux plus bas dans l'arbre) : au lieu que le
+       tableau défile dans sa propre enveloppe (.defilement-tableau), c'est
+       toute la colonne main.contenu -- et donc la page entière, en-tête
+       compris -- qui s'élargit au-delà du viewport. min-width:0 rend à
+       l'enveloppement horizontal du tableau l'effet voulu. */
     .page-etroite { max-width:600px; }
     .page { display:none; }
     /* Surface utile du tableau de bord (04/09/2026) -- toutes les
@@ -627,6 +697,14 @@
     #page-dashboard { max-width:1040px; margin:0 auto; width:100%; }
     .page.visible { display:block; }
     .page h2 { font-size:17px; margin:0 0 20px; color:var(--navy); }
+    /* 26/09/2026 -- utilise l'espace resté vide à droite d'un titre de page
+       court : titre et légende sur une même ligne quand la largeur le
+       permet, la légende repassant seule dessous sinon (flex-wrap, pas de
+       seuil fixe à entretenir -- même principe que .defilement-tableau).
+       flex-shrink:0 sur le titre : jamais lui qui cède de la place. */
+    .page-entete { display:flex; align-items:baseline; flex-wrap:wrap; column-gap:20px; row-gap:2px; margin-bottom:20px; }
+    .page-entete h2 { margin:0; flex-shrink:0; }
+    .page .page-entete p.sous-titre { margin:0; flex:1 1 280px; }
     .barre-conteneur { height:4px; width:100%; background:#e5e7eb; border-radius:9999px; margin:6px 0 14px; overflow:hidden; }
     .barre { height:100%; width:0%; transition:width .2s, background-color .2s; }
     .grise { opacity:0.5; pointer-events:none; }
@@ -634,6 +712,23 @@
     .separateur-grise { border-top:1px dashed var(--border); margin-top:20px; padding-top:16px; }
 
     table { width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+    /* 26/09/2026 -- enveloppe systématique des tableaux produits par
+       creerRenduTableau (voir ce moteur) : défilement horizontal propre à
+       CE tableau plutôt qu'un débordement de toute la page sur petit
+       écran. max-width:100% pour ne jamais dépasser le conteneur parent. */
+    .defilement-tableau { overflow-x:auto; max-width:100%; }
+    /* 27/09/2026 -- bascule Nouvelle affaire / Renouvellement / Avenant,
+       même langage visuel que le bascule Tableau/Fiches (barre d'outils). */
+    .mvt-bouton-type { flex:1; font-size:11px; padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:white; color:var(--navy); cursor:pointer; }
+    .mvt-bouton-type.actif { background:var(--purple); color:white; border-color:var(--purple); }
+    /* 27/09/2026 -- menu du séparateur CSV, fusionné dans le bouton
+       Exporter (plus de select séparé, redondant à l'écran). */
+    .menu-separateur-csv { display:none; position:absolute; margin-top:2px; background:white; border:1px solid var(--border); border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.12); z-index:60; min-width:170px; overflow:hidden; }
+    .menu-separateur-csv.ouvert { display:block; }
+    .menu-separateur-csv button { display:block; width:100%; text-align:left; padding:8px 12px; font-size:11px; border:none; background:white; cursor:pointer; color:var(--navy); }
+    .menu-separateur-csv button:hover { background:#f8fafc; }
+    .defilement-tableau table { border-radius:0; box-shadow:none; } /* coins arrondis perdus dans le défilement : reportés sur l'enveloppe */
+    .defilement-tableau { border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); background:white; }
     th, td { text-align:left; padding:10px 14px; font-size:13px; border-bottom:1px solid var(--border); word-break:break-word; }
     th { background:#f1f5f9; font-weight:700; color:#475569; font-size:11px; text-transform:uppercase; }
     th.th-triable { cursor:pointer; user-select:none; }
@@ -808,12 +903,86 @@
     .carte-dashboard, .carte-dashboard-verrouillee { min-height: clamp(40px, 10vw, 60px); }
     .dashboard-graphique-conteneur { height: 210px; }
 }
+/* Lot 1 (22/09/2026) -- classes utilisées par genererFichesGenerique()
+   et genererFichesPersonnel(), jamais définies dans le lot livré.
+   Ajoutées ici pour que la vue Fiches ait une vraie distinction
+   visuelle libellé/valeur plutôt que du texte brut sans style. */
+.carte-fiche-libelle { font-size:10px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:0.03em; }
+/* Grille responsive des fiches (24/09/2026, retour de Roger) -- une
+   fiche est une FICHE, pas une pleine largeur d'écran : largeur
+   maximale raisonnable par carte, 2/3/4 par ligne selon l'espace
+   disponible (utile en particulier en mode paysage). auto-fill +
+   minmax fait ça sans media query à écrire à la main. */
+.grille-fiches { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:10px; }
+.grille-fiches > div { margin-bottom:0 !important; max-width:420px; }
+.carte-fiche-valeur { font-size:13px; color:var(--navy); }
+/* 26/09/2026 -- décompte financier d'une fiche (Émissions & DTA) : les
+   montants forment une vraie colonne, distincte de l'identité (souscripteur,
+   compagnie...), avec des chiffres à largeur fixe (tabular-nums) plutôt que
+   du texte aligné à gauche parmi des valeurs de nature différente. Fond
+   #f8fafc : le même gris que les autres blocs secondaires de l'application
+   (panneaux d'observations, colonnes Kanban), pas une nouvelle couleur. */
+.fiche-decompte { background:#f8fafc; border-radius:8px; padding:6px 10px; margin-bottom:10px; }
+.fiche-decompte-ligne { display:flex; justify-content:space-between; align-items:baseline; gap:12px; font-size:12px; padding:3px 0; }
+.fiche-decompte-libelle { color:var(--gray); }
+.fiche-decompte-montant { font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--navy); }
+.fiche-decompte-total { border-top:1px solid var(--border); margin-top:3px; padding-top:7px; }
+.fiche-decompte-total .fiche-decompte-libelle { color:var(--navy); font-weight:700; }
+.fiche-decompte-total .fiche-decompte-montant { font-weight:700; font-size:13px; }
+/* Fiches à un seul montant (Échéancier, Mes contrats) -- même logique,
+   en plus compact : un chiffre-clé détaché de l'identité par un filet. */
+.fiche-montant-cle { display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--border); margin-top:8px; padding-top:8px; }
+.fiche-montant-cle-libelle { font-size:11px; color:var(--gray); }
+.fiche-montant-cle-valeur { font-size:16px; font-weight:800; color:var(--navy); font-variant-numeric:tabular-nums; white-space:nowrap; }
+/* Lot 1 (22/09/2026, unification ergonomique) -- volontairement large
+   (masque tous les <button> sans distinction) -- à affiner page par
+   page si besoin après usage réel. */
 @media print {
     header, nav, .menu-item, #panneau-filtres-generique, #import-generique-modal,
     [id^="pagination-"], button { display: none !important; }
     body { background: white; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 4px 6px; font-size: 11px; }
+    /* 26/09/2026 -- l'enveloppe de défilement (.defilement-tableau) ne doit
+       jamais tronquer le tableau à l'impression : imprimerTableau() affiche
+       toutes les lignes filtrées, pas seulement celles visibles à l'écran. */
+    .defilement-tableau { overflow: visible !important; box-shadow: none; }
+
+    /* 27/09/2026 -- format et orientation demandés par Roger : "landscape"
+       laisse le navigateur utiliser le format papier réglé par
+       l'utilisateur (A4, Letter...), seule l'orientation est imposée. */
+    @page {
+        size: landscape;
+        margin: 16mm 10mm 20mm;
+        /* Tentative de numérotation : content/counter(pages) dans une boîte
+           de marge @page est une fonctionnalité aux appuis inégaux d'un
+           navigateur à l'autre -- à vérifier à l'impression réelle, sans
+           filet de sécurité si elle ne s'affiche pas (voir pied-impression
+           ci-dessous pour ce qui, lui, est garanti). */
+        @bottom-right { content: "Page " counter(page) " / " counter(pages); font-size: 9px; color: #64748b; }
+    }
+
+    /* Zone d'impression ciblée (voir imprimerTableau) : remplace toute la
+       page normale de l'application, qui reste masquée. */
+    body.impression-ciblee .layout { display: none !important; }
+    body.impression-ciblee #zone-impression { display: block !important; }
+    #zone-impression .defilement-tableau { margin-bottom: 10px; }
+
+    /* En-tête, 3 zones séparées par l'espace libre entre elles
+       (justify-content:space-between) : identité (2/9), titre du document
+       (2/9), légende contextuelle (3/9) -- 2/9 restants en espacement. */
+    #entete-impression { display: flex !important; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid var(--navy); }
+    .entete-impression-identite { flex: 0 0 22.22%; display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+    .entete-impression-logo { height: 26px; width: auto; flex-shrink: 0; }
+    .entete-impression-nom { font-size: 10px; font-weight: 800; color: var(--navy); line-height: 1.3; }
+    .entete-impression-coordonnees { font-size: 7.5px; color: #64748b; line-height: 1.5; margin-top: 2px; }
+    .entete-impression-titre { flex: 0 0 22.22%; font-size: 15px; font-weight: 800; color: var(--navy); text-align: center; min-width: 0; }
+    .entete-impression-contexte { flex: 0 0 33.33%; font-size: 9px; color: #64748b; line-height: 1.4; min-width: 0; }
+
+    /* Pied de page : garanti (position:fixed se répète sur chaque page
+       imprimée dans Chrome) -- contrairement à la numérotation ci-dessus,
+       qui dépend du moteur d'impression du navigateur. */
+    #pied-impression { display: block !important; position: fixed; bottom: 6mm; left: 10mm; right: 10mm; text-align: right; font-size: 9px; color: #64748b; border-top: 1px solid var(--border); padding-top: 4px; }
 }
 </style>
 <link rel="icon" href="/favicon/favicon.ico" sizes="any">
@@ -827,6 +996,26 @@
 <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
 </head>
 <body>
+
+<!-- 27/09/2026 -- refonte complète de l'impression (Roger) : en-tête en 3
+     zones (identité / titre / légende contextuelle), pied de page daté
+     et paginé, et zone d'impression ciblée qui remplace TOUTE la page
+     visible par SEULEMENT ce qu'imprimerTableau() y dépose -- plus de
+     recherche, sous-formulaire ouvert ou texte d'aide qui se glissait
+     dans le document imprimé (Prospects/Clients/Partenaires notamment). -->
+<div id="entete-impression" class="entete-impression">
+    <div class="entete-impression-zone entete-impression-identite">
+        <img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="entete-impression-logo">
+        <div>
+            <div class="entete-impression-nom">Mutuelle Pro Assurances</div>
+            <div class="entete-impression-coordonnees">+237 6 97 71 73 34<br>mpro-manguier@mutuelleproassurances.com</div>
+        </div>
+    </div>
+    <div class="entete-impression-zone entete-impression-titre" id="entete-impression-titre"></div>
+    <div class="entete-impression-zone entete-impression-contexte" id="entete-impression-contexte"></div>
+</div>
+<div id="zone-impression"></div>
+<div id="pied-impression">Document imprimé le <span id="pied-impression-date"></span></div>
 
 <header>
     <h1><img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="logo"> Mon Espace</h1>
@@ -1332,6 +1521,17 @@
                 </div>
             </section>
 
+            <!-- [PRÉSENTATION-CLIENT] Mes contrats (Lot P1, 24/09/2026) --
+                 lecture seule, uniquement les contrats rattachés au compte
+                 connecté (/api/mes-contrats), jamais de donnée interne. -->
+            <section id="page-mes-contrats" class="page">
+                <div class="page-entete">
+                    <h2>Mes contrats</h2>
+                    <p class="sous-titre">Vos contrats d'assurance souscrits par l'intermédiaire de Mutuelle Pro Assurances et leurs échéances.</p>
+                </div>
+                <div id="mes-contrats-conteneur"></div>
+            </section>
+
             <!-- [PRÉSENTATION-PERSONNEL] Gestion des tickets (tous) -->
             <section id="page-tickets" class="page">
                 <h2>Tickets</h2>
@@ -1381,6 +1581,9 @@
                     <button onclick="actionGroupeeProspects('perdu')" title="Marque le(s) prospect(s) sélectionné(s) comme perdu(s)" style="font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">✖️ Marquer perdu</button>
                     <button id="bouton-supprimer-prospects" onclick="actionGroupeeProspects('supprimer')" title="Supprime définitivement le(s) prospect(s) sélectionné(s)" style="font-size:11px; padding:5px 10px; border:1px solid #fecaca; border-radius:6px; background:#fef2f2; color:#dc2626; cursor:pointer;">🗑️ Supprimer</button>
                     <input type="text" id="recherche-prospects" placeholder="Rechercher (nom, branche…)" oninput="afficherTableauProspects()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
+                    <label style="font-size:11px; color:var(--gray); display:flex; align-items:center; gap:5px; white-space:nowrap;" title="Un prospect promu en client reste masqué ici par défaut">
+                        <input type="checkbox" id="prospects-inclure-clients" onchange="afficherTableauProspects()"> Inclure les clients en portefeuille
+                    </label>
                 </div>
                 <div id="prospects-conteneur" style="font-size:12px;"></div>
                 <style>#prospects-conteneur th, #prospects-conteneur td { padding:8px 8px; }</style>
@@ -1445,15 +1648,17 @@
                 </div>
                 <div id="cp-liste-conteneur" style="margin-bottom:24px;"></div>
 
-                <div id="bloc-import-partenaires" style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:24px; background:#fafafa;">
+                <div id="bloc-import-partenaires" style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:14px; margin-bottom:16px;">
                     <p style="font-size:13px; font-weight:800; color:var(--navy); margin:0 0 8px;">Importer une liste (CSV)</p>
-                    <p style="font-size:11px; color:var(--gray); margin:0 0 10px;">
-                        En-tête attendu : <code>NOM;PRENOM;EMAIL;EMAIL_NOTIFICATION;TELEPHONE;CODES_TYPES;CONTACTS</code><br>
-                        Séparateur de colonnes : point-virgule.<br>
-                        « codes_types » : codes séparés par virgule et/ou plage avec tiret (ex : <code>E03-E04,E08,E09</code>).<br>
-                        « contacts » : blocs <code>{nom;prenom;fonction;telephone}</code> séparés par point-virgule, <code>*</code> après l'accolade pour désigner le contact par défaut (obligatoire). <strong>Ce champ doit être entre guillemets</strong> (ex : <code>"{...}*;{...}"</code>) — il contient lui-même des points-virgules, comme le fait naturellement Excel en enregistrant au format CSV français.
-                    </p>
-                    <button type="button" onclick="telechargerModeleCsv()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; margin-bottom:10px;">📄 Télécharger un modèle</button>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; margin-bottom:10px;">
+                        <p style="flex:1; min-width:260px; font-size:11px; color:var(--gray); margin:0;">
+                            En-tête attendu : <code>NOM;PRENOM;EMAIL;EMAIL_NOTIFICATION;TELEPHONE;CODES_TYPES;CONTACTS</code><br>
+                            Séparateur de colonnes : point-virgule.<br>
+                            « codes_types » : codes séparés par virgule et/ou plage avec tiret (ex : <code>E03-E04,E08,E09</code>).<br>
+                            « contacts » : blocs <code>{nom;prenom;fonction;telephone}</code> séparés par point-virgule, <code>*</code> après l'accolade pour désigner le contact par défaut (obligatoire). <strong>Ce champ doit être entre guillemets</strong> (ex : <code>"{...}*;{...}"</code>) — il contient lui-même des points-virgules, comme le fait naturellement Excel en enregistrant au format CSV français.
+                        </p>
+                        <button type="button" onclick="telechargerModeleCsv()" style="flex-shrink:0; font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:white; cursor:pointer; white-space:nowrap;">📄 Télécharger un modèle</button>
+                    </div>
                     <button type="button" class="principal" onclick="ouvrirImportGenerique('partenaires', 'Importer des Partenaires', chargerListePartenaires)">Importer</button>
                 </div>
 
@@ -1581,6 +1786,57 @@
                     <input type="text" id="recherche-journal-no-reply" placeholder="Rechercher (destinataire, type, référence…)" oninput="afficherTableauJournalNoReply()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
                 </div>
                 <div id="journal-no-reply-conteneur"></div>
+            </section>
+
+            <!-- [PRÉSENTATION-PERSONNEL] Production & Souscription — Échéancier
+                 (Lot P1, renommé P1bis le 24/09/2026 ; id interne
+                 "renouvellements" conservé) -- contrats par échéance sur une
+                 période d'édition réglable. Formulaires en sous-formulaire
+                 rétractable sous l'en-tête, jamais en boîte de dialogue. -->
+            <section id="page-renouvellements" class="page">
+                <div class="page-entete">
+                    <h2>Échéancier</h2>
+                    <p class="sous-titre">Contrats par date d'échéance — suivi des relances et renouvellement.</p>
+                </div>
+                <div id="sous-formulaire-renouvellements" style="display:none;"></div>
+                <div class="filtres" style="flex-wrap:wrap; align-items:center;">
+                    <label for="horizon-renouvellements" style="font-size:11px; font-weight:700; color:var(--gray); margin:0;">Période d'édition</label>
+                    <select class="filtre" id="horizon-renouvellements" onchange="etatTableau('renouvellements').page = 1; afficherTableauRenouvellements();">
+                        <option value="echus">Échus non renouvelés</option>
+                        <option value="30">Échus + échéance sous 30 jours</option>
+                        <option value="60">Échus + échéance sous 60 jours</option>
+                        <option value="90" selected>Échus + échéance sous 90 jours</option>
+                        <option value="180">Échus + échéance sous 180 jours</option>
+                        <option value="365">Échus + échéance sous 365 jours</option>
+                    </select>
+                    <input type="text" id="recherche-renouvellements" placeholder="Rechercher (police, souscripteur, compagnie, matricule…)" oninput="afficherTableauRenouvellements()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px; margin:0;">
+                </div>
+                <div id="renouvellements-conteneur"></div>
+            </section>
+
+            <!-- [PRÉSENTATION-PERSONNEL] Production & Souscription — Émissions & DTA
+                 (Lot P1, refondu P1bis le 24/09/2026) -- registre des
+                 MOUVEMENTS (affaires nouvelles, renouvellements, avenants),
+                 totaux, « Nouveau Mouvement » en sous-formulaire rétractable. -->
+            <section id="page-emissions" class="page">
+                <div class="page-entete">
+                    <h2>Émissions & DTA</h2>
+                    <p class="sous-titre">Mouvements émis — affaires nouvelles, renouvellements et avenants, avec leur décompte (TVA, fichier central, carte rose, Droit de Timbre Automobile).</p>
+                </div>
+                <div id="message-emissions"></div>
+                <div id="sous-formulaire-emissions" style="display:none;"></div>
+                <div class="filtres" style="flex-wrap:wrap; align-items:center;">
+                    <label for="periode-emissions" style="font-size:11px; font-weight:700; color:var(--gray); margin:0;">Période d'édition</label>
+                    <select class="filtre" id="periode-emissions" onchange="etatTableau('emissions').page = 1; afficherTableauEmissions();">
+                        <option value="mois" selected>Émis ce mois-ci</option>
+                        <option value="mois_precedent">Émis le mois précédent</option>
+                        <option value="annee">Émis cette année</option>
+                        <option value="toutes">Toutes les émissions</option>
+                    </select>
+                    <input type="text" id="recherche-emissions" placeholder="Rechercher (police, souscripteur, VIN, immatriculation…)" oninput="afficherTableauEmissions()" style="flex:1; min-width:200px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px; margin:0;">
+                    <button onclick="messagePage('emissions', ''); ouvrirNouveauMouvement()" style="font-size:12px; padding:7px 14px; border:none; border-radius:8px; background:var(--purple); color:white; cursor:pointer; white-space:nowrap;">➕ Nouveau Mouvement</button>
+                </div>
+                <div id="emissions-conteneur"></div>
             </section>
 
             <!-- [PRÉSENTATION-PERSONNEL] Administration du Personnel -->
@@ -2179,7 +2435,13 @@
             } else {
                 const texte = (valeurFiltre || '').toLowerCase();
                 if (!texte) return;
-                resultat = resultat.filter((ligne) => String(col.trier(ligne) ?? '').toLowerCase().includes(texte));
+                // P1bis (24/09/2026) : critère comparatif sur tout champ --
+                // ">50000", "<=10", "=3", "a..b" (bornes incluses ; dates
+                // AAAA-MM-JJ comparées comme du texte) ; sinon "contient".
+                const critere = interpreterCritereFiltre(texte);
+                resultat = critere
+                    ? resultat.filter((ligne) => critere(col.trier(ligne)))
+                    : resultat.filter((ligne) => String(col.trier(ligne) ?? '').toLowerCase().includes(texte));
             }
         });
 
@@ -2195,6 +2457,32 @@
             }
         }
         return resultat;
+    }
+
+    // [DONNÉES/ÉTAT] P1bis (24/09/2026) -- critère comparatif d'un filtre
+    // texte ; null si le texte n'est pas un critère (filtre "contient").
+    function interpreterCritereFiltre(texte) {
+        const comparer = (a, b) => {
+            const na = Number(a), nb = Number(b);
+            if (a !== '' && b !== '' && !Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+            return String(a).localeCompare(String(b), 'fr');
+        };
+        const valeur = (v) => (v === null || v === undefined ? '' : String(v));
+        let m = texte.match(/^\s*(>=|<=|>|<|=)\s*(.+?)\s*$/);
+        if (m) {
+            const [, op, borne] = m;
+            return (v) => {
+                if (valeur(v) === '') return false;
+                const c = comparer(valeur(v), borne);
+                return op === '>' ? c > 0 : op === '<' ? c < 0 : op === '>=' ? c >= 0 : op === '<=' ? c <= 0 : c === 0;
+            };
+        }
+        m = texte.match(/^\s*(.+?)\s*\.\.\s*(.+?)\s*$/);
+        if (m) {
+            const [, min, max] = m;
+            return (v) => valeur(v) !== '' && comparer(valeur(v), min) >= 0 && comparer(valeur(v), max) <= 0;
+        }
+        return null;
     }
 
     // Découpe le tableau déjà trié/filtré selon la page courante, et
@@ -2220,7 +2508,7 @@
                     <button onclick="changerPage('${nomTableau}', -1)" ${etat.page <= 1 ? 'disabled' : ''} style="padding:3px 8px; border:1px solid var(--border); border-radius:5px; background:white; cursor:pointer;">◀</button>
                     <button onclick="changerPage('${nomTableau}', 1)" ${etat.page >= totalPages ? 'disabled' : ''} style="padding:3px 8px; border:1px solid var(--border); border-radius:5px; background:white; cursor:pointer;">▶</button>
                     <select onchange="changerTaillePage('${nomTableau}', this.value)" style="font-size:11px; padding:3px 5px; border:1px solid var(--border); border-radius:5px;">
-                        ${[10, 25, 50, 100].map((n) => `<option value="${n}" ${etat.taillePage === n ? 'selected' : ''}>${n} / page</option>`).join('')}
+                        ${[5, 10, 25, 50, 100].map((n) => `<option value="${n}" ${etat.taillePage === n ? 'selected' : ''}>${n} / page</option>`).join('')}
                     </select>
                 </div>
             </div>`;
@@ -2246,6 +2534,11 @@
     // Chaque table s'enregistre dans les deux (voir plus bas).
     const rendusTableauxComplet = {};
     const rendusTableauxCorps = {};
+    // 27/09/2026 -- conteneur DOM réel de chaque tableau, par nomTableau.
+    // Les identifiants ne suivent pas tous le même schéma (prospects-conteneur,
+    // clients-liste-conteneur, cp-liste-conteneur...) : imprimerTableau() en
+    // a besoin pour cibler l'impression sur CE tableau, sans rien deviner.
+    const idConteneurParTableau = {};
     function rafraichirTableau(nomTableau) {
         if (rendusTableauxComplet[nomTableau]) rendusTableauxComplet[nomTableau]();
     }
@@ -2317,7 +2610,7 @@
         rafraichirTableau(nomTableau);
     }
 
-    // [PRÉSENTATION-COMMUNE]
+    // [PRÉSENTATION-COMMUNE] Lot 1 (22/09/2026, unification ergonomique)
     let panneauFiltresTableauActif = null;
 
     function ouvrirPanneauFiltres(nomTableau) {
@@ -2345,7 +2638,7 @@
             }).join('');
         }
         const valeurActuelle = (etat.filtres[col.cle] || '').replace(/"/g, '&quot;');
-        return `<input type="text" value="${valeurActuelle}" placeholder="Filtrer…" oninput="appliquerFiltreColonne('${nomTableau}', '${col.cle}', this.value)" style="width:100%; box-sizing:border-box; font-size:12px; padding:6px 8px; border:1px solid var(--border); border-radius:6px;">`;
+        return `<input type="text" value="${valeurActuelle}" placeholder="Filtrer… (ou >, <, =, a..b)" title="Texte contenu, ou critère : >50000, <=10, =3, 2026-01-01..2026-03-31" oninput="appliquerFiltreColonne('${nomTableau}', '${col.cle}', this.value)" style="width:100%; box-sizing:border-box; font-size:12px; padding:6px 8px; border:1px solid var(--border); border-radius:6px;">`;
     }
 
     function rafraichirPanneauFiltres() {
@@ -2386,10 +2679,28 @@
         `).join('');
     }
 
-    function echapperCelluleCsv(valeur) {
+    // P1bis (24/09/2026) : séparateur au choix -- ";" (tableurs en
+    // français, défaut) ou "," (tableurs en anglais).
+    let separateurCsvTableaux = ';';
+
+    function echapperCelluleCsv(valeur, separateur = ';') {
         const texte = valeur === null || valeur === undefined ? '' : String(valeur);
-        return /[;"\r\n]/.test(texte) ? `"${texte.replace(/"/g, '""')}"` : texte;
+        return (texte.includes(separateur) || /["\r\n]/.test(texte)) ? `"${texte.replace(/"/g, '""')}"` : texte;
     }
+
+    // 27/09/2026 -- menu du séparateur CSV, fusionné dans le bouton Exporter.
+    function basculerMenuCsv(nomTableau) {
+        const cible = document.getElementById(`csv-menu-${nomTableau}`);
+        const ouvert = cible.classList.contains('ouvert');
+        document.querySelectorAll('.menu-separateur-csv.ouvert').forEach((m) => m.classList.remove('ouvert'));
+        if (!ouvert) cible.classList.add('ouvert');
+    }
+    function choisirSeparateurCsv(nomTableau, separateur) {
+        separateurCsvTableaux = separateur;
+        document.querySelectorAll('[id^="csv-sep-"]').forEach((el) => { el.textContent = separateur; });
+        document.querySelectorAll('.menu-separateur-csv.ouvert').forEach((m) => m.classList.remove('ouvert'));
+    }
+    document.addEventListener('click', () => document.querySelectorAll('.menu-separateur-csv.ouvert').forEach((m) => m.classList.remove('ouvert')));
 
     function exporterTableauCsv(nomTableau) {
         const colonnes = colonnesEnregistrees[nomTableau] || [];
@@ -2398,7 +2709,8 @@
         const donnees = trierEtFiltrerDonnees(obtenirDonnees(), colonnes, nomTableau);
         const entetes = colonnes.map((c) => c.libelle);
         const lignes = donnees.map((ligne) => colonnes.map((c) => (c.exporter ? c.exporter(ligne) : c.trier(ligne))));
-        const contenu = [entetes, ...lignes].map((l) => l.map(echapperCelluleCsv).join(';')).join('\r\n');
+        const sep = separateurCsvTableaux;
+        const contenu = [entetes, ...lignes].map((l) => l.map((v) => echapperCelluleCsv(v, sep)).join(sep)).join('\r\n');
         const blob = new Blob(['\ufeff' + contenu], { type: 'text/csv;charset=utf-8;' });
         const lien = document.createElement('a');
         lien.href = URL.createObjectURL(blob);
@@ -2409,14 +2721,59 @@
         URL.revokeObjectURL(lien.href);
     }
 
-    function creerRenduTableau(nomTableau, { obtenirDonnees, colonnes, genererLignes, genererFiches, idConteneur, avant = '', apres = '', colgroup = '', messageVide = 'Aucune donnée.' }) {
+    // P1bis (24/09/2026) : l'impression porte sur TOUTES les lignes
+    // filtrées, pas seulement la page de pagination affichée.
+    // 27/09/2026 (Roger) : et sur CE tableau seulement -- avant, la page
+    // entière s'imprimait autour de lui (recherche, sous-formulaire ouvert,
+    // texte d'aide...), particulièrement visible sur Prospects/Clients/
+    // Partenaires. Le contenu utile (filtres actifs, totaux, tableau) est
+    // recopié dans #zone-impression, qui remplace alors toute la page ---
+    // voir body.impression-ciblee dans la feuille d'impression.
+    function imprimerTableau(nomTableau) {
+        const etat = etatTableau(nomTableau);
+        const taille = etat.taillePage, page = etat.page;
+        etat.taillePage = 1e9; etat.page = 1;
+        rafraichirTableau(nomTableau);
+        const idConteneur = idConteneurParTableau[nomTableau];
+        const conteneur = idConteneur ? document.getElementById(idConteneur) : null;
+        const zone = document.getElementById('zone-impression');
+        const cible = conteneur && zone;
+        if (cible) {
+            const filtreActif = conteneur.querySelector(`#filtre-actif-${nomTableau}`);
+            const blocTotaux = conteneur.querySelector(`#totaux-${nomTableau}`);
+            const contenu = conteneur.querySelector('.defilement-tableau, .grille-fiches');
+            zone.innerHTML = '';
+            if (filtreActif && filtreActif.innerHTML.trim()) zone.appendChild(filtreActif.cloneNode(true));
+            if (blocTotaux) zone.appendChild(blocTotaux.cloneNode(true));
+            if (contenu) zone.appendChild(contenu.cloneNode(true));
+            document.body.classList.add('impression-ciblee');
+        }
+        try { window.print(); } finally {
+            document.body.classList.remove('impression-ciblee');
+            if (zone) zone.innerHTML = '';
+            etat.taillePage = taille; etat.page = page;
+            rafraichirTableau(nomTableau);
+        }
+    }
+
+    // totaux (optionnel, P1bis) : (lignesFiltrées) => [{ libelle, valeur }],
+    // calculés sur toutes les lignes filtrées (pas seulement la page).
+    function construireTotaux(totaux, donnees) {
+        if (!totaux) return '';
+        return `<div style="display:flex; gap:6px 18px; flex-wrap:wrap; background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:6px 12px; margin-bottom:8px; font-size:12px;">
+            <span style="font-weight:700; color:var(--gray);">Σ Totaux (lignes filtrées)</span>
+            ${totaux(donnees).map((t) => `<span>${t.libelle} : <strong>${t.valeur}</strong></span>`).join('')}
+        </div>`;
+    }
+
+    function creerRenduTableau(nomTableau, { obtenirDonnees, colonnes, genererLignes, genererFiches, idConteneur, avant = '', apres = '', colgroup = '', messageVide = 'Aucune donnée.', totaux = null }) {
         colonnesEnregistrees[nomTableau] = colonnes;
         obtenirDonneesEnregistrees[nomTableau] = obtenirDonnees;
-
+        idConteneurParTableau[nomTableau] = idConteneur;
         function traiter() {
             const brutes = obtenirDonnees();
             const traitees = trierEtFiltrerDonnees(brutes, colonnes, nomTableau);
-            return { brutes, ...paginerDonnees(traitees, nomTableau) };
+            return { brutes, traitees, ...paginerDonnees(traitees, nomTableau) };
         }
 
         function contenuCorps(page, total) {
@@ -2429,7 +2786,7 @@
 
         function renduComplet() {
             const conteneur = document.getElementById(idConteneur);
-            const { brutes, page, total, totalPages } = traiter();
+            const { brutes, traitees, page, total, totalPages } = traiter();
             if (!brutes.length) { conteneur.innerHTML = `<p class="vide">${messageVide}</p>`; return; }
 
             const etat = etatTableau(nomTableau);
@@ -2439,26 +2796,40 @@
                     <button onclick="basculerVueTableau('${nomTableau}', 'tableau')" style="font-size:11px; padding:6px 10px; border:none; cursor:pointer; background:${etat.vue !== 'fiches' ? 'var(--purple)' : 'white'}; color:${etat.vue !== 'fiches' ? 'white' : 'var(--navy)'};">📋 Tableau</button>
                     <button onclick="basculerVueTableau('${nomTableau}', 'fiches')" style="font-size:11px; padding:6px 10px; border:none; cursor:pointer; background:${etat.vue === 'fiches' ? 'var(--purple)' : 'white'}; color:${etat.vue === 'fiches' ? 'white' : 'var(--navy)'};">📇 Fiches</button>
                 </div>
-                <button onclick="exporterTableauCsv('${nomTableau}')" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">⬇️ Exporter (CSV)</button>
-                <button onclick="window.print()" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🖨️ Imprimer</button>
+                <div style="position:relative; display:inline-flex;">
+                    <button onclick="exporterTableauCsv('${nomTableau}')" title="Exporter en CSV" style="font-size:11px; padding:6px 6px 6px 12px; border:1px solid var(--border); border-right:none; border-radius:6px 0 0 6px; background:white; cursor:pointer;">⬇️ Exporter CSV « <span id="csv-sep-${nomTableau}">${echapperHtml(separateurCsvTableaux)}</span> »</button><button onclick="event.stopPropagation(); basculerMenuCsv('${nomTableau}')" title="Choisir le séparateur" style="font-size:9px; padding:6px 8px; border:1px solid var(--border); border-radius:0 6px 6px 0; background:white; cursor:pointer; color:var(--gray);">▾</button><div id="csv-menu-${nomTableau}" class="menu-separateur-csv" style="top:100%; right:0;"><button onclick="choisirSeparateurCsv('${nomTableau}', ';')">CSV « ; » (français)</button><button onclick="choisirSeparateurCsv('${nomTableau}', ',')">CSV « , » (anglais)</button></div>
+                </div>
+                <button onclick="imprimerTableau('${nomTableau}')" title="Imprime toutes les lignes filtrées" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🖨️ Imprimer</button>
             </div>`;
 
             const bandeauFiltres = construireBandeauFiltresActifs(nomTableau, colonnes);
             const corps = contenuCorps(page, total);
             const pagination = creerControlePagination(nomTableau, total, totalPages);
 
+            const blocTotaux = `<div id="totaux-${nomTableau}">${construireTotaux(totaux, traitees)}</div>`;
             if (etat.vue === 'fiches') {
-                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div><div id="fiches-${nomTableau}">${corps}</div><div id="pagination-${nomTableau}">${pagination}</div>`;
+                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div>${blocTotaux}<div id="fiches-${nomTableau}" class="grille-fiches">${corps}</div><div id="pagination-${nomTableau}">${pagination}</div>`;
             } else {
                 const thead = creerEnTeteTableau(nomTableau, colonnes, { avant, apres });
-                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div><table>${colgroup}${thead}<tbody id="tbody-${nomTableau}">${corps}</tbody></table><div id="pagination-${nomTableau}">${pagination}</div>`;
+                // 26/09/2026 (mise en page mobile) -- le tableau s'enveloppe
+                // toujours dans son propre défilement horizontal. Avant ce
+                // correctif, ce défilement dépendait d'une liste d'identifiants
+                // de conteneurs à tenir à jour à la main (règle du 21/08/2026,
+                // scoped-mobile.css) : la plupart des tableaux actuels,
+                // produits par ce même moteur, n'y figuraient pas, d'où un
+                // débordement de toute la page sur petit écran. Ici, chaque
+                // tableau porte son propre défilement, quel que soit le
+                // conteneur qui l'accueille -- aucune liste à maintenir.
+                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div>${blocTotaux}<div class="defilement-tableau"><table>${colgroup}${thead}<tbody id="tbody-${nomTableau}">${corps}</tbody></table></div><div id="pagination-${nomTableau}">${pagination}</div>`;
             }
         }
 
         function renduCorps() {
             const etat = etatTableau(nomTableau);
-            const { page, total, totalPages } = traiter();
+            const { traitees, page, total, totalPages } = traiter();
             const corps = contenuCorps(page, total);
+            const zoneTotaux = document.getElementById(`totaux-${nomTableau}`);
+            if (zoneTotaux) zoneTotaux.innerHTML = construireTotaux(totaux, traitees);
 
             if (etat.vue === 'fiches') {
                 const conteneurFiches = document.getElementById(`fiches-${nomTableau}`);
@@ -2471,10 +2842,13 @@
             const paginationDiv = document.getElementById(`pagination-${nomTableau}`);
             if (paginationDiv) paginationDiv.innerHTML = creerControlePagination(nomTableau, total, totalPages);
 
+            // Le bandeau vit hors de tbody/pagination -- ciblé séparément,
+            // jamais via conteneur.innerHTML ici (perdrait le focus des
+            // filtres texte en cours de frappe, même piège déjà résolu
+            // ailleurs dans ce fichier).
             const conteneurBandeau = document.getElementById(`filtre-actif-${nomTableau}`);
             if (conteneurBandeau) conteneurBandeau.innerHTML = construireBandeauFiltresActifs(nomTableau, colonnes);
         }
-
         rendusTableauxComplet[nomTableau] = renduComplet;
         rendusTableauxCorps[nomTableau] = renduCorps;
         return renduComplet;
@@ -3041,7 +3415,7 @@
     // "modifié", sans reconstruire toute la bulle (préserve la position
     // de défilement et l'état des autres messages du fil).
     function mettreAJourMessageModifie(message) {
-        const bulle = document.getElementById(`bulle-message-${message.id_message}`);
+        const bulle = document.getElementById(`bulle-message-${message.id_message_dossier}`);
         if (!bulle) return;
         bulle.dataset.contenuBrut = message.contenu;
         const zone = bulle.querySelector('.zone-contenu-message');
@@ -3450,7 +3824,7 @@
         const delai = prochaineExpiration - Date.now();
         if (delai <= 0) return; // ne devrait pas arriver (le bouton n'aurait pas dû être affiché), sécurité silencieuse
         setTimeout(() => {
-            const bloc = document.getElementById(`bloc-corriger-${m.id_message}`);
+            const bloc = document.getElementById(`bloc-corriger-${m.id_message_dossier}`);
             if (bloc) bloc.remove();
         }, delai);
     }
@@ -3478,10 +3852,10 @@
         // proprement (séparateur " · " compris) quand le délai de grâce
         // expire, sans attendre un rechargement.
         const boutonCorriger = (estMoi && !messageBloqueCorrectionApresLecture(m))
-            ? ` <span id="bloc-corriger-${m.id_message}"> · <button onclick="basculerEditionMessage('${m.type_auteur}', ${m.id_message})" style="border:none; background:none; cursor:pointer; padding:0; color:inherit; text-decoration:underline; font-size:10px; opacity:0.85;">Corriger</button></span>`
+            ? ` <span id="bloc-corriger-${m.id_message_dossier}"> · <button onclick="basculerEditionMessage('${m.type_auteur}', ${m.id_message_dossier})" style="border:none; background:none; cursor:pointer; padding:0; color:inherit; text-decoration:underline; font-size:10px; opacity:0.85;">Corriger</button></span>`
             : '';
         if (estMoi && boutonCorriger) programmerMasquageCorrection(m);
-        return `<div id="bulle-message-${m.id_message}" data-contenu-brut="${echapperHtml(m.contenu)}" style="display:flex; justify-content:${estMoi ? 'flex-end' : 'flex-start'}; margin-bottom:8px;">
+        return `<div id="bulle-message-${m.id_message_dossier}" data-contenu-brut="${echapperHtml(m.contenu)}" style="display:flex; justify-content:${estMoi ? 'flex-end' : 'flex-start'}; margin-bottom:8px;">
             <div style="max-width:70%; background:${estMoi ? 'var(--purple)' : '#f1f5f9'}; color:${estMoi ? 'white' : 'var(--navy)'}; border-radius:12px; padding:8px 12px; font-size:13px;">
                 ${etiquetteAuteur}
                 <div class="zone-contenu-message" style="word-break:break-word;">${rendreContenuMessage(m.contenu)}</div>
@@ -3585,6 +3959,8 @@
         if (sessionClient) {
             html += '<div class="menu-groupe-titre">Espace Client</div>';
             html += `<button class="menu-item" data-page="mes-demandes" onclick="afficherPage('mes-demandes'); chargerMesDemandes();">Mes demandes<span class="badge-notif" style="display:none; background:#dc2626; color:white; border-radius:999px; font-size:10px; padding:1px 6px; margin-left:4px;"></span></button>`;
+            // Lot P1 (24/09/2026) -- visibilité "Client" : ses seuls contrats
+            html += `<button class="menu-item" data-page="mes-contrats" onclick="afficherPage('mes-contrats'); chargerMesContrats();">Mes contrats</button>`;
         }
         if (sessionStaff) {
             html += '<div class="menu-groupe-titre">Espace Personnel</div>';
@@ -3605,15 +3981,51 @@
             // complète, supprimer, importer en masse) restent, eux,
             // réservés en interne -- même motif que le bouton ✏️ déjà
             // construit sur Prospects.
+            // Réorganisation du 24/09/2026 (précision de Roger sur la
+            // distinction "administration des données" -- accessible à
+            // tout staff pour SES données -- vs "administration de la
+            // base" au niveau Admin/Superadmin) : Partenaires est de la
+            // 2e catégorie (déplacé vers Administration), Clients est
+            // une pure donnée de production comme Prospects l'est pour
+            // la prospection (déplacé vers Production & Souscription,
+            // même niveau d'accès que Prospects).
             if (sessionStaff.code_role === 'gestionnaire' || sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
                 html += '<div class="menu-groupe-titre">Prospection & Suivi</div>';
                 html += `<button class="menu-item" data-page="prospects" onclick="afficherPage('prospects')">Prospects</button>`;
-                html += `<button class="menu-item" data-page="creer-partenaire" onclick="afficherPage('creer-partenaire')">Partenaires</button>`;
                 html += `<button class="menu-item" data-page="pilotage" onclick="afficherPage('pilotage'); chargerKpis();">Pilotage & KPIs</button>`;
+            }
+            // Section créée le 24/09/2026 (demande de Roger, positionnée
+            // juste avant Administration/Paramètres). Les 4 modules
+            // restent verrouillés -- l'apport soumis à "Évaluation de
+            // code" (production.html, 22/09) n'était qu'un aperçu de
+            // direction à données simulées, explicitement différé à un
+            // chantier séparé, pas quelque chose à intégrer tel quel ici.
+            // Clients reste visible au niveau Admin+ SEULEMENT pour
+            // l'instant (pas gestionnaire) -- le backend
+            // (staffClients.routes.js) restreint encore GET/PATCH
+            // /clients à administrateur/superadmin ; ouvrir le menu à
+            // gestionnaire sans toucher le backend l'exposerait à un
+            // 403 au clic. Décision d'élargir le backend à trancher
+            // séparément (voir échange du 24/09).
+            if (sessionStaff.code_role === 'gestionnaire' || sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
+                html += '<div class="menu-groupe-titre">Production & Souscription</div>';
+                if (sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
+                    html += `<button class="menu-item" data-page="clients" onclick="afficherPage('clients'); chargerListeClients();">Clients</button>`;
+                }
+                // Lot P1 (24/09/2026) -- Renouvellements et Émissions & DTA
+                // deviennent réels (socle site.contrats). Un contrat naît dans
+                // Émissions (décision de Roger du 24/09), Renouvellements n'en
+                // traite que l'échéance. Le DTA lui-même arrive au lot P2 ;
+                // les 2 derniers modules restent verrouillés jusqu'à leur lot.
+                html += `<button class="menu-item" data-page="renouvellements" onclick="afficherPage('renouvellements'); chargerRenouvellements();">Échéancier</button>`;
+                html += `<button class="menu-item" data-page="emissions" onclick="afficherPage('emissions'); chargerEmissions();">Émissions & DTA</button>`;
+                ['Sinistres SLA', 'Reversements & Bordereaux'].forEach((libelle) => {
+                    html += `<button class="menu-item menu-item-grise" disabled title="Bientôt disponible">🔒 ${libelle}</button>`;
+                });
             }
             if (sessionStaff.code_role === 'administrateur' || sessionStaff.code_role === 'superadmin') {
                 html += '<div class="menu-groupe-titre">Administration</div>';
-                html += `<button class="menu-item" data-page="clients" onclick="afficherPage('clients'); chargerListeClients();">Clients</button>`;
+                html += `<button class="menu-item" data-page="creer-partenaire" onclick="afficherPage('creer-partenaire')">Partenaires</button>`;
                 html += `<button class="menu-item" data-page="personnel" onclick="afficherPage('personnel'); chargerListePersonnel();">Personnel</button>`;
                 html += `<button class="menu-item" data-page="parametres" onclick="afficherPage('parametres'); chargerParametresSite();">Paramètres</button>`;
                 html += `<button class="menu-item" data-page="journal-no-reply" onclick="afficherPage('journal-no-reply'); chargerJournalNoReply();">Journal no-reply</button>`;
@@ -3625,17 +4037,23 @@
             html += `<button class="menu-item" data-page="messagerie" onclick="afficherPage('messagerie'); chargerMessagerie('partenaire');">Messagerie</button>`;
         }
 
-        html += '<div class="menu-groupe-titre">Prochainement</div>';
-        const prochainement = [
-            'Téléverser mes documents',
-            'Production & Souscription', 'Sinistres (dont Bon de prise en charge)', 'Stocks',
-            'Double authentification (2FA)',
-            'Groupes de permissions (partenaires)',
-            'Modèles d\'import',
-        ];
-        prochainement.forEach((libelle) => {
-            html += `<button class="menu-item menu-item-grise" disabled title="Bientôt disponible">🔒 ${libelle}</button>`;
-        });
+        // 30/09/2026 (Roger) : visible par tout le monde jusqu'ici, y
+        // compris les Clients -- une section « en construction » n'a de
+        // sens que pour qui peut agir dessus. Restreinte aux rôles
+        // Administrateur/Super administrateur.
+        if (sessionStaff && ['administrateur', 'superadmin'].includes(sessionStaff.code_role)) {
+            html += '<div class="menu-groupe-titre">Prochainement</div>';
+            const prochainement = [
+                'Téléverser mes documents',
+                'Sinistres (dont Bon de prise en charge)', 'Stocks',
+                'Double authentification (2FA)',
+                'Groupes de permissions (partenaires)',
+                'Modèles d\'import',
+            ];
+            prochainement.forEach((libelle) => {
+                html += `<button class="menu-item menu-item-grise" disabled title="Bientôt disponible">🔒 ${libelle}</button>`;
+            });
+        }
 
         menu.innerHTML = html;
 
@@ -4798,10 +5216,24 @@
         }
     }
 
+    // 30/09/2026 (Roger) : un prospect promu en client ne doit plus
+    // apparaître dans "Prospects" par défaut -- seulement si la case est
+    // cochée. Rapprochement par email (meilleur signal disponible côté
+    // écran ; la notion même d'identité Client/Souscripteur reste une
+    // question ouverte, voir échange du 30/09 -- ceci est une mesure
+    // pragmatique, pas une réponse définitive à cette question).
+    function estProspectDevenuClient(p) {
+        if (!p.email) return false;
+        const email = p.email.toLowerCase();
+        return clientsCourants.some((c) => (c.email || '').toLowerCase() === email);
+    }
+
     function donneesProspectsAffichables() {
         const recherche = (document.getElementById('recherche-prospects')?.value || '').toLowerCase();
-        if (!recherche) return prospectsCourants;
-        return prospectsCourants.filter((p) =>
+        const inclureClients = document.getElementById('prospects-inclure-clients')?.checked;
+        let liste = inclureClients ? prospectsCourants : prospectsCourants.filter((p) => !estProspectDevenuClient(p));
+        if (!recherche) return liste;
+        return liste.filter((p) =>
             (nomAffiche(p) || p.email || '').toLowerCase().includes(recherche) || (p.branche_interet || '').toLowerCase().includes(recherche)
         );
     }
@@ -4819,6 +5251,9 @@
     async function chargerProspects() {
         const conteneur = document.getElementById('prospects-conteneur');
         conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        // Nécessaire au rapprochement "déjà client" (voir donneesProspectsAffichables) --
+        // chargé une fois, silencieusement, si ce n'est déjà fait ailleurs.
+        if (!clientsCourants.length) chargerListeClients().then(() => afficherTableauProspects());
         try {
             const resp = await fetch('/api/staff/prospects', { credentials: 'include' });
             const data = await resp.json();
@@ -5776,6 +6211,27 @@
     // affiché par les navigateurs modernes (texte générique imposé), mais
     // preventDefault()/returnValue reste nécessaire pour déclencher
     // l'invite native.
+    // 26/09/2026 -- date l'en-tête d'impression (logo + nom + date), quel
+    // que soit le déclencheur (bouton "Imprimer" du tableau, ou Ctrl+P) :
+    // beforeprint couvre les deux, contrairement à un simple appel dans
+    // imprimerTableau().
+    // 27/09/2026 -- refonte de l'impression (Roger) : date au pied de page
+    // (plus dans l'en-tête, pour éliminer la redondance avec l'en-tête
+    // natif du navigateur), et les zones Titre / Légende de l'en-tête
+    // reprennent le <h2> et le <p class="sous-titre"> de la page
+    // actuellement visible -- l'en-tête est unique et partagé, il doit
+    // donc être rempli au moment même de l'impression, quelle que soit la
+    // page ouverte (bouton "Imprimer" d'un tableau, ou Ctrl+P direct).
+    window.addEventListener('beforeprint', () => {
+        const date = document.getElementById('pied-impression-date');
+        if (date) date.textContent = new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+        const pageVisible = document.querySelector('.page.visible');
+        const titre = document.getElementById('entete-impression-titre');
+        if (titre) titre.textContent = pageVisible?.querySelector('h2')?.textContent || 'Mon Espace';
+        const contexte = document.getElementById('entete-impression-contexte');
+        if (contexte) contexte.textContent = pageVisible?.querySelector('p.sous-titre')?.textContent || '';
+    });
+
     window.addEventListener('beforeunload', (event) => {
         const unModifie = Object.values(etatDashboardPersonnalisable).some((etat) => etat.modifie);
         if (!unModifie) return;
@@ -6370,6 +6826,1440 @@
         } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
     }
 
+    // =====================================================================
+    // [PRÉSENTATION-PERSONNEL] + [PRÉSENTATION-CLIENT]
+    // Production & Souscription — Lot P1 (24/09/2026) + P1bis (24/09/2026)
+    //   * Échéancier (ex-« Renouvellements ») : contrats par date
+    //     d'échéance sur une période d'édition réglable ; Suivi ;
+    //     Renouveler (ouvre un mouvement REN dans Émissions).
+    //   * Émissions & DTA : registre des MOUVEMENTS (affaires nouvelles,
+    //     renouvellements, avenants), totaux, « ➕ Nouveau Mouvement ».
+    //   * Mes contrats (Client) : ses seuls contrats, inchangé.
+    //   * Aucune boîte de dialogue : tout formulaire est un SOUS-FORMULAIRE
+    //     RÉTRACTABLE sous l'en-tête de la page (règle du projet).
+    //   * Montants dérivés (fichier central, TVA, carte rose, DTA, TTC)
+    //     affichés à titre indicatif ici, TOUJOURS recalculés par le
+    //     serveur (mouvements.routes.js) -- le navigateur ne décide rien.
+    //   * Tableaux : moteur partagé creerRenduTableau (totaux, filtres par
+    //     champ avec comparaisons, pagination 5-100, CSV ; ou ,, impression
+    //     de toutes les lignes filtrées).
+    //   * Toute donnée affichée passe par echapperHtml / echapperAttribut.
+    // =====================================================================
+    let contratsCourants = [];
+    let mouvementsCourants = [];
+    let referentielsProduction = null;
+    let mesContratsCourants = [];
+
+    const LIBELLES_SUIVI_RENOUVELLEMENT = {
+        a_traiter: 'À traiter', relance: 'Relancé', accord_client: 'Accord client', renouvele: 'Renouvelé', perdu: 'Perdu',
+    };
+    const LIBELLES_STATUT_CONTRAT = {
+        en_cours: 'En cours', suspendu: 'Suspendu', resilie: 'Résilié', renouvele: 'Renouvelé', annule: 'Annulé',
+    };
+    const LIBELLES_STATUT_PAIEMENT = { non_paye: 'Non payé', partiel: 'Partiellement payé', paye: 'Payé' };
+    const LIBELLES_STATUT_DTA = { non_applicable: '—', du: 'Perçu', deja_acquitte: 'Déjà acquitté', exempte: 'Exempté' };
+    const LIBELLES_GENRE_VEHICULE = { VEHICULE: 'Véhicule (4 roues et plus)', MOTO2: 'Motocyclette 2 roues', MOTO3: 'Motocyclette 3 roues / tricycle' };
+
+    // echapperHtml n'échappe pas les guillemets : indispensable dans value="…".
+    function echapperAttribut(texte) {
+        return echapperHtml(texte).replace(/"/g, '&quot;');
+    }
+
+    // Code de filtre sans caractère capable de casser l'attribut onchange
+    // du panneau de filtres générique ni le bandeau des filtres actifs.
+    function codeFiltreSur(valeur) {
+        return String(valeur ?? '').replace(/['"<>&\\]/g, ' ').trim();
+    }
+
+    function valeursDistinctesFiltre(donnees, champ) {
+        const vues = new Map();
+        donnees.forEach((d) => { const v = d[champ]; if (v) vues.set(codeFiltreSur(v), v); });
+        return [...vues.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'fr'))
+            .map(([code, v]) => ({ code, libelle: echapperHtml(v) }));
+    }
+
+    function colonneChoix(cle, libelle, champ, source) {
+        return {
+            cle, libelle, trier: (l) => l[champ] || '',
+            valeurs: () => valeursDistinctesFiltre(source(), champ),
+            correspond: (l, codes) => codes.includes(codeFiltreSur(l[champ])),
+        };
+    }
+
+    // 30/09/2026 -- addendum2 §1.3 : en mode Tableau, le sigle monétaire
+    // n'apparaît plus qu'une fois, en en-tête de colonne -- avecDevise=false
+    // pour une cellule de tableau ; resté à true (par défaut) pour une
+    // fiche, où chaque valeur se lit isolément et garde son sigle.
+    function formaterMontantFcfa(valeur, avecDevise = true) {
+        if (valeur === null || valeur === undefined || valeur === '') return '—';
+        const chiffre = Number(valeur).toLocaleString('fr-FR');
+        return avecDevise ? `${chiffre} FCFA` : chiffre;
+    }
+
+    // Dates reçues en texte AAAA-MM-JJ (jamais d'objet Date côté serveur).
+    function formaterDateIso(iso) {
+        if (!iso) return '—';
+        const [a, m, j] = String(iso).slice(0, 10).split('-');
+        return `${j}/${m}/${a}`;
+    }
+
+    function aujourdhuiIsoCameroun() {
+        return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Douala' });
+    }
+
+    function ajouterUnAnIso(iso) {
+        const [a, m, j] = iso.split('-').map(Number);
+        return new Date(Date.UTC(a + 1, m - 1, j)).toISOString().slice(0, 10);
+    }
+
+    // 06/10/2026 -- vocabulaire de Roger : Expiration = DERNIER jour couvert
+    // = Échéance (anniversaire) - 1 jour. Même mécanique UTC que
+    // ajouterUnAnIso : aucun décalage de fuseau possible.
+    function retirerUnJourIso(iso) {
+        const [a, m, j] = iso.split('-').map(Number);
+        return new Date(Date.UTC(a, m - 1, j - 1)).toISOString().slice(0, 10);
+    }
+
+    function badgeCouleur(libelle, fond, texte, bord, titre) {
+        return `<span class="badge" style="background:${fond}; color:${texte}; border-color:${bord}; white-space:nowrap;"${titre ? ` title="${echapperAttribut(titre)}"` : ''}>${libelle}</span>`;
+    }
+
+    // 30/09/2026 -- couleur d'urgence seule (sans le badge), pour habiller
+    // le bord de la fiche Échéancier : mêmes seuils que badgeEcheance,
+    // une seule source de vérité pour les deux usages.
+    function couleurUrgenceEcheance(jours, statutContrat) {
+        if (['renouvele', 'resilie', 'annule'].includes(statutContrat)) return '#cbd5e1';
+        const n = Number(jours);
+        if (n <= 0) return '#dc2626';
+        if (n <= 30) return '#c2410c';
+        if (n <= 60) return '#b45309';
+        return '#047857';
+    }
+
+    function badgeEcheance(jours, statutContrat) {
+        if (['renouvele', 'resilie', 'annule'].includes(statutContrat)) {
+            return badgeCouleur(LIBELLES_STATUT_CONTRAT[statutContrat], '#f1f5f9', '#64748b', '#e2e8f0');
+        }
+        const n = Number(jours);
+        if (n < 0) return badgeCouleur(`Échu depuis ${-n} j`, '#fef2f2', '#dc2626', '#fecaca');
+        if (n === 0) return badgeCouleur('Échéance ce jour', '#fef2f2', '#dc2626', '#fecaca');
+        if (n <= 30) return badgeCouleur(`J-${n}`, '#fff7ed', '#c2410c', '#fed7aa');
+        if (n <= 60) return badgeCouleur(`J-${n}`, '#fffbeb', '#b45309', '#fde68a');
+        return badgeCouleur(`J-${n}`, '#ecfdf5', '#047857', '#a7f3d0');
+    }
+
+    function badgeSuiviRenouvellement(c) {
+        const couleurs = {
+            a_traiter: ['#eff6ff', '#1d4ed8', '#bfdbfe'], relance: ['#fffbeb', '#b45309', '#fde68a'],
+            accord_client: ['#ecfdf5', '#047857', '#a7f3d0'], renouvele: ['#f1f5f9', '#64748b', '#e2e8f0'],
+            perdu: ['#fef2f2', '#dc2626', '#fecaca'],
+        }[c.statut_renouvellement] || ['#f1f5f9', '#64748b', '#e2e8f0'];
+        const titre = c.date_derniere_relance ? `Dernière relance : ${new Date(c.date_derniere_relance).toLocaleString('fr-FR')}` : '';
+        return badgeCouleur(LIBELLES_SUIVI_RENOUVELLEMENT[c.statut_renouvellement] || c.statut_renouvellement, couleurs[0], couleurs[1], couleurs[2], titre);
+    }
+
+    function badgePaiement(statut) {
+        const c = { non_paye: ['#fef2f2', '#dc2626', '#fecaca'], partiel: ['#fffbeb', '#b45309', '#fde68a'], paye: ['#ecfdf5', '#047857', '#a7f3d0'] }[statut] || ['#f1f5f9', '#64748b', '#e2e8f0'];
+        return badgeCouleur(LIBELLES_STATUT_PAIEMENT[statut] || statut, c[0], c[1], c[2]);
+    }
+
+    function contratActif(c) {
+        return c.statut_contrat === 'en_cours' || c.statut_contrat === 'suspendu';
+    }
+
+    function totalMontant(liste, champ) {
+        return liste.reduce((s, l) => s + Number(l[champ] || 0), 0);
+    }
+
+    // ---------------------------------------------------------------------
+    // Sous-formulaire rétractable -- un par page, placé juste sous l'en-tête
+    // (#sous-formulaire-<page>). Jamais de superposition.
+    // ---------------------------------------------------------------------
+    // Les champs déclarent leur propre marge : la règle générale
+    // "input, textarea { margin-bottom:14px }" s'appliquerait sinon.
+    const STYLE_CHAMP_PRODUCTION = 'width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; margin:0 0 8px; background:white;';
+
+    function champProduction(libelle, html, idBloc) {
+        return `<div${idBloc ? ` id="${idBloc}"` : ''}><label style="font-size:10px; color:var(--gray); display:block; margin-bottom:2px; font-weight:700;">${libelle}</label>${html}</div>`;
+    }
+
+    function ouvrirSousFormulaire(page, titre, corps, libelleValider, actionValider) {
+        const zone = document.getElementById(`sous-formulaire-${page}`);
+        if (!zone) return;
+        zone.innerHTML = `
+            <div style="border:1px solid var(--border); border-left:4px solid var(--purple); border-radius:10px; background:#fafaff; padding:14px 16px; margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+                    <h3 style="font-size:14px; margin:0;">${titre}</h3>
+                    <button onclick="fermerSousFormulaire('${page}')" title="Replier ce formulaire" style="font-size:11px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">▲ Replier</button>
+                </div>
+                ${corps}
+                <div id="sous-formulaire-${page}-erreur" style="font-size:11px; color:#dc2626; margin:4px 0 8px; display:none;"></div>
+                <div style="display:flex; gap:6px; justify-content:flex-end;">
+                    <button onclick="fermerSousFormulaire('${page}')" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">Annuler</button>
+                    <button id="sous-formulaire-${page}-valider" onclick="${actionValider}" style="font-size:11px; padding:6px 14px; border:none; border-radius:6px; background:var(--purple); color:white; cursor:pointer;">${libelleValider}</button>
+                </div>
+            </div>`;
+        zone.style.display = 'block';
+        zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function fermerSousFormulaire(page) {
+        const zone = document.getElementById(`sous-formulaire-${page}`);
+        if (zone) { zone.innerHTML = ''; zone.style.display = 'none'; }
+    }
+
+    function erreurSousFormulaire(page, message) {
+        const el = document.getElementById(`sous-formulaire-${page}-erreur`);
+        if (!el) return;
+        el.textContent = message || '';
+        el.style.display = message ? 'block' : 'none';
+    }
+
+    function messagePage(page, html, couleur) {
+        const el = document.getElementById(`message-${page}`);
+        if (!el) return;
+        el.innerHTML = html ? `<div style="background:${couleur || '#ecfdf5'}; border:1px solid ${couleur ? '#fecaca' : '#a7f3d0'}; border-radius:8px; padding:8px 12px; font-size:12px; margin-bottom:12px;">${html}</div>` : '';
+    }
+
+    async function envoyerProduction(page, methode, url, corps) {
+        const bouton = document.getElementById(`sous-formulaire-${page}-valider`);
+        if (bouton) bouton.disabled = true;
+        erreurSousFormulaire(page, '');
+        try {
+            const resp = await fetch(url, {
+                method: methode, headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify(corps),
+            });
+            const data = await resp.json();
+            if (!data.succes) { erreurSousFormulaire(page, (data.erreurs || ['erreur serveur']).join(' — ')); return null; }
+            fermerSousFormulaire(page);
+            return data;
+        } catch (err) {
+            erreurSousFormulaire(page, 'requête réseau échouée');
+            return null;
+        } finally {
+            if (bouton) bouton.disabled = false;
+        }
+    }
+
+    function valeurChampProduction(id) {
+        const el = document.getElementById(id);
+        return el ? String(el.value).trim() : '';
+    }
+
+    // ---------------------------------------------------------------------
+    // Chargements
+    // ---------------------------------------------------------------------
+    // 30/09/2026 -- même marqueur que VERSION_ROUTE côté serveur (voir
+    // mouvements.routes.js) : un dépôt désynchronisé s'est déjà traduit
+    // plusieurs fois par des 404 ou des champs manquants, difficiles à
+    // diagnostiquer depuis la console seule -- ceci le rend immédiat.
+    const VERSION_ECRAN = '2026-09-30-a';
+    async function chargerReferentielsProduction(forcer) {
+        if (referentielsProduction && !forcer) return referentielsProduction;
+        const resp = await fetch('/api/staff/production/referentiels', { credentials: 'include' });
+        const data = await resp.json();
+        if (!data.succes) throw new Error((data.erreurs && data.erreurs[0]) || 'référentiels indisponibles');
+        if (data.version_route !== VERSION_ECRAN) {
+            throw new Error(`Version désynchronisée : cette page attend le serveur ${VERSION_ECRAN}, il répond en ${data.version_route || '(ancienne version, sans marqueur)'}. Redéployez myspace.html et mouvements.routes.js ENSEMBLE avant de continuer.`);
+        }
+        referentielsProduction = data;
+        return data;
+    }
+
+    async function chargerContratsProduction(idConteneur) {
+        const conteneur = idConteneur ? document.getElementById(idConteneur) : null;
+        if (conteneur) conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/contrats', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                const message = (data.erreurs && data.erreurs[0]) || 'Erreur de chargement.';
+                if (conteneur) conteneur.innerHTML = `<p class="vide">${echapperHtml(message)}</p>`;
+                else messagePage('renouvellements', `Échéancier non actualisé : ${echapperHtml(message)}`, '#fef2f2');
+                return;
+            }
+            contratsCourants = data.contrats;
+            afficherTableauRenouvellements();
+        } catch (err) {
+            console.error(err);
+            if (conteneur) conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>';
+            else messagePage('renouvellements', 'Échéancier non actualisé : requête réseau échouée.', '#fef2f2');
+        }
+    }
+
+    async function chargerMouvementsProduction(idConteneur) {
+        const conteneur = idConteneur ? document.getElementById(idConteneur) : null;
+        if (conteneur) conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/staff/mouvements', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                const message = (data.erreurs && data.erreurs[0]) || 'Erreur de chargement.';
+                if (conteneur) conteneur.innerHTML = `<p class="vide">${echapperHtml(message)}</p>`;
+                else messagePage('emissions', `Registre non actualisé : ${echapperHtml(message)}`, '#fef2f2');
+                return;
+            }
+            mouvementsCourants = data.mouvements;
+            afficherTableauEmissions();
+        } catch (err) {
+            console.error(err);
+            if (conteneur) conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>';
+            else messagePage('emissions', 'Registre non actualisé : requête réseau échouée.', '#fef2f2');
+        }
+    }
+
+    function chargerRenouvellements() { return chargerContratsProduction('renouvellements-conteneur'); }
+
+    async function chargerEmissions() {
+        try { await chargerReferentielsProduction(); } catch (err) { console.error(err); }
+        return chargerMouvementsProduction('emissions-conteneur');
+    }
+
+    // Après toute émission : les deux registres sont rechargés.
+    function rechargerProduction() {
+        chargerMouvementsProduction();
+        chargerContratsProduction();
+    }
+
+    // ---------------------------------------------------------------------
+    // Personnel — Échéancier (id interne "renouvellements" conservé)
+    // ---------------------------------------------------------------------
+    const colonnesRenouvellements = [
+        { cle: 'echeance', libelle: 'Échéance', trier: (c) => c.date_echeance || '', exporter: (c) => formaterDateIso(c.date_echeance) },
+        { cle: 'jours', libelle: 'Jours restants', trier: (c) => Number(c.jours_restants) },
+        { cle: 'police', libelle: 'N° police', trier: (c) => c.numero_police || '' },
+        { cle: 'souscripteur', libelle: 'Souscripteur', trier: (c) => c.souscripteur || '' },
+        colonneChoix('compagnie', 'Compagnie', 'compagnie', () => contratsCourants),
+        colonneChoix('branche', 'Branche', 'code_branche', () => contratsCourants),
+        { cle: 'prime', libelle: 'Prime TTC (FCFA)', trier: (c) => Number(c.prime_ttc || 0), exporter: (c) => c.prime_ttc ?? '' },
+        {
+            cle: 'suivi', libelle: 'Suivi', trier: (c) => LIBELLES_SUIVI_RENOUVELLEMENT[c.statut_renouvellement] || '',
+            valeurs: () => Object.values(LIBELLES_SUIVI_RENOUVELLEMENT).map((l) => ({ code: l, libelle: l })),
+        },
+    ];
+
+    function boutonsActionsEcheancier(c) {
+        if (!contratActif(c)) return '';
+        return `<button onclick="ouvrirSuiviContrat(${c.id_contrat})" title="Suivi du renouvellement" style="font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">✏️ Suivi</button>
+            <button onclick="allerRenouveler(${c.id_contrat})" title="Émettre le renouvellement (mouvement REN)" style="font-size:11px; padding:4px 8px; border:none; border-radius:6px; background:var(--purple); color:white; cursor:pointer;">🔁 Renouveler</button>`;
+    }
+
+    function genererLignesRenouvellements(page) {
+        return page.map((c) => `<tr>
+                <td style="white-space:nowrap;">${formaterDateIso(c.date_echeance)}</td>
+                <td>${badgeEcheance(c.jours_restants, c.statut_contrat)}</td>
+                <td><strong>${echapperHtml(c.numero_police)}</strong>${c.libelle_produit ? `<div style="font-size:10px; color:var(--gray);">${echapperHtml(c.libelle_produit)}</div>` : ''}</td>
+                <td>${echapperHtml(c.souscripteur)}${c.matricule
+                    ? `<div style="font-size:10px; color:var(--gray);">${echapperHtml(c.matricule)}</div>`
+                    : '<div style="font-size:10px; color:#b45309;" title="Ce souscripteur n\'a pas de compte : il ne voit pas ce contrat dans son espace">sans compte client</div>'}</td>
+                <td>${echapperHtml(c.compagnie)}</td>
+                <td style="font-size:11px;">${echapperHtml(c.code_branche)}</td>
+                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(c.prime_ttc, false)}</td>
+                <td>${badgeSuiviRenouvellement(c)}</td>
+                <td style="white-space:nowrap;">${boutonsActionsEcheancier(c)}</td>
+            </tr>`).join('');
+    }
+
+    function genererFichesRenouvellements(page) {
+        return page.map((c) => {
+            const n = Number(c.jours_restants);
+            const enCours = !['renouvele', 'resilie', 'annule'].includes(c.statut_contrat);
+            const couleur = couleurUrgenceEcheance(c.jours_restants, c.statut_contrat);
+            const grandNombre = enCours ? `<div style="text-align:right; flex-shrink:0;">
+                <div style="font-size:26px; font-weight:800; line-height:1; color:${couleur};">${n <= 0 ? (n === 0 ? '0' : `+${-n}`) : n}</div>
+                <div style="font-size:9px; color:var(--gray); text-transform:uppercase; letter-spacing:0.04em;">${n < 0 ? 'jours de retard' : n === 0 ? 'échu ce jour' : 'jours restants'}</div>
+            </div>` : `<div style="flex-shrink:0;">${badgeCouleur(LIBELLES_STATUT_CONTRAT[c.statut_contrat], '#f1f5f9', '#64748b', '#e2e8f0')}</div>`;
+            return `
+            <div style="border:1px solid var(--border); border-left:4px solid ${couleur}; border-radius:10px; padding:14px; background:white;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;">
+                    <div>
+                        <div style="font-weight:700; font-size:14px;">${echapperHtml(c.souscripteur)}</div>
+                        <div style="font-size:11px; color:var(--gray);">${echapperHtml(c.compagnie)} · ${echapperHtml(c.numero_police)}</div>
+                    </div>
+                    ${grandNombre}
+                </div>
+                <div style="display:grid; grid-template-columns:max-content 1fr; gap:6px 14px;">
+                    <div class="carte-fiche-libelle">Échéance</div><div class="carte-fiche-valeur">${formaterDateIso(c.date_echeance)}</div>
+                    <div class="carte-fiche-libelle">Branche</div><div class="carte-fiche-valeur">${echapperHtml(c.code_branche)}${c.libelle_produit ? ` — ${echapperHtml(c.libelle_produit)}` : ''}</div>
+                    <div class="carte-fiche-libelle">Téléphone</div><div class="carte-fiche-valeur">${echapperHtml(c.telephone || '—')}</div>
+                    <div class="carte-fiche-libelle">Suivi</div><div class="carte-fiche-valeur">${badgeSuiviRenouvellement(c)}</div>
+                </div>
+                <div class="fiche-montant-cle">
+                    <span class="fiche-montant-cle-libelle">Prime TTC</span>
+                    <span class="fiche-montant-cle-valeur">${formaterMontantFcfa(c.prime_ttc)}</span>
+                </div>
+                ${c.observations_internes ? `<p style="font-size:11px; color:#475569; background:#f8fafc; border-radius:6px; padding:6px 8px; margin:0 0 10px; white-space:pre-wrap;">${echapperHtml(c.observations_internes)}</p>` : ''}
+                <div style="display:flex; gap:6px; justify-content:flex-end;">${boutonsActionsEcheancier(c)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    // Période d'édition : échus + échéance sous N jours (90 par défaut)
+    function donneesRenouvellementsAffichables() {
+        const horizon = document.getElementById('horizon-renouvellements')?.value || '90';
+        const recherche = (document.getElementById('recherche-renouvellements')?.value || '').toLowerCase();
+        let donnees = contratsCourants.filter(contratActif);
+        donnees = horizon === 'echus'
+            ? donnees.filter((c) => Number(c.jours_restants) < 0)
+            : donnees.filter((c) => Number(c.jours_restants) <= Number(horizon));
+        if (!recherche) return donnees;
+        return donnees.filter((c) =>
+            [c.numero_police, c.souscripteur, c.compagnie, c.matricule, c.telephone, c.libelle_produit]
+                .some((v) => (v || '').toLowerCase().includes(recherche))
+        );
+    }
+
+    const afficherTableauRenouvellements = creerRenduTableau('renouvellements', {
+        obtenirDonnees: donneesRenouvellementsAffichables,
+        colonnes: colonnesRenouvellements,
+        genererLignes: genererLignesRenouvellements,
+        genererFiches: genererFichesRenouvellements,
+        idConteneur: 'renouvellements-conteneur',
+        apres: '<th style="padding:6px 6px;">Actions</th>',
+        totaux: (d) => [
+            { libelle: 'Contrats', valeur: d.length },
+            { libelle: 'Échus', valeur: d.filter((c) => Number(c.jours_restants) < 0).length },
+            { libelle: 'Primes TTC en jeu', valeur: formaterMontantFcfa(totalMontant(d, 'prime_ttc')) },
+        ],
+        messageVide: 'Aucun contrat à échéance sur cette période. Élargissez la période ; les contrats naissent dans Émissions & DTA.',
+    });
+
+    // Suivi du renouvellement (route P1 PATCH /api/staff/contrats/:id)
+    function ouvrirSuiviContrat(idContrat) {
+        const c = contratsCourants.find((x) => x.id_contrat === idContrat);
+        if (!c) return;
+        const options = (libelles, codes, actuel) => codes.map((code) =>
+            `<option value="${code}" ${code === actuel ? 'selected' : ''}>${libelles[code]}</option>`).join('');
+        ouvrirSousFormulaire('renouvellements',
+            `Suivi — ${echapperHtml(c.numero_police)} · ${echapperHtml(c.souscripteur)}`,
+            `<p style="font-size:11px; color:var(--gray); margin:0 0 10px;">${echapperHtml(c.compagnie)} — échéance ${formaterDateIso(c.date_echeance)}</p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0 12px;">
+                ${champProduction('Suivi du renouvellement', `<select id="suivi-statut-renouvellement" style="${STYLE_CHAMP_PRODUCTION}">${options(LIBELLES_SUIVI_RENOUVELLEMENT, ['a_traiter', 'relance', 'accord_client', 'perdu'], c.statut_renouvellement)}</select>`)}
+                ${champProduction('Téléphone de contact', `<input id="suivi-telephone" value="${echapperAttribut(c.telephone || '')}" style="${STYLE_CHAMP_PRODUCTION}">`)}
+            </div>
+            ${champProduction('Observations internes (jamais visibles du client)', `<textarea id="suivi-observations" rows="3" style="${STYLE_CHAMP_PRODUCTION} resize:vertical;">${echapperHtml(c.observations_internes || '')}</textarea>`)}
+            <p style="font-size:10px; color:var(--gray); margin:0 0 6px;">Résiliation, suspension ou changement de prime : par un mouvement dans Émissions & DTA (avenant), jamais par une correction directe.</p>`,
+            'Enregistrer', `enregistrerSuiviContrat(${idContrat})`);
+    }
+
+    async function enregistrerSuiviContrat(idContrat) {
+        const c = contratsCourants.find((x) => x.id_contrat === idContrat);
+        if (!c) return;
+        const corps = {};
+        const comparer = (champ, nouvelle, ancienne) => { if (String(nouvelle ?? '') !== String(ancienne ?? '')) corps[champ] = nouvelle === '' ? null : nouvelle; };
+        comparer('statut_renouvellement', valeurChampProduction('suivi-statut-renouvellement'), c.statut_renouvellement);
+        comparer('souscripteur_telephone', valeurChampProduction('suivi-telephone'), c.telephone);
+        comparer('observations_internes', valeurChampProduction('suivi-observations'), c.observations_internes);
+        if (!Object.keys(corps).length) { fermerSousFormulaire('renouvellements'); return; }
+        if (await envoyerProduction('renouvellements', 'PATCH', `/api/staff/contrats/${idContrat}`, corps)) chargerContratsProduction();
+    }
+
+    // Renouveler = émettre un mouvement REN, dans Émissions & DTA
+    async function allerRenouveler(idContrat) {
+        const c = contratsCourants.find((x) => x.id_contrat === idContrat);
+        if (!c) return;
+        afficherPage('emissions');
+        await chargerEmissions();
+        ouvrirNouveauMouvement({ code_nature: 'REN', numero_police: c.numero_police, date_effet: c.date_echeance, date_echeance: retirerUnJourIso(ajouterUnAnIso(c.date_echeance)) });
+    }
+
+    // ---------------------------------------------------------------------
+    // Personnel — Émissions & DTA : registre des mouvements
+    // ---------------------------------------------------------------------
+    const colonnesEmissions = [
+        { cle: 'emission', libelle: 'Émis le', trier: (m) => m.date_emission || '', exporter: (m) => formaterDateIso(m.date_emission) },
+        colonneChoix('nature', 'Nature', 'nature', () => mouvementsCourants),
+        { cle: 'police', libelle: 'N° police', trier: (m) => m.numero_police || '' },
+        { cle: 'souscripteur', libelle: 'Souscripteur', trier: (m) => m.souscripteur || '' },
+        colonneChoix('compagnie', 'Compagnie', 'compagnie', () => mouvementsCourants),
+        colonneChoix('branche', 'Branche', 'code_branche', () => mouvementsCourants),
+        colonneChoix('pdv', 'Point de vente', 'code_point_de_vente', () => mouvementsCourants),
+        { cle: 'effet', libelle: 'Effet', trier: (m) => m.date_effet || '', exporter: (m) => formaterDateIso(m.date_effet) },
+        { cle: 'vehicule', libelle: 'Véhicule / risque', trier: (m) => m.immatriculation || m.vin || m.caracterisation_risque || '' },
+        { cle: 'prime_nette', libelle: 'Prime nette (FCFA)', trier: (m) => Number(m.prime_nette || 0), exporter: (m) => m.prime_nette ?? '' },
+        { cle: 'ca', libelle: 'Chiffre d\'affaires (FCFA)', trier: (m) => Number(m.chiffre_affaires || 0), exporter: (m) => m.chiffre_affaires ?? '' },
+        { cle: 'dta', libelle: 'DTA (FCFA)', trier: (m) => Number(m.dta || 0), exporter: (m) => m.dta ?? '' },
+        { cle: 'ttc', libelle: 'Prime TTC (FCFA)', trier: (m) => Number(m.prime_ttc || 0), exporter: (m) => m.prime_ttc ?? '' },
+        {
+            cle: 'paiement', libelle: 'Paiement', trier: (m) => LIBELLES_STATUT_PAIEMENT[m.statut_paiement] || '',
+            valeurs: () => Object.values(LIBELLES_STATUT_PAIEMENT).map((l) => ({ code: l, libelle: l })),
+        },
+    ];
+
+    function libelleDta(m) {
+        if (m.dta_statut === 'deja_acquitte') return `<div style="font-size:10px; color:var(--gray);" title="Exercice ${echapperAttribut(m.dta_exercice)} — acquitté sur ${echapperAttribut(m.dta_police_reference)} (effet ${formaterDateIso(m.dta_date_reference)})">déjà acquitté</div>`;
+        if (m.dta_statut === 'exempte') return `<div style="font-size:10px; color:#b45309;" title="${echapperAttribut(m.dta_justificatif)}">exempté</div>`;
+        return '';
+    }
+
+    function genererLignesEmissions(page) {
+        return page.map((m) => `<tr>
+                <td style="white-space:nowrap;">${formaterDateIso(m.date_emission)}</td>
+                <td style="font-size:11px;"><strong>${echapperHtml(m.code_nature)}</strong><div style="color:var(--gray);">${echapperHtml(m.nature)}</div></td>
+                <td style="white-space:nowrap;"><strong>${echapperHtml(m.numero_police)}</strong></td>
+                <td>${echapperHtml(m.souscripteur)}${m.matricule ? `<div style="font-size:10px; color:var(--gray);">${echapperHtml(m.matricule)}</div>` : ''}</td>
+                <td>${echapperHtml(m.compagnie)}</td>
+                <td style="font-size:11px;">${echapperHtml(m.code_branche)}</td>
+                <td style="font-size:11px;" title="${echapperAttribut(m.point_de_vente)}">${echapperHtml(m.code_point_de_vente)}</td>
+                <td style="white-space:nowrap;">${formaterDateIso(m.date_effet)}</td>
+                <td style="font-size:11px;">${echapperHtml(m.immatriculation || m.vin || m.caracterisation_risque || '—')}${m.energie ? `<div style="color:var(--gray);">${echapperHtml(m.energie)}</div>` : ''}</td>
+                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.prime_nette, false)}${m.prime_annuelle_reference && Number(m.prime_annuelle_reference) !== Number(m.prime_nette) ? `<div style="font-size:10px; color:var(--gray); font-weight:normal;" title="Prime annuelle équivalente (Tarif Ministériel, Art. 6)">annuité : ${formaterMontantFcfa(m.prime_annuelle_reference, false)}</div>` : ''}</td>
+                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.chiffre_affaires, false)}</td>
+                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.dta, false)}${libelleDta(m)}</td>
+                <td style="white-space:nowrap; text-align:right;"><strong>${formaterMontantFcfa(m.prime_ttc, false)}</strong></td>
+                <td>${badgePaiement(m.statut_paiement)}</td>
+                <td style="white-space:nowrap;">
+                    <button onclick="ouvrirPaiementMouvement(${m.id_mouvement})" title="Statut du paiement" style="font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">💳</button>
+                    <button onclick="ouvrirNouveauMouvement({ numero_police: '${echapperAttribut(codeFiltreSur(m.numero_police))}' })" title="Nouvel avenant sur cette police" style="font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">➕ Avenant</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function genererFichesEmissions(page) {
+        const ligne = (libelle, valeur) => `<div class="carte-fiche-libelle">${libelle}</div><div class="carte-fiche-valeur">${valeur}</div>`;
+        const poste = (libelle, valeur, total) => `<div class="fiche-decompte-ligne${total ? ' fiche-decompte-total' : ''}"><span class="fiche-decompte-libelle">${libelle}</span><span class="fiche-decompte-montant">${valeur}</span></div>`;
+        // 30/09/2026 -- identité visuelle propre à cette fiche (addendum2
+        // §1.4) : un repère de couleur selon la nature (nouvelle affaire /
+        // renouvellement / avenant), pour que l'œil trie avant même de lire.
+        const couleurNature = (code) => code === 'NAF' ? 'var(--purple)' : code === 'REN' ? '#0369a1' : '#64748b';
+        return page.map((m) => `
+            <div style="border:1px solid var(--border); border-left:4px solid ${couleurNature(m.code_nature)}; border-radius:10px; padding:14px; background:white;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px;">
+                    <div>
+                        <div style="font-weight:700; font-size:14px;">${echapperHtml(m.numero_police)}</div>
+                        <div style="font-size:11px; color:var(--gray);">${echapperHtml(m.code_nature)} — ${echapperHtml(m.nature)} · émis le ${formaterDateIso(m.date_emission)} (${echapperHtml(m.code_point_de_vente)})</div>
+                    </div>
+                    ${badgePaiement(m.statut_paiement)}
+                </div>
+                <div style="display:grid; grid-template-columns:max-content 1fr; gap:4px 14px; margin-bottom:10px;">
+                    ${ligne('Souscripteur', echapperHtml(m.souscripteur))}
+                    ${ligne('Compagnie', echapperHtml(m.compagnie))}
+                    ${ligne('Période', `${formaterDateIso(m.date_effet)} → ${formaterDateIso(m.date_echeance)}`)}
+                    ${ligne('Risque', echapperHtml(m.immatriculation || m.vin || m.caracterisation_risque || '—'))}
+                    ${m.code_branche === 'AUTOMOBILE' && m.energie ? ligne('Énergie', echapperHtml(m.energie)) : ''}
+                </div>
+                <div class="fiche-decompte">
+                    ${poste('Prime nette', formaterMontantFcfa(m.prime_nette))}
+                    ${poste('Accessoires', formaterMontantFcfa(m.accessoires))}
+                    ${poste('Fichier central', formaterMontantFcfa(m.fichier_central))}
+                    ${poste(`TVA (${echapperHtml(m.taux_tva)} %)`, formaterMontantFcfa(m.tva))}
+                    ${m.code_branche === 'AUTOMOBILE' ? poste('Carte rose', formaterMontantFcfa(m.carte_rose)) : ''}
+                    ${m.code_branche === 'AUTOMOBILE' ? poste('DTA', `${formaterMontantFcfa(m.dta)}${['deja_acquitte', 'exempte'].includes(m.dta_statut) ? ' ' + echapperHtml(LIBELLES_STATUT_DTA[m.dta_statut]) : ''}`) : ''}
+                    ${Number(m.autres_montant) ? poste(echapperHtml(m.autres_nature || 'Autres'), formaterMontantFcfa(m.autres_montant)) : ''}
+                    ${poste('Prime TTC', formaterMontantFcfa(m.prime_ttc), true)}
+                </div>
+                ${m.prime_annuelle_reference && Number(m.prime_annuelle_reference) !== Number(m.prime_nette) ? `<p style="font-size:10px; color:var(--gray); margin:-6px 0 10px;" title="Tarif Ministériel, Article 6">Prime annuelle équivalente : ${formaterMontantFcfa(m.prime_annuelle_reference)}</p>` : ''}
+                <div style="display:flex; gap:6px; justify-content:flex-end;">
+                    <button onclick="ouvrirPaiementMouvement(${m.id_mouvement})" style="font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">💳 Paiement</button>
+                </div>
+            </div>`).join('');
+    }
+
+    // Période d'édition sur la date d'émission, calendrier camerounais
+    function donneesEmissionsAffichables() {
+        const periode = document.getElementById('periode-emissions')?.value || 'mois';
+        const recherche = (document.getElementById('recherche-emissions')?.value || '').toLowerCase();
+        let donnees = mouvementsCourants;
+        if (periode !== 'toutes') {
+            const [annee, mois] = aujourdhuiIsoCameroun().split('-').map(Number);
+            let prefixe = `${annee}-`;
+            if (periode === 'mois') prefixe = `${annee}-${String(mois).padStart(2, '0')}`;
+            if (periode === 'mois_precedent') prefixe = new Date(Date.UTC(annee, mois - 2, 1)).toISOString().slice(0, 7);
+            donnees = donnees.filter((m) => (m.date_emission || '').startsWith(prefixe));
+        }
+        if (!recherche) return donnees;
+        return donnees.filter((m) =>
+            [m.numero_police, m.souscripteur, m.compagnie, m.matricule, m.vin, m.immatriculation, m.nature, m.code_nature]
+                .some((v) => String(v || '').toLowerCase().includes(recherche))
+        );
+    }
+
+    const afficherTableauEmissions = creerRenduTableau('emissions', {
+        obtenirDonnees: donneesEmissionsAffichables,
+        colonnes: colonnesEmissions,
+        genererLignes: genererLignesEmissions,
+        genererFiches: genererFichesEmissions,
+        idConteneur: 'emissions-conteneur',
+        apres: '<th style="padding:6px 6px;">Actions</th>',
+        totaux: (d) => [
+            { libelle: 'Nombre', valeur: d.length },
+            { libelle: 'Chiffre d\'affaires', valeur: formaterMontantFcfa(totalMontant(d, 'chiffre_affaires')) },
+            { libelle: 'DTA', valeur: formaterMontantFcfa(totalMontant(d, 'dta')) },
+            { libelle: 'Prime TTC', valeur: formaterMontantFcfa(totalMontant(d, 'prime_ttc')) },
+        ],
+        messageVide: 'Aucune émission sur cette période. Élargissez la période ou saisissez un « ➕ Nouveau Mouvement ».',
+    });
+
+    function ouvrirPaiementMouvement(idMouvement) {
+        const m = mouvementsCourants.find((x) => x.id_mouvement === idMouvement);
+        if (!m) return;
+        ouvrirSousFormulaire('emissions',
+            `Paiement — ${echapperHtml(m.numero_police)} · ${echapperHtml(m.code_nature)} du ${formaterDateIso(m.date_emission)}`,
+            `<p style="font-size:11px; color:var(--gray); margin:0 0 10px;">Prime TTC ${formaterMontantFcfa(m.prime_ttc)} — seul le statut de paiement d'une émission peut évoluer ; toute autre correction passe par un nouveau mouvement.</p>
+            ${champProduction('Statut du paiement', `<select id="paiement-statut" style="${STYLE_CHAMP_PRODUCTION} max-width:260px;">${Object.entries(LIBELLES_STATUT_PAIEMENT).map(([code, l]) => `<option value="${code}" ${code === m.statut_paiement ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}`,
+            'Enregistrer', `enregistrerPaiementMouvement(${idMouvement})`);
+    }
+
+    async function enregistrerPaiementMouvement(idMouvement) {
+        const r = await envoyerProduction('emissions', 'PATCH', `/api/staff/mouvements/${idMouvement}/paiement`, { statut_paiement: valeurChampProduction('paiement-statut') });
+        if (r) chargerMouvementsProduction();
+    }
+
+    // ---------------------------------------------------------------------
+    // Nouveau Mouvement -- affaire nouvelle, renouvellement ou avenant
+    // ---------------------------------------------------------------------
+    // État de la saisie en cours (police trouvée, DTA proposé…)
+    let saisieMouvement = { police: null, risque: null, dta: null };
+    let minuterieDtaMouvement = null;
+
+    function natureSaisie() {
+        const code = valeurChampProduction('mvt-nature');
+        return (referentielsProduction?.natures || []).find((n) => n.code === code) || null;
+    }
+
+    function brancheSaisie() {
+        const nature = natureSaisie();
+        if (nature && nature.code === 'NAF') return valeurChampProduction('mvt-branche');
+        return saisieMouvement.police ? saisieMouvement.police.code_branche : '';
+    }
+
+    async function ouvrirNouveauMouvement(preremplissage = {}) {
+        let ref;
+        try { ref = await chargerReferentielsProduction(); } catch (err) { messagePage('emissions', echapperHtml(err.message), '#fef2f2'); return; }
+        saisieMouvement = { police: null, risque: null, dta: null };
+        accessoiresSaisisMain = false;
+        expirationSaisieMain = false;
+        propositionAccessoires = null;
+        propositionFractionnement = null;
+        const aujourdhui = aujourdhuiIsoCameroun();
+        // 27/09/2026 -- défensif : si le serveur déployé n'est pas encore à
+        // jour (route sans les derniers référentiels), une liste manquante
+        // ne doit plus faire planter tout le formulaire -- juste laisser
+        // ce menu vide plutôt que de crasher opt().
+        const opt = (liste, valeur, libelle, choisi) => (liste || []).map((x) => `<option value="${echapperAttribut(x[valeur])}" ${x[valeur] === choisi ? 'selected' : ''}>${libelle(x)}</option>`).join('');
+        const avenants = (ref.natures || []).filter((n) => !n.mouvement_initial);
+        const libNature = (n) => `${echapperHtml(n.code)} — ${echapperHtml(n.libelle)}${n.libelle_alternatif ? ` (${echapperHtml(n.libelle_alternatif)})` : ''}`;
+        const natureInitiale = preremplissage.code_nature || (preremplissage.numero_police ? 'MOD' : 'NAF');
+        const grille = 'display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:0 12px;';
+        const section = (titre, contenu, id, cache) => `<fieldset id="${id}" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px 2px; margin:0 0 10px; ${cache ? 'display:none;' : ''}"><legend style="font-size:11px; font-weight:700; padding:0 4px;">${titre}</legend>${contenu}</fieldset>`;
+        const num = (id, placeholder) => `<input id="${id}" type="number" step="1" placeholder="${placeholder || '0'}" oninput="recalculerDecompteMouvement()" style="${STYLE_CHAMP_PRODUCTION}">`;
+
+        ouvrirSousFormulaire('emissions', '➕ Nouveau Mouvement', `
+            ${section('Mouvement', `
+                <div style="display:flex; gap:6px; margin-bottom:10px;">
+                    <button type="button" id="mvt-type-NAF" onclick="choisirTypeMouvement('NAF')" class="mvt-bouton-type">Nouvelle affaire</button>
+                    <button type="button" id="mvt-type-REN" onclick="choisirTypeMouvement('REN')" class="mvt-bouton-type">Renouvellement</button>
+                    <button type="button" id="mvt-type-avenant" onclick="choisirTypeMouvement('avenant')" class="mvt-bouton-type">Avenant</button>
+                </div>
+                <input type="hidden" id="mvt-nature" value="${echapperAttribut(natureInitiale)}">
+                <div id="mvt-bloc-nature-avenant" style="display:none; margin-bottom:8px;">
+                    ${champProduction('Nature de l\'avenant *', `<select id="mvt-nature-avenant" onchange="document.getElementById('mvt-nature').value = this.value; adapterFormulaireMouvement();" style="${STYLE_CHAMP_PRODUCTION}">${opt(avenants, 'code', libNature, natureInitiale)}</select>`)}
+                </div>
+                <div style="${grille}">
+                    ${champProduction('Point de vente (gestionnaire) *', `<select id="mvt-agence" onchange="apercuNumeroPolice()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.points_de_vente, 'cle', (p) => `${echapperHtml(p.code_point_de_vente)} — ${echapperHtml(p.nom)}`, '')}</select>`)}
+                </div>`, 'mvt-section-nature')}
+
+            ${section('Police existante', `
+                <div style="display:flex; gap:6px; align-items:flex-start;">
+                    <input id="mvt-police" placeholder="N° de police, ou raccourci (ex. 25, 1000025, P01 2026 01 00025)" value="${echapperAttribut(preremplissage.numero_police || '')}" onkeydown="if (event.key === 'Enter') rechercherPoliceMouvement()" style="${STYLE_CHAMP_PRODUCTION} flex:1;">
+                    <button onclick="rechercherPoliceMouvement()" style="font-size:11px; padding:0 12px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; white-space:nowrap;">🔍 Rechercher</button>
+                </div>
+                <div id="mvt-police-resultat" style="font-size:11px; margin:0 0 8px;"></div>`, 'mvt-section-police', true)}
+
+            ${section('Affaire nouvelle', `<div style="${grille}">
+                ${champProduction('Compagnie *', `<select id="mvt-compagnie" onchange="planifierPropositionAccessoires()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.compagnies, 'id', (c) => echapperHtml(c.nom), null)}</select>`)}
+                ${champProduction('Branche *', `<select id="mvt-branche" onchange="adapterFormulaireMouvement(); apercuNumeroPolice()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.branches, 'code_branche', (b) => `${echapperHtml(b.code_numerotation)} — ${echapperHtml(b.libelle)}`, '')}</select>`)}
+                ${champProduction('Produit', `<input id="mvt-produit" placeholder="Libellé du produit" style="${STYLE_CHAMP_PRODUCTION}">`)}
+            </div>
+            <div style="${grille}">
+                <div>${champProduction('Souscripteur — compte client', `<div style="display:flex; gap:6px;"><input id="mvt-identifiant-client" placeholder="Matricule ou email" onkeydown="if (event.key === 'Enter') rechercherClientMouvement()" style="${STYLE_CHAMP_PRODUCTION} flex:1;"><button onclick="rechercherClientMouvement()" style="font-size:11px; padding:0 10px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍</button></div>`)}
+                    <div id="mvt-client-trouve" style="font-size:11px; margin:-4px 0 8px;"></div></div>
+                ${champProduction('… ou nom du souscripteur (sans compte)', `<input id="mvt-souscripteur-nom" style="${STYLE_CHAMP_PRODUCTION}">`, 'mvt-bloc-souscripteur-libre')}
+                ${champProduction('Téléphone de contact', `<input id="mvt-telephone" style="${STYLE_CHAMP_PRODUCTION}">`)}
+            </div>
+            <p id="mvt-apercu-numero" style="font-size:11px; color:var(--gray); margin:0 0 8px;"></p>`, 'mvt-section-naf', true)}
+
+            ${section('Dates', `<div style="${grille}">
+                ${champProduction('Date d\'effet *', `<input id="mvt-effet" type="date" value="${echapperAttribut(preremplissage.date_effet || aujourdhui)}" onchange="dateEffetMouvementChangee()" style="${STYLE_CHAMP_PRODUCTION}">`)}
+                ${champProduction('Expiration *', `<input id="mvt-echeance" type="date" value="${echapperAttribut(preremplissage.date_echeance || retirerUnJourIso(ajouterUnAnIso(aujourdhui)))}" oninput="expirationSaisieMain = true;" onchange="expirationSaisieMain = true; planifierPropositionAccessoires(); planifierPropositionFractionnement(); afficherDureeMouvement();" style="${STYLE_CHAMP_PRODUCTION}">`, 'mvt-bloc-echeance')}
+            </div>
+            <p id="mvt-duree" style="font-size:10px; color:var(--gray); margin:-4px 0 8px;"></p>
+            <p id="mvt-echeance-anniversaire" style="font-size:10px; color:var(--gray); margin:-4px 0 8px;"></p>`, 'mvt-section-dates')}
+
+            ${section('Identification du risque — véhicule', `<div style="${grille}">
+                ${champProduction('N° VIN (série / châssis)', `<div style="display:flex; gap:6px;"><input id="mvt-vin" maxlength="17" oninput="this.value = this.value.toUpperCase(); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION} flex:1; font-family:monospace;"><button onclick="deduireVinMouvement()" title="Décoder le VIN (même service que le site public)" style="font-size:11px; padding:0 10px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Décoder</button></div>`)}
+                ${champProduction('Immatriculation', `<input id="mvt-immatriculation" oninput="this.value = this.value.toUpperCase(); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`)}
+                ${champProduction('Catégorie (classement CIMA)', `<select id="mvt-categorie" onchange="planifierVerificationDta(); planifierPropositionAccessoires(); planifierPropositionFractionnement()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.categories_automobile, 'categorie_code', (c) => `${echapperHtml(c.categorie_code)} — ${echapperHtml(c.categorie_libelle)}`, '')}</select>`)}
+                ${champProduction('Genre du véhicule', `<select id="mvt-genre" onchange="planifierVerificationDta(); basculerCvCylindree()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${Object.entries(LIBELLES_GENRE_VEHICULE).map(([code, l]) => `<option value="${code}">${l}</option>`).join('')}</select>`)}
+                ${champProduction('Puissance fiscale (CV)', `<input id="mvt-cv" type="number" min="1" step="1" oninput="planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`, 'mvt-bloc-cv')}
+                ${champProduction('Cylindrée (cm³)', `<input id="mvt-cylindree" type="number" min="1" step="1" oninput="planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`, 'mvt-bloc-cylindree')}
+                ${champProduction('Marque / modèle', `<div style="display:flex; gap:6px;"><input id="mvt-marque" placeholder="Marque" style="${STYLE_CHAMP_PRODUCTION}"><input id="mvt-modele" placeholder="Modèle" style="${STYLE_CHAMP_PRODUCTION}"></div>`)}
+                ${champProduction('Énergie', `<select id="mvt-energie" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— non renseignée —</option>${opt(ref.energies_vehicule, 'code', (e) => echapperHtml(e.libelle), '')}</select>`)}
+            </div>
+            <div id="mvt-vin-resultat" style="font-size:11px; margin:-2px 0 8px;"></div>
+            <div id="mvt-vin-candidats"></div>`, 'mvt-section-vehicule', true)}
+
+            ${section('Identification du risque', champProduction('Caractérisation du risque (bien ou personnes assurés)', `<textarea id="mvt-caracterisation" rows="2" style="${STYLE_CHAMP_PRODUCTION} resize:vertical;"></textarea>`), 'mvt-section-risque', true)}
+
+            ${section('Droit de Timbre Automobile (DTA)', `
+                <div id="mvt-dta-resultat" style="font-size:12px; margin:0 0 8px;">Renseignez le VIN ou l'immatriculation, le genre et la puissance.</div>
+                <label style="font-size:11px; display:flex; align-items:center; gap:6px; margin:0 0 8px; cursor:pointer;"><input type="checkbox" id="mvt-dta-exempte" onchange="document.getElementById('mvt-dta-bloc-exemption').style.display = this.checked ? '' : 'none'; planifierVerificationDta()" style="margin:0; width:auto;"> Véhicule exempté (note DGI — justificatif obligatoire)</label>
+                <div id="mvt-dta-bloc-exemption" style="${grille} display:none;">
+                    ${champProduction('Motif d\'exemption *', `<select id="mvt-dta-motif" onchange="planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.motifs_exemption_dta, 'code', (m) => echapperHtml(m.libelle), '')}</select>`)}
+                    ${champProduction('Référence du justificatif *', `<input id="mvt-dta-justificatif" placeholder="ex. carte grise n°…, carte diplomatique n°…" style="${STYLE_CHAMP_PRODUCTION}">`)}
+                </div>`, 'mvt-section-dta', true)}
+
+            ${section('Décompte de prime (FCFA)', `<div style="${grille}">
+                <div>${champProduction('Prime nette', `<input id="mvt-prime-nette" type="number" step="1" placeholder="0" oninput="recalculerDecompteMouvement(); planifierPropositionAccessoires(); planifierPropositionFractionnement()" style="${STYLE_CHAMP_PRODUCTION}">`)}
+                    <div id="mvt-fractionnement" style="font-size:10px; color:var(--gray); margin:-4px 0 8px;"></div></div>
+                <div>${champProduction('Accessoires', `<input id="mvt-accessoires" type="number" step="1" placeholder="0" oninput="accessoiresSaisisMain = true; recalculerDecompteMouvement(); afficherPropositionAccessoires()" style="${STYLE_CHAMP_PRODUCTION}">`)}
+                    <div id="mvt-accessoires-proposition" style="font-size:10px; color:var(--gray); margin:-4px 0 8px;"></div></div>
+                ${champProduction('Autres — montant', num('mvt-autres-montant'))}
+                ${champProduction('Autres — nature', `<input id="mvt-autres-nature" placeholder="Obligatoire si un montant « Autres » est saisi" style="${STYLE_CHAMP_PRODUCTION}">`)}
+            </div>
+            <div id="mvt-decompte" style="font-size:12px; background:white; border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin:0 0 10px;"></div>`, 'mvt-section-montants')}
+
+            <div style="${grille}">
+                ${champProduction('Statut du paiement', `<select id="mvt-paiement" style="${STYLE_CHAMP_PRODUCTION}">${Object.entries(LIBELLES_STATUT_PAIEMENT).map(([code, l]) => `<option value="${code}">${l}</option>`).join('')}</select>`)}
+                ${champProduction('Observations', `<input id="mvt-observations" style="${STYLE_CHAMP_PRODUCTION}">`)}
+            </div>`,
+            'Émettre le mouvement', 'enregistrerNouveauMouvement()');
+
+        choisirTypeMouvement(['NAF', 'REN'].includes(natureInitiale) ? natureInitiale : 'avenant');
+        if (preremplissage.numero_police) await rechercherPoliceMouvement();
+    }
+
+    // Affiche les sections utiles selon la nature et la branche
+    // 27/09/2026 -- bascule entre les 3 types de mouvement (Roger) :
+    // Nouvelle affaire et Renouvellement fixent directement mvt-nature ;
+    // Avenant révèle le sous-choix (plusieurs natures possibles), dont le
+    // premier devient la valeur par défaut tant que rien n'est choisi.
+    function choisirTypeMouvement(type) {
+        document.querySelectorAll('.mvt-bouton-type').forEach((b) => b.classList.remove('actif'));
+        const idBouton = type === 'avenant' ? 'mvt-type-avenant' : `mvt-type-${type}`;
+        document.getElementById(idBouton)?.classList.add('actif');
+        const blocAvenant = document.getElementById('mvt-bloc-nature-avenant');
+        const champNature = document.getElementById('mvt-nature');
+        if (!champNature) return;
+        if (type === 'avenant') {
+            if (blocAvenant) blocAvenant.style.display = '';
+            const selectAvenant = document.getElementById('mvt-nature-avenant');
+            champNature.value = selectAvenant ? selectAvenant.value : champNature.value;
+        } else {
+            if (blocAvenant) blocAvenant.style.display = 'none';
+            champNature.value = type;
+        }
+        adapterFormulaireMouvement();
+    }
+
+    function adapterFormulaireMouvement() {
+        const nature = natureSaisie();
+        if (!nature) return;
+        const estNaf = nature.code === 'NAF';
+        const afficher = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? '' : 'none'; };
+        afficher('mvt-section-police', !estNaf);
+        afficher('mvt-section-naf', estNaf);
+        // Échéance saisissable : NAF, REN, PRG (prorogation) ; sinon celle de la police
+        afficher('mvt-bloc-echeance', ['NAF', 'REN', 'PRG'].includes(nature.code));
+        const branche = brancheSaisie();
+        const estAuto = branche === 'AUTOMOBILE';
+        afficher('mvt-section-vehicule', estAuto);
+        afficher('mvt-section-risque', !!branche && !estAuto);
+        afficher('mvt-section-dta', estAuto && nature.delivre_attestation);
+        if (!estNaf && !saisieMouvement.police) {
+            document.getElementById('sous-formulaire-emissions-valider')?.setAttribute('disabled', 'disabled');
+        } else {
+            document.getElementById('sous-formulaire-emissions-valider')?.removeAttribute('disabled');
+        }
+        apercuNumeroPolice();
+        planifierVerificationDta();
+        planifierPropositionAccessoires();
+        planifierPropositionFractionnement();
+        basculerCvCylindree();
+        afficherEcheanceAnniversaire();
+        afficherDureeMouvement();
+        recalculerDecompteMouvement();
+    }
+
+    function apercuNumeroPolice() {
+        const zone = document.getElementById('mvt-apercu-numero');
+        if (!zone || !referentielsProduction) return;
+        const pdv = (referentielsProduction.points_de_vente || []).find((p) => p.cle === valeurChampProduction('mvt-agence'));
+        const br = (referentielsProduction.branches || []).find((b) => b.code_branche === valeurChampProduction('mvt-branche'));
+        zone.innerHTML = pdv && br
+            ? `N° de police attribué à l'émission : <strong>${echapperHtml(pdv.code_point_de_vente)} ${aujourdhuiIsoCameroun().slice(0, 4)} ${echapperHtml(br.code_numerotation)} ·····</strong> (numéro d'ordre fixé par le serveur)`
+            : 'Le n° de police (Pxx AAAA BR NNNN) est attribué automatiquement dès le point de vente et la branche choisis.';
+    }
+
+    // Recherche OBLIGATOIRE pour un renouvellement ou un avenant : échec =
+    // aucune émission possible.
+    // 27/09/2026, corrigé le 28/09/2026 (Roger) -- raccourcis de numéro de
+    // police, pour Renouvellement et Avenant. Composantes séparées par un
+    // séparateur quelconque (espace compris, y compris le "P" d'un numéro
+    // déjà complet) :
+    //   * exactement 4 composantes -> prises dans l'ordre point de vente /
+    //     année / branche / sériel, telles quelles ;
+    //   * sinon (2, 3 composantes, ou une suite de chiffres nue) -> le
+    //     séparateur est annulé et la LONGUEUR TOTALE de chiffres tranche
+    //     (sériel toujours sur 5 chiffres, comme la codification réelle) :
+    //     ≤5 chiffres  -> sériel seul (point de vente et année courants,
+    //                      branche Automobile) ;
+    //     =7 chiffres  -> branche (2) + sériel (5), point de vente et
+    //                      année courants ;
+    //     =9 chiffres  -> année complète (4) + sériel (5), point de vente
+    //                      courant, branche Automobile ;
+    //     =11 chiffres -> point de vente (2) + année SANS le millénaire
+    //                      (2) + branche (2) + sériel (5) ;
+    //     =13 chiffres -> point de vente (2) + année complète (4) +
+    //                      branche (2) + sériel (5).
+    function interpreterRaccourciPolice(saisie) {
+        const composantes = String(saisie || '').trim().split(/[^0-9]+/).filter(Boolean);
+        if (composantes.length === 4) {
+            const [pointDeVente, annee, branche, serie] = composantes;
+            return { pointDeVente, annee, branche, serie };
+        }
+        const chiffres = composantes.join('');
+        if (!chiffres) return null;
+        if (chiffres.length <= 5) return { pointDeVente: null, annee: null, branche: null, serie: chiffres };
+        if (chiffres.length === 7) return { pointDeVente: null, annee: null, branche: chiffres.slice(0, 2), serie: chiffres.slice(2) };
+        if (chiffres.length === 9) return { pointDeVente: null, annee: chiffres.slice(0, 4), branche: null, serie: chiffres.slice(4) };
+        if (chiffres.length === 11) return { pointDeVente: chiffres.slice(0, 2), annee: `20${chiffres.slice(2, 4)}`, branche: chiffres.slice(4, 6), serie: chiffres.slice(6) };
+        if (chiffres.length === 13) return { pointDeVente: chiffres.slice(0, 2), annee: chiffres.slice(2, 6), branche: chiffres.slice(6, 8), serie: chiffres.slice(8) };
+        return null;
+    }
+
+    // Complète les composantes non désignées par le contexte courant
+    // (point de vente choisi dans le formulaire, année en cours, branche
+    // Automobile), et rend le numéro canonique "Pxx AAAA BR NNNNN". null si
+    // le contexte manque (ex. point de vente pas encore choisi) ou si le
+    // sériel est absent.
+    function resoudreNumeroPoliceRaccourci(interprete) {
+        if (!interprete || !interprete.serie || !referentielsProduction) return null;
+        const pdvChoisi = (referentielsProduction.points_de_vente || []).find((p) => p.cle === valeurChampProduction('mvt-agence'));
+        const brancheAuto = (referentielsProduction.branches || []).find((b) => b.code_branche === 'AUTOMOBILE');
+        const pointDeVente = interprete.pointDeVente || (pdvChoisi ? String(pdvChoisi.ordre_affichage) : null);
+        const annee = interprete.annee || aujourdhuiIsoCameroun().slice(0, 4);
+        const branche = interprete.branche || (brancheAuto ? brancheAuto.code_numerotation : null);
+        if (!pointDeVente || !annee || !branche) return null;
+        // parseInt puis padStart, jamais padStart seul : selon la règle
+        // employée, le sériel peut arriver sur une largeur différente de
+        // 5 -- padStart seul ne raccourcit jamais une chaîne déjà trop
+        // longue.
+        const serieNormalisee = String(parseInt(interprete.serie, 10)).padStart(5, '0');
+        return `P${pointDeVente.padStart(2, '0')} ${annee} ${branche.padStart(2, '0')} ${serieNormalisee}`;
+    }
+
+    async function rechercherPoliceMouvement() {
+        const saisie = valeurChampProduction('mvt-police');
+        const zone = document.getElementById('mvt-police-resultat');
+        saisieMouvement.police = null;
+        saisieMouvement.risque = null;
+        if (!saisie) { zone.innerHTML = ''; adapterFormulaireMouvement(); return; }
+        const interprete = interpreterRaccourciPolice(saisie);
+        const canonique = resoudreNumeroPoliceRaccourci(interprete);
+        if (interprete && !canonique) {
+            zone.innerHTML = '<span style="color:#b45309;">Choisissez d\'abord le point de vente pour interpréter ce raccourci.</span>';
+            adapterFormulaireMouvement();
+            return;
+        }
+        const numero = canonique || saisie;
+        if (canonique && canonique.toUpperCase() !== saisie.trim().toUpperCase()) {
+            document.getElementById('mvt-police').value = canonique;
+            zone.innerHTML = `<span style="color:var(--gray); font-size:10px;">Raccourci interprété : <strong>${echapperHtml(canonique)}</strong></span>`;
+        } else {
+            zone.innerHTML = '<span style="color:var(--gray);">Recherche…</span>';
+        }
+        try {
+            const resp = await fetch(`/api/staff/production/police?numero=${encodeURIComponent(numero)}`, { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                zone.innerHTML = `<span style="color:#dc2626;">✕ ${echapperHtml((data.erreurs && data.erreurs[0]) || 'police introuvable')}</span>`;
+                adapterFormulaireMouvement();
+                return;
+            }
+            const c = data.contrat;
+            saisieMouvement.police = c;
+            saisieMouvement.risque = data.risque;
+            zone.innerHTML = `<span style="color:#047857;">✔ <strong>${echapperHtml(c.numero_police)}</strong> — ${echapperHtml(c.souscripteur)} · ${echapperHtml(c.compagnie)} · ${echapperHtml(c.code_branche)} · du ${formaterDateIso(c.date_effet)} au ${formaterDateIso(c.date_echeance)} · ${echapperHtml(LIBELLES_STATUT_CONTRAT[c.statut_contrat] || c.statut_contrat)}</span>`;
+            // Risque connu repris (modifiable : changement de véhicule, d'immatriculation…)
+            const r = data.risque || {};
+            const poser = (id, v) => { const el = document.getElementById(id); if (el && v !== null && v !== undefined) el.value = v; };
+            poser('mvt-vin', r.vin); poser('mvt-immatriculation', r.immatriculation); poser('mvt-genre', r.genre_vehicule);
+            poser('mvt-cv', r.puissance_cv); poser('mvt-cylindree', r.cylindree_cm3); poser('mvt-marque', r.marque); poser('mvt-modele', r.modele); poser('mvt-energie', r.energie);
+            poser('mvt-categorie', r.code_categorie_cima); poser('mvt-caracterisation', r.caracterisation_risque);
+            if (natureSaisie()?.code !== 'REN' && natureSaisie()?.code !== 'PRG') poser('mvt-echeance', c.date_echeance);
+        } catch (err) {
+            zone.innerHTML = '<span style="color:#dc2626;">requête réseau échouée</span>';
+        }
+        adapterFormulaireMouvement();
+    }
+
+    let clientRattacheMouvement = null;
+
+    async function rechercherClientMouvement() {
+        const identifiant = valeurChampProduction('mvt-identifiant-client');
+        const zone = document.getElementById('mvt-client-trouve');
+        clientRattacheMouvement = null;
+        document.getElementById('mvt-bloc-souscripteur-libre').style.display = '';
+        if (!identifiant) { zone.innerHTML = ''; return; }
+        zone.innerHTML = '<span style="color:var(--gray);">Recherche…</span>';
+        try {
+            const resp = await fetch(`/api/staff/production/client?identifiant=${encodeURIComponent(identifiant)}`, { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { zone.innerHTML = `<span style="color:#b45309;">${echapperHtml((data.erreurs && data.erreurs[0]) || 'introuvable')}</span>`; return; }
+            clientRattacheMouvement = data.client;
+            document.getElementById('mvt-bloc-souscripteur-libre').style.display = 'none';
+            zone.innerHTML = `<span style="color:#047857;">✔ ${echapperHtml(nomAffiche(data.client))} (${echapperHtml(data.client.matricule)})</span>
+                <button onclick="clientRattacheMouvement = null; document.getElementById('mvt-client-trouve').innerHTML = ''; document.getElementById('mvt-bloc-souscripteur-libre').style.display = '';" style="font-size:10px; margin-left:6px; border:none; background:none; color:#dc2626; cursor:pointer;">✕ détacher</button>`;
+        } catch (err) { zone.innerHTML = '<span style="color:#dc2626;">requête réseau échouée</span>'; }
+    }
+
+    // Décodage VIN : même service que le site public (GET /api/vin/:vin,
+    // vin-decoder-api). L'enveloppe exacte de sa réponse n'a pas pu être
+    // relevée : lecture tolérante des champs connus de
+    // decode_vin_flat_fusionne (catalogue_marque, catalogue_modele,
+    // catalogue_puissance_fiscale_cv), où qu'ils se trouvent.
+    function chercherCleProfonde(objet, cles, profondeur = 0) {
+        if (!objet || typeof objet !== 'object' || profondeur > 4) return undefined;
+        for (const cle of cles) {
+            if (objet[cle] !== undefined && objet[cle] !== null && objet[cle] !== '') return objet[cle];
+        }
+        for (const valeur of Object.values(objet)) {
+            const trouve = chercherCleProfonde(Array.isArray(valeur) ? valeur[0] : valeur, cles, profondeur + 1);
+            if (trouve !== undefined) return trouve;
+        }
+        return undefined;
+    }
+
+    // 27/09/2026 -- réécrit selon le topo transmis par myspace.html
+    // (TOPO_VIN_GENRE_PUISSANCE_26092026.md) : le site public ne décode
+    // JAMAIS un VIN exact et complet via /api/vin/:vin -- il utilise
+    // systématiquement la recherche approximative par préfixe,
+    // /api/vin/cascade/:vinPartiel, tolérante aux VIN incomplets ou
+    // fautifs (~69% du parc = Toyota, majoritairement d'occasion, VIN
+    // souvent partiel ou mal ressaisi). Un VIN complet fonctionne comme
+    // cas particulier d'un préfixe qui vaut le VIN entier. La réponse
+    // porte data.trouve, data.resultats[], data.agrege (marque/modèle les
+    // plus probables + marque_confiance), data.niveau_trouve (caractères
+    // ayant suffi) et data.nb_references. L'enveloppe EXACTE de chaque
+    // élément n'a pas pu être observée (aucun exemple réel transmis) :
+    // recherche de clé élargie, comme pour l'ancienne route.
+    async function deduireVinMouvement() {
+        const vin = valeurChampProduction('mvt-vin');
+        const zone = document.getElementById('mvt-vin-resultat');
+        if (vin.length < 5) { zone.innerHTML = '<span style="color:#b45309;">Au moins 5 caractères du VIN sont nécessaires pour rechercher.</span>'; return; }
+        zone.innerHTML = '<span style="color:var(--gray);">Recherche…</span>';
+        candidatsVin = []; indexCandidatVinChoisi = null; afficherCandidatsVin();   // pas de fiches périmées pendant la recherche suivante
+        const controleur = new AbortController();
+        const delai = setTimeout(() => controleur.abort(), 8000);
+        try {
+            const resp = await fetch(`/api/vin/cascade/${encodeURIComponent(vin)}`, { signal: controleur.signal });
+            clearTimeout(delai);
+            if (!resp.ok) { zone.innerHTML = `<span style="color:#b45309;">Recherche indisponible (${resp.status}) — saisissez les caractéristiques à la main, ou <a href="#" onclick="event.preventDefault(); deduireVinMouvement();" style="color:var(--purple);">réessayez</a>.</span>`; return; }
+            const data = await resp.json();
+            if (!data.trouve) { zone.innerHTML = '<span style="color:#b45309;">Aucun véhicule correspondant — saisissez les caractéristiques à la main.</span>'; return; }
+            const candidats = Array.isArray(data.resultats) ? data.resultats : [];
+            dernierNiveauVin = { niveau: data.niveau_trouve, references: data.nb_references, prefixe: data.prefixe };
+            appliquerCandidatVin(data.agrege || candidats[0] || {}, true);
+            // 06/10/2026 (Roger) : une mini-fiche par véhicule trouvé, au lieu d'un
+            // simple bouton « marque modèle » -- tous les éléments étaient déjà
+            // dans la réponse (vin, marque, modèle, énergie, puissance, confiance).
+            candidatsVin = candidats; pageCandidatsVin = 0; indexCandidatVinChoisi = null;
+            afficherCandidatsVin();
+            planifierVerificationDta();
+        } catch (err) {
+            clearTimeout(delai);
+            const message = err.name === 'AbortError' ? 'délai dépassé (le service ne répond pas)' : 'requête réseau échouée';
+            zone.innerHTML = `<span style="color:#dc2626;">Recherche : ${message} — <a href="#" onclick="event.preventDefault(); deduireVinMouvement();" style="color:var(--purple);">réessayer</a>, ou saisissez les caractéristiques à la main.</span>`;
+        }
+    }
+
+    // Applique un candidat (agrégat ou élément de data.resultats[]) aux
+    // champs du véhicule. principal=true : message de succès normal ;
+    // false : reprise explicite d'une alternative (clic de l'utilisateur),
+    // message différent pour que le geste soit visible.
+    // ---- Mini-fiches des véhicules trouvés par le décodage VIN (06/10/2026) ----
+    // Conteneur à ascenseurs, 5 fiches par page ; pagination dès que les résultats
+    // dépassent 5. Sélection par index (jamais de JSON dans un attribut HTML).
+    const TAILLE_PAGE_VIN = 5;
+    let candidatsVin = [], pageCandidatsVin = 0, indexCandidatVinChoisi = null;
+
+    function ficheVehiculeVin(c, i) {
+        const g = (cles) => chercherCleProfonde(c, cles);
+        const marque = g(['marque', 'catalogue_marque', 'make']), modele = g(['modele', 'catalogue_modele', 'model']);
+        const vin = g(['vin']), energie = g(['energie', 'catalogue_energie']), puissance = g(['puissance', 'catalogue_puissance_fiscale_cv']);
+        const confiance = c.confiance_pct !== undefined ? Number(c.confiance_pct) : null;
+        const choisie = i === indexCandidatVinChoisi;
+        const fort = confiance !== null && confiance >= 95;   // même seuil que le site public
+        const bordure = choisie ? 'var(--purple)' : (fort ? '#10b981' : 'var(--border)');
+        return `<div onclick="choisirCandidatVin(${i})" title="Appliquer ce véhicule" style="flex:0 0 172px; box-sizing:border-box; border:2px solid ${bordure}; border-radius:8px; padding:7px 9px; background:${choisie ? '#faf5ff' : 'white'}; cursor:pointer; line-height:1.35;">
+            <div style="font-weight:700; font-size:12px; color:var(--navy);">${echapperHtml([marque, modele].filter(Boolean).join(' ') || 'Véhicule')}</div>
+            ${vin ? `<div style="font-family:ui-monospace,monospace; font-size:9.5px; color:var(--gray); word-break:break-all;">${echapperHtml(vin)}</div>` : ''}
+            <div style="font-size:11px; margin-top:3px;">${echapperHtml([energie, puissance].filter(Boolean).join(' · ') || '—')}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:10px;">
+                ${confiance !== null ? `<span style="color:${fort ? '#047857' : 'var(--gray)'};">confiance ${Math.round(confiance)} %</span>` : '<span></span>'}
+                ${choisie ? '<span style="color:var(--purple); font-weight:700;">✔ appliqué</span>' : ''}
+            </div>
+        </div>`;
+    }
+
+    function afficherCandidatsVin() {
+        const zone = document.getElementById('mvt-vin-candidats');
+        if (!zone) return;
+        const total = candidatsVin.length;
+        if (!total) { zone.innerHTML = ''; return; }
+        const nbPages = Math.ceil(total / TAILLE_PAGE_VIN);
+        pageCandidatsVin = Math.min(Math.max(pageCandidatsVin, 0), nbPages - 1);
+        const debut = pageCandidatsVin * TAILLE_PAGE_VIN;
+        const fiches = candidatsVin.slice(debut, debut + TAILLE_PAGE_VIN).map((c, k) => ficheVehiculeVin(c, debut + k)).join('');
+        const nav = total > TAILLE_PAGE_VIN
+            ? `<span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px;">
+                   <button type="button" onclick="changerPageVin(-1)" ${pageCandidatsVin === 0 ? 'disabled' : ''} style="padding:1px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">‹</button>
+                   page ${pageCandidatsVin + 1} / ${nbPages}
+                   <button type="button" onclick="changerPageVin(1)" ${pageCandidatsVin >= nbPages - 1 ? 'disabled' : ''} style="padding:1px 8px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">›</button>
+               </span>` : '';
+        zone.innerHTML = `<div style="border:1px solid var(--border); border-radius:8px; background:#f8fafc; padding:6px; margin:0 0 8px;">
+            <div style="display:flex; align-items:center; gap:10px; font-size:11px; color:var(--gray); margin-bottom:6px;">
+                <span>${total} véhicule${total > 1 ? 's' : ''} correspondant${total > 1 ? 's' : ''}${dernierNiveauVin && dernierNiveauVin.niveau ? ` (sur ${echapperHtml(dernierNiveauVin.niveau)} caractères)` : ''} — cliquez une fiche pour l'appliquer</span>
+                <a href="#" onclick="event.preventDefault(); rejeterCandidatsVin();" style="color:var(--purple); white-space:nowrap;">Aucun ne convient</a>
+                ${nav}
+            </div>
+            <div id="mvt-vin-candidats-liste" style="display:flex; flex-wrap:wrap; gap:8px; max-height:190px; overflow:auto; padding:2px;">${fiches}</div>
+        </div>`;
+    }
+
+    function changerPageVin(delta) { pageCandidatsVin += delta; afficherCandidatsVin(); }
+
+    function choisirCandidatVin(i) {
+        if (!candidatsVin[i]) return;
+        indexCandidatVinChoisi = i;
+        appliquerCandidatVin(candidatsVin[i], false);
+        afficherCandidatsVin();
+    }
+
+    // « Aucun ne convient » : retour à la saisie manuelle, sans pénalité -- les
+    // champs remplis par la suggestion automatique sont vidés.
+    function rejeterCandidatsVin() {
+        candidatsVin = []; indexCandidatVinChoisi = null;
+        ['mvt-marque', 'mvt-modele', 'mvt-cv', 'mvt-cylindree'].forEach((id) => { const el = document.getElementById(id); if (el) el.value = ''; });
+        const energie = document.getElementById('mvt-energie'); if (energie) energie.value = '';
+        document.getElementById('mvt-vin-resultat').innerHTML = '<span style="color:var(--gray);">Aucun véhicule retenu — saisissez les caractéristiques à la main.</span>';
+        afficherCandidatsVin();
+        planifierVerificationDta();
+    }
+
+    let dernierNiveauVin = null;
+    function appliquerCandidatVin(candidat, principal) {
+        const zone = document.getElementById('mvt-vin-resultat');
+        // 29/09/2026 -- noms de champs confirmés par le code source réel de
+        // devis.js (LIVRAISON_ENERGIES_VIN_28092026.md) : marque, modele,
+        // energie, puissance (chaîne, partie numérique extraite par regex),
+        // confiance_pct sur chaque élément de resultats[] -- marque_confiance
+        // seulement sur data.agrege (l'agrégat n'a ni energie ni puissance).
+        const marque = chercherCleProfonde(candidat, ['marque', 'catalogue_marque', 'make', 'Make', 'brand']);
+        const modele = chercherCleProfonde(candidat, ['modele', 'catalogue_modele', 'model', 'Model']);
+        const cvBrut = chercherCleProfonde(candidat, ['puissance', 'catalogue_puissance_fiscale_cv', 'puissance_fiscale_cv', 'fiscal_hp', 'cv']);
+        const cv = cvBrut !== undefined ? parseInt(String(cvBrut).replace(/[^0-9]/g, ''), 10) : NaN;
+        const cm3Brut = chercherCleProfonde(candidat, ['cylindree', 'catalogue_cylindree', 'cylindree_cm3', 'displacement']);
+        const cm3 = cm3Brut !== undefined ? parseInt(String(cm3Brut).replace(/[^0-9]/g, ''), 10) : NaN;
+        // Rapprochement EXACT (caractère pour caractère), comme l'exige la
+        // note de livraison du 28/09 -- sinon "Autre / Non précisé", jamais
+        // une correspondance approximative.
+        const energieBrute = chercherCleProfonde(candidat, ['energie', 'catalogue_energie', 'carburant', 'fuel_type', 'fuelType']);
+        const energiesConnues = (referentielsProduction?.energies_vehicule || []).map((e) => e.code);
+        const energieTrouvee = energieBrute
+            ? (energiesConnues.includes(energieBrute) ? energieBrute : (energiesConnues.includes('Autre / Non précisé') ? 'Autre / Non précisé' : null))
+            : null;
+        const confiance = candidat.confiance_pct !== undefined ? Number(candidat.confiance_pct)
+            : (candidat.marque_confiance !== undefined ? Number(candidat.marque_confiance) * 100 : null);
+        const trouve = [];
+        if (marque) { document.getElementById('mvt-marque').value = String(marque).slice(0, 80); trouve.push(echapperHtml(marque)); }
+        if (modele) { document.getElementById('mvt-modele').value = String(modele).slice(0, 120); trouve.push(echapperHtml(modele)); }
+        // CV pour un véhicule 4 roues, cm³ pour une moto/tricycle (topo
+        // 27/09/2026, point 5 de Roger) -- selon le genre déjà sélectionné.
+        const genreActuel = valeurChampProduction('mvt-genre');
+        if (genreActuel === 'VEHICULE' || !genreActuel) {
+            if (Number.isInteger(cv) && cv > 0) { document.getElementById('mvt-cv').value = cv; trouve.push(`${cv} CV`); }
+        } else if (document.getElementById('mvt-cylindree') && Number.isInteger(cm3) && cm3 > 0) {
+            document.getElementById('mvt-cylindree').value = cm3; trouve.push(`${cm3} cm³`);
+        }
+        if (energieTrouvee && !valeurChampProduction('mvt-energie')) { document.getElementById('mvt-energie').value = energieTrouvee; trouve.push(energieTrouvee); }
+        const prefixe = principal ? '✔' : '↳ repris :';
+        const couleur = principal ? '#047857' : '#7c3aed';
+        const avertissementPuissance = (genreActuel === 'VEHICULE' || !genreActuel) && !(Number.isInteger(cv) && cv > 0)
+            ? ' <span style="color:#b45309;">— puissance fiscale non fournie, à saisir.</span>' : '';
+        zone.innerHTML = trouve.length
+            ? `<span style="color:${couleur};">${prefixe} ${trouve.join(' · ')}</span>${avertissementPuissance}${confiance !== null ? ` <span style="color:var(--gray); font-size:10px;">(confiance : ${Math.round(confiance)} %)</span>` : ''}`
+            : '<span style="color:#b45309;">Candidat sans caractéristique exploitable — saisissez à la main.</span>';
+        planifierVerificationDta();
+    }
+
+    function dateEffetMouvementChangee() {
+        const nature = natureSaisie();
+        const effet = valeurChampProduction('mvt-effet');
+        // Suggestion par défaut seulement -- ne jamais écraser une
+        // Expiration déjà choisie à la main (fractionnement compris).
+        if (effet && nature && ['NAF', 'REN'].includes(nature.code) && !expirationSaisieMain) {
+            document.getElementById('mvt-echeance').value = retirerUnJourIso(ajouterUnAnIso(effet));
+        }
+        afficherDureeMouvement();
+        afficherEcheanceAnniversaire();
+        planifierVerificationDta();
+        planifierPropositionAccessoires();
+        planifierPropositionFractionnement();
+    }
+
+    // 28/09/2026 (Roger) : pour une affaire nouvelle ou un renouvellement,
+    // l'échéance est la date anniversaire du contrat -- fixée sur la date
+    // d'effet (+1 an), affichée mais jamais modifiable ; tout contrat
+    // automobile est souscrit pour 1 an, même fractionné en plusieurs
+    // mouvements. Seule une prorogation (PRG) peut encore la reculer.
+    // 28/09/2026 (Roger, complément) -- correction d'une erreur de ma part :
+    // l'Expiration (ce champ) N'EST PAS la Date Échéance. L'Échéance
+    // (l'anniversaire du contrat, effet + 1 an) est fixe et jamais
+    // modifiable, mais c'est une notion SÉPARÉE, affichée à part --
+    // l'Expiration du mouvement, elle, reste modifiable : c'est elle qui
+    // porte un fractionnement (Art. 6), donc potentiellement plus courte
+    // qu'un an. La verrouiller comme je l'ai fait hier soir cassait
+    // justement le fractionnement construit deux jours plus tôt.
+    function afficherEcheanceAnniversaire() {
+        const nature = natureSaisie();
+        const zone = document.getElementById('mvt-echeance-anniversaire');
+        if (!zone || !nature) return;
+        if (['NAF', 'REN'].includes(nature.code)) {
+            const effet = valeurChampProduction('mvt-effet');
+            zone.textContent = effet ? `Date Échéance du contrat (anniversaire, fixe) : ${formaterDateIso(ajouterUnAnIso(effet))}` : '';
+        } else if (saisieMouvement.police) {
+            const p = saisieMouvement.police;
+            zone.textContent = `Date Échéance du contrat : ${formaterDateIso(p.date_echeance)}` +
+                (p.derniere_expiration && p.derniere_expiration !== p.date_echeance ? ` — couverture actuelle jusqu'au ${formaterDateIso(p.derniere_expiration)}` : '');
+        } else {
+            zone.textContent = '';
+        }
+    }
+
+    // Durée entre l'effet et l'échéance du mouvement -- purement informatif.
+    // 30/09/2026 (Roger) : Durée = Entier(DEXP) - Entier(DEFF) + 1 --
+    // compte les deux bornes (du 01/01 au 01/03 = 60 jours, pas 59).
+    function afficherDureeMouvement() {
+        const zone = document.getElementById('mvt-duree');
+        if (!zone) return;
+        const effet = valeurChampProduction('mvt-effet'), echeance = valeurChampProduction('mvt-echeance');
+        if (!effet || !echeance) { zone.textContent = ''; return; }
+        const jours = Math.round((new Date(echeance) - new Date(effet)) / 86400000) + 1;
+        zone.textContent = jours > 0 ? `Durée : ${jours} jour${jours > 1 ? 's' : ''}${jours >= 60 ? ` (≈ ${Math.round(jours / 30.44)} mois)` : ''}` : '';
+    }
+
+    // Puissance fiscale (CV) pour un véhicule 4 roues, cylindrée (cm³) pour
+    // une moto/tricycle (topo 27/09/2026, point 5 de Roger : le barème CIMA
+    // ne raisonne pas de la même façon selon la famille de véhicule).
+    function basculerCvCylindree() {
+        const genre = valeurChampProduction('mvt-genre');
+        const blocCv = document.getElementById('mvt-bloc-cv');
+        const blocCm3 = document.getElementById('mvt-bloc-cylindree');
+        if (!blocCv || !blocCm3) return;
+        const estMoto = genre === 'MOTO2' || genre === 'MOTO3';
+        blocCv.style.display = estMoto ? 'none' : '';
+        blocCm3.style.display = estMoto ? '' : 'none';
+    }
+
+    // Vérification DTA (même règle que le serveur : GET /production/dta)
+    function planifierVerificationDta() {
+        clearTimeout(minuterieDtaMouvement);
+        minuterieDtaMouvement = setTimeout(verifierDtaMouvement, 400);
+    }
+
+    async function verifierDtaMouvement() {
+        const zone = document.getElementById('mvt-dta-resultat');
+        const nature = natureSaisie();
+        saisieMouvement.dta = null;
+        if (!zone || !nature || brancheSaisie() !== 'AUTOMOBILE' || !nature.delivre_attestation) { recalculerDecompteMouvement(); return; }
+        const parametres = new URLSearchParams({
+            code_nature: nature.code, code_branche: 'AUTOMOBILE', date_effet: valeurChampProduction('mvt-effet'),
+            vin: valeurChampProduction('mvt-vin'), immatriculation: valeurChampProduction('mvt-immatriculation'),
+            genre_vehicule: valeurChampProduction('mvt-genre'), puissance_cv: valeurChampProduction('mvt-cv'),
+            code_categorie: valeurChampProduction('mvt-categorie'),
+        });
+        if (document.getElementById('mvt-dta-exempte')?.checked && valeurChampProduction('mvt-dta-motif')) parametres.set('motif_exemption', valeurChampProduction('mvt-dta-motif'));
+        if (!parametres.get('vin') && !parametres.get('immatriculation')) {
+            zone.innerHTML = 'Renseignez le VIN ou l\'immatriculation, le genre et la puissance.';
+            recalculerDecompteMouvement();
+            return;
+        }
+        try {
+            const resp = await fetch(`/api/staff/production/dta?${parametres}`, { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) {
+                zone.innerHTML = `<span style="color:#b45309;">${echapperHtml((data.erreurs && data.erreurs[0]) || 'vérification impossible')}</span>`;
+            } else {
+                const d = data.dta;
+                saisieMouvement.dta = d;
+                let html = '';
+                if (d.statut === 'du') html = `<span style="color:#1d4ed8;">DTA dû pour l'exercice ${d.exercice} : <strong>${formaterMontantFcfa(d.montant)}</strong> (${echapperHtml(d.libelleCategorie)})</span>`;
+                if (d.statut === 'deja_acquitte') html = `<span style="color:#047857;">✔ DTA de l'exercice ${d.exercice} déjà ${d.reference.statut === 'exempte' ? 'couvert par une exemption' : 'acquitté'} pour ce véhicule — police ${echapperHtml(d.reference.numero_police)}, effet du ${formaterDateIso(d.reference.date_effet)}. Rien à percevoir.</span>`;
+                if (d.statut === 'exempte') html = `<span style="color:#b45309;">Exemption pour l'exercice ${d.exercice} — DTA 0, motif et justificatif conservés.</span>`;
+                if (d.avertissement) html += `<div style="color:#b45309; margin-top:4px;">⚠ ${echapperHtml(d.avertissement)}</div>`;
+                zone.innerHTML = html;
+            }
+        } catch (err) { zone.innerHTML = '<span style="color:#dc2626;">vérification DTA : requête réseau échouée</span>'; }
+        recalculerDecompteMouvement();
+    }
+
+    // Proposition d'accessoires (25/09/2026) -- barème de la compagnie
+    // (tarification.bareme_frais_accessoires : risque, palier de prime nette,
+    // durée), sinon son montant par défaut. Elle remplit le champ tant que
+    // le gestionnaire ne l'a pas modifié ; sa saisie n'est jamais écrasée.
+    let accessoiresSaisisMain = false;
+    let expirationSaisieMain = false;
+    let propositionAccessoires = null;
+    let minuterieAccessoires = null;
+
+    function planifierPropositionAccessoires() {
+        clearTimeout(minuterieAccessoires);
+        minuterieAccessoires = setTimeout(proposerAccessoires, 400);
+    }
+
+    async function proposerAccessoires() {
+        const nature = natureSaisie();
+        if (!document.getElementById('mvt-accessoires') || !nature) return;
+        const idCompagnie = nature.code === 'NAF'
+            ? valeurChampProduction('mvt-compagnie')
+            : (saisieMouvement.police ? saisieMouvement.police.id_partenaire_assurance : '');
+        const branche = brancheSaisie();
+        if (!idCompagnie || !branche) { propositionAccessoires = null; afficherPropositionAccessoires(); return; }
+        const parametres = new URLSearchParams({
+            id_partenaire_assurance: idCompagnie, code_branche: branche,
+            code_categorie: branche === 'AUTOMOBILE' ? valeurChampProduction('mvt-categorie') : '',
+            prime_nette: valeurChampProduction('mvt-prime-nette') || '0',
+            date_effet: valeurChampProduction('mvt-effet'), date_echeance: valeurChampProduction('mvt-echeance'),
+        });
+        try {
+            const resp = await fetch(`/api/staff/production/accessoires?${parametres}`, { credentials: 'include' });
+            const data = await resp.json();
+            propositionAccessoires = data.succes ? data.proposition : null;
+        } catch (err) { propositionAccessoires = null; }
+        if (propositionAccessoires && !accessoiresSaisisMain) {
+            document.getElementById('mvt-accessoires').value = propositionAccessoires.montant;
+            recalculerDecompteMouvement();
+        }
+        afficherPropositionAccessoires();
+    }
+
+    function afficherPropositionAccessoires() {
+        const zone = document.getElementById('mvt-accessoires-proposition');
+        if (!zone) return;
+        const p = propositionAccessoires;
+        if (!p) { zone.innerHTML = ''; return; }
+        const source = p.origine === 'bareme' ? `barème : ${echapperHtml(p.detail)}` : 'montant par défaut de la compagnie';
+        const ecart = String(p.montant) !== valeurChampProduction('mvt-accessoires');
+        zone.innerHTML = `Proposé : <strong>${formaterMontantFcfa(p.montant)}</strong> (${source})`
+            + (ecart ? ` — <a href="#" onclick="event.preventDefault(); accessoiresSaisisMain = false; document.getElementById('mvt-accessoires').value = propositionAccessoires.montant; recalculerDecompteMouvement(); afficherPropositionAccessoires();" style="color:var(--purple);">↺ reprendre la proposition</a>` : '');
+    }
+
+    // Fractionnement -- Tarif Ministériel, Art. 6 (26/09/2026). Purement
+    // informatif : contrairement aux accessoires, rien n'est réinjecté
+    // dans un champ modifiable -- la prime nette saisie reste celle du
+    // gestionnaire, cet aperçu affiche seulement la prime annuelle que le
+    // serveur en déduira à l'émission.
+    let propositionFractionnement = null;
+    let minuterieFractionnement = null;
+
+    function planifierPropositionFractionnement() {
+        clearTimeout(minuterieFractionnement);
+        minuterieFractionnement = setTimeout(proposerFractionnement, 400);
+    }
+
+    async function proposerFractionnement() {
+        const nature = natureSaisie();
+        const zone = document.getElementById('mvt-fractionnement');
+        if (!zone) return;
+        propositionFractionnement = null;
+        // Seul un mouvement initial (NAF/REN) porte une prime de garantie
+        // complète soumise au barème -- un avenant n'a rien à afficher ici.
+        if (!nature || !nature.mouvement_initial || brancheSaisie() !== 'AUTOMOBILE') { afficherPropositionFractionnement(); return; }
+        const effet = valeurChampProduction('mvt-effet'), echeance = valeurChampProduction('mvt-echeance');
+        const prime = valeurChampProduction('mvt-prime-nette');
+        if (!effet || !echeance || !prime) { afficherPropositionFractionnement(); return; }
+        const parametres = new URLSearchParams({ code_categorie: valeurChampProduction('mvt-categorie'), date_effet: effet, date_echeance: echeance, prime_nette: prime });
+        try {
+            const resp = await fetch(`/api/staff/production/fractionnement?${parametres}`, { credentials: 'include' });
+            const data = await resp.json();
+            propositionFractionnement = data.succes ? data.fractionnement : null;
+        } catch (err) { propositionFractionnement = null; }
+        afficherPropositionFractionnement();
+    }
+
+    function afficherPropositionFractionnement() {
+        const zone = document.getElementById('mvt-fractionnement');
+        if (!zone) return;
+        const f = propositionFractionnement;
+        if (!f || !f.prime_annuelle_reference || f.pourcentage >= 100) { zone.innerHTML = ''; return; }
+        zone.innerHTML = `Prime annuelle équivalente : <strong>${formaterMontantFcfa(f.prime_annuelle_reference)}</strong>`
+            + (f.libelle ? ` <span style="color:var(--gray);">(${echapperHtml(f.libelle)})</span>` : '');
+    }
+
+    // Décompte indicatif -- recalculé par le serveur à l'émission
+    function recalculerDecompteMouvement() {
+        const zone = document.getElementById('mvt-decompte');
+        const ref = referentielsProduction;
+        if (!zone || !ref) return;
+        const nature = natureSaisie();
+        const branche = brancheSaisie();
+        const estAuto = branche === 'AUTOMOBILE';
+        const entier = (id) => { const n = parseInt(valeurChampProduction(id), 10); return Number.isInteger(n) ? n : 0; };
+        const frais = (code) => Number((ref.frais_fixes || []).find((f) => f.code === code)?.montant || 0);
+        const taux = Number(((ref.taux_tva || []).find((t) => t.perimetre === branche) || (ref.taux_tva || []).find((t) => t.perimetre === '*'))?.taux || 0);
+        const pn = entier('mvt-prime-nette');
+        const acc = entier('mvt-accessoires');
+        const autres = entier('mvt-autres-montant');
+        const fc = frais('FICHIER_CENTRAL');
+        const tva = Math.round((pn + acc + fc) * taux / 100);
+        const cr = estAuto && nature && nature.delivre_carte_rose ? frais('CARTE_ROSE') : 0;
+        const dta = saisieMouvement.dta ? Number(saisieMouvement.dta.montant || 0) : 0;
+        const ttc = pn + acc + fc + tva + cr + dta + autres;
+        const l = (libelle, valeur, gras) => `<div style="display:flex; justify-content:space-between; gap:12px;${gras ? ' font-weight:700; border-top:1px solid var(--border); margin-top:4px; padding-top:4px;' : ''}"><span>${libelle}</span><span>${formaterMontantFcfa(valeur)}</span></div>`;
+        zone.innerHTML = `
+            ${l('Prime nette', pn)}${l('Accessoires', acc)}${l('Fichier central', fc)}
+            ${l(`TVA ${taux} % (sur prime nette + accessoires + fichier central)`, tva)}
+            ${l('Carte rose', cr)}${l('DTA', dta)}${autres ? l('Autres', autres) : ''}
+            ${l('Prime TTC', ttc, true)}
+            <div style="display:flex; justify-content:space-between; gap:12px; color:var(--gray); font-size:11px;"><span>Chiffre d'affaires (prime nette + accessoires + fichier central)</span><span>${formaterMontantFcfa(pn + acc + fc)}</span></div>
+            <div style="color:var(--gray); font-size:10px; margin-top:4px;">Montants indicatifs : le serveur les recalcule à l'émission.</div>`;
+    }
+
+    async function enregistrerNouveauMouvement() {
+        const nature = natureSaisie();
+        if (!nature) return;
+        const estNaf = nature.code === 'NAF';
+        if (!valeurChampProduction('mvt-agence')) { erreurSousFormulaire('emissions', 'point de vente (gestionnaire) obligatoire'); return; }
+        if (!estNaf && !saisieMouvement.police) { erreurSousFormulaire('emissions', 'recherchez d\'abord la police existante : un avenant ou un renouvellement ne peut porter que sur une police trouvée'); return; }
+        const exempte = document.getElementById('mvt-dta-exempte')?.checked;
+        const corps = {
+            code_nature: nature.code,
+            cle_agence: valeurChampProduction('mvt-agence'),
+            date_effet: valeurChampProduction('mvt-effet'),
+            date_echeance: valeurChampProduction('mvt-echeance') || null,
+            vin: valeurChampProduction('mvt-vin') || null,
+            immatriculation: valeurChampProduction('mvt-immatriculation') || null,
+            genre_vehicule: valeurChampProduction('mvt-genre') || null,
+            puissance_cv: valeurChampProduction('mvt-cv') || null,
+            cylindree_cm3: valeurChampProduction('mvt-cylindree') || null,
+            energie: valeurChampProduction('mvt-energie') || null,
+            marque: valeurChampProduction('mvt-marque') || null,
+            modele: valeurChampProduction('mvt-modele') || null,
+            code_categorie_cima: valeurChampProduction('mvt-categorie') || null,
+            caracterisation_risque: valeurChampProduction('mvt-caracterisation') || null,
+            prime_nette: valeurChampProduction('mvt-prime-nette') || 0,
+            accessoires: valeurChampProduction('mvt-accessoires') || 0,
+            autres_montant: valeurChampProduction('mvt-autres-montant') || 0,
+            autres_nature: valeurChampProduction('mvt-autres-nature') || null,
+            dta_motif_exemption: exempte ? (valeurChampProduction('mvt-dta-motif') || null) : null,
+            dta_justificatif: exempte ? (valeurChampProduction('mvt-dta-justificatif') || null) : null,
+            statut_paiement: valeurChampProduction('mvt-paiement'),
+            observations: valeurChampProduction('mvt-observations') || null,
+        };
+        if (exempte && (!corps.dta_motif_exemption || !corps.dta_justificatif)) { erreurSousFormulaire('emissions', 'exemption de DTA : motif et référence du justificatif obligatoires'); return; }
+        if (estNaf) {
+            Object.assign(corps, {
+                id_partenaire_assurance: valeurChampProduction('mvt-compagnie'),
+                code_branche: valeurChampProduction('mvt-branche'),
+                libelle_produit: valeurChampProduction('mvt-produit') || null,
+                id_utilisateur: clientRattacheMouvement ? clientRattacheMouvement.id_utilisateur : null,
+                souscripteur_nom: clientRattacheMouvement ? null : (valeurChampProduction('mvt-souscripteur-nom') || null),
+                souscripteur_telephone: valeurChampProduction('mvt-telephone') || null,
+            });
+            if (!corps.id_partenaire_assurance || !corps.code_branche) { erreurSousFormulaire('emissions', 'compagnie et branche obligatoires'); return; }
+            if (!corps.id_utilisateur && !corps.souscripteur_nom) { erreurSousFormulaire('emissions', 'rattachez un compte client ou saisissez le nom du souscripteur'); return; }
+        } else {
+            corps.numero_police = saisieMouvement.police.numero_police;
+        }
+        const r = await envoyerProduction('emissions', 'POST', '/api/staff/mouvements', corps);
+        if (!r) return;
+        clientRattacheMouvement = null;
+        messagePage('emissions', `✔ ${echapperHtml(nature.code)} émis — police <strong>${echapperHtml(r.numero_police)}</strong>, prime TTC <strong>${formaterMontantFcfa(r.prime_ttc)}</strong>${r.avertissement_dta ? `<div style="color:#b45309;">⚠ ${echapperHtml(r.avertissement_dta)}</div>` : ''}`);
+        rechargerProduction();
+    }
+
+    // ---------------------------------------------------------------------
+    // Client — Mes contrats (lecture seule, ses seuls contrats)
+    // ---------------------------------------------------------------------
+    const colonnesMesContrats = [
+        { cle: 'compagnie', libelle: 'Compagnie', trier: (c) => c.compagnie || '' },
+        { cle: 'police', libelle: 'N° police', trier: (c) => c.numero_police || '' },
+        { cle: 'branche', libelle: 'Branche', trier: (c) => c.code_branche || '' },
+        { cle: 'effet', libelle: 'Effet', trier: (c) => c.date_effet || '', exporter: (c) => formaterDateIso(c.date_effet) },
+        { cle: 'echeance', libelle: 'Échéance', trier: (c) => c.date_echeance || '', exporter: (c) => formaterDateIso(c.date_echeance) },
+        { cle: 'prime', libelle: 'Prime TTC (FCFA)', trier: (c) => Number(c.prime_ttc || 0), exporter: (c) => c.prime_ttc ?? '' },
+        {
+            cle: 'statut', libelle: 'Statut', trier: (c) => LIBELLES_STATUT_CONTRAT[c.statut_contrat] || '',
+            valeurs: () => Object.values(LIBELLES_STATUT_CONTRAT).map((l) => ({ code: l, libelle: l })),
+        },
+    ];
+
+    function genererLignesMesContrats(page) {
+        return page.map((c) => `<tr>
+                <td>${echapperHtml(c.compagnie)}</td>
+                <td><strong>${echapperHtml(c.numero_police)}</strong></td>
+                <td style="font-size:11px;">${echapperHtml(c.code_branche)}${c.libelle_produit ? `<div style="color:var(--gray);">${echapperHtml(c.libelle_produit)}</div>` : ''}</td>
+                <td style="white-space:nowrap;">${formaterDateIso(c.date_effet)}</td>
+                <td style="white-space:nowrap;">${formaterDateIso(c.date_echeance)} ${badgeEcheance(c.jours_restants, c.statut_contrat)}</td>
+                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(c.prime_ttc, false)}</td>
+                <td>${echapperHtml(LIBELLES_STATUT_CONTRAT[c.statut_contrat] || c.statut_contrat)}</td>
+            </tr>`).join('');
+    }
+
+    // 30/09/2026 -- une carte plus calme, pensée pour le client : bande de
+    // couleur en tête (pas la bordure des fiches internes), une couleur
+    // par branche pour repérer ses polices d'un coup d'œil sur plusieurs
+    // branches, jamais l'échelle d'urgence rouge/orange interne.
+    const COULEUR_BRANCHE = { AUTOMOBILE: '#1e3a8a', SANTE: '#047857', INCENDIE: '#b45309', TRANSPORT: '#0369a1', RC_GENERALE: '#7c3aed', AVIATION: '#0891b2', CREDIT_CAUTIONS: '#be123c', RISQUES_TECHNIQUES: '#4d7c0f' };
+    function genererFichesMesContrats(page) {
+        return page.map((c) => `
+            <div style="border:1px solid var(--border); border-radius:10px; overflow:hidden; background:white;">
+                <div style="height:6px; background:${COULEUR_BRANCHE[c.code_branche] || 'var(--navy)'};"></div>
+                <div style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px;">
+                    <div>
+                        <div style="font-weight:700; font-size:14px;">${echapperHtml(c.compagnie)}</div>
+                        <div style="font-size:11px; color:var(--gray);">Police ${echapperHtml(c.numero_police)}</div>
+                    </div>
+                    ${badgeEcheance(c.jours_restants, c.statut_contrat)}
+                </div>
+                <div style="display:grid; grid-template-columns:max-content 1fr; gap:6px 14px;">
+                    <div class="carte-fiche-libelle">Branche</div><div class="carte-fiche-valeur">${echapperHtml(c.code_branche)}${c.libelle_produit ? ` — ${echapperHtml(c.libelle_produit)}` : ''}</div>
+                    <div class="carte-fiche-libelle">Effet</div><div class="carte-fiche-valeur">${formaterDateIso(c.date_effet)}</div>
+                    <div class="carte-fiche-libelle">Échéance</div><div class="carte-fiche-valeur">${formaterDateIso(c.date_echeance)}</div>
+                </div>
+                <div class="fiche-montant-cle">
+                    <span class="fiche-montant-cle-libelle">Prime TTC</span>
+                    <span class="fiche-montant-cle-valeur">${formaterMontantFcfa(c.prime_ttc)}</span>
+                </div>
+                </div>
+            </div>`).join('');
+    }
+
+    const afficherTableauMesContrats = creerRenduTableau('mes-contrats', {
+        obtenirDonnees: () => mesContratsCourants,
+        colonnes: colonnesMesContrats,
+        genererLignes: genererLignesMesContrats,
+        genererFiches: genererFichesMesContrats,
+        idConteneur: 'mes-contrats-conteneur',
+        messageVide: 'Aucun contrat n\'est encore rattaché à votre compte. Si vous êtes assuré chez nous, contactez votre conseiller pour le rattachement.',
+    });
+
+    async function chargerMesContrats() {
+        const conteneur = document.getElementById('mes-contrats-conteneur');
+        conteneur.innerHTML = '<p class="vide">Chargement…</p>';
+        try {
+            const resp = await fetch('/api/mes-contrats', { credentials: 'include' });
+            const data = await resp.json();
+            if (!data.succes) { conteneur.innerHTML = '<p class="vide">Erreur de chargement.</p>'; return; }
+            mesContratsCourants = data.contrats;
+            afficherTableauMesContrats();
+        } catch (err) { console.error(err); conteneur.innerHTML = '<p class="vide">Erreur réseau.</p>'; }
+    }
+
     // [PRÉSENTATION-PERSONNEL]
     async function actionGroupeeClients(nouveauStatut) {
         const coches = Array.from(document.querySelectorAll('.client-select:checked'));
@@ -6563,7 +8453,7 @@
         );
     }
 
-    // [PRÉSENTATION-PERSONNEL]
+    // [PRÉSENTATION-PERSONNEL] Lot 1 (22/09/2026)
     function genererFichesPersonnel(page) {
         return page.map((p) => {
             let statutBadge;

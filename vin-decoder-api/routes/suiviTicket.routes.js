@@ -47,7 +47,7 @@ async function envoyerCodeParEmail(pool, email, code) {
         // l'identifiant lui-même sert de référence.
         try {
             await pool.query(
-                `INSERT INTO site.no_reply_messages_envoyes (message_id, destinataire, type_message, reference_compte)
+                `INSERT INTO site.no_reply_message_envoye (message_id_rfc, destinataire, type_message, reference_compte)
                  VALUES ($1, $2, $3, $4)`,
                 [infoEnvoi.messageId, email, 'code_suivi_ticket', email]
             );
@@ -94,7 +94,7 @@ module.exports = function (pool) {
         try {
             const code = crypto.randomInt(100000, 999999).toString();
             await pool.query(
-                'INSERT INTO site.suivi_ticket_codes (identifiant, code) VALUES ($1, $2)',
+                `INSERT INTO site.code_verification (code_nature_jeton, identifiant, code) VALUES ('SUIVI_TICKET', $1, $2)`,
                 [identifiant, code]
             );
 
@@ -125,16 +125,14 @@ module.exports = function (pool) {
 
         try {
             const resultat = await pool.query(
-                `SELECT id_code, tentatives FROM site.suivi_ticket_codes
-                 WHERE identifiant = $1 AND code = $2 AND utilise = false AND date_expiration > now()
+                `SELECT id_code_verification AS id_code, tentatives FROM site.code_verification WHERE code_nature_jeton = 'SUIVI_TICKET' AND identifiant = $1 AND code = $2 AND utilise = false AND date_expiration > now()
                  ORDER BY date_creation DESC LIMIT 1`,
                 [identifiant, code]
             );
 
             if (resultat.rowCount === 0) {
                 await pool.query(
-                    `UPDATE site.suivi_ticket_codes SET tentatives = tentatives + 1
-                     WHERE identifiant = $1 AND utilise = false AND date_expiration > now()`,
+                    `UPDATE site.code_verification SET tentatives = tentatives + 1 WHERE code_nature_jeton = 'SUIVI_TICKET' AND identifiant = $1 AND utilise = false AND date_expiration > now()`,
                     [identifiant]
                 );
                 return res.status(401).json({ succes: false, erreurs: ['code invalide ou expiré'] });
@@ -145,7 +143,7 @@ module.exports = function (pool) {
                 return res.status(429).json({ succes: false, erreurs: ['trop de tentatives, demandez un nouveau code'] });
             }
 
-            await pool.query('UPDATE site.suivi_ticket_codes SET utilise = true WHERE id_code = $1', [id_code]);
+            await pool.query('UPDATE site.code_verification SET utilise = true WHERE id_code_verification = $1', [id_code]);
 
             const tickets = await pool.query(
                 `SELECT t.code_ticket, tt.libelle_fr AS type_libelle_fr, st.libelle_fr AS statut_libelle_fr, t.date_creation
