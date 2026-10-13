@@ -70,6 +70,7 @@ Cree le 13/10/2026 depuis les noms de fichiers presents sur les branches. La col
 | 064 | Tarification | fonction RC (compagnie propre sinon compagnie 0, lecture de la variante) | feat/tarification | reserve le 13/10/2026, libere si fusionne avec la 063 |
 | 065 | Normalisation | Etape 0 du routage des demandes : colonnes de site.agences (cle_rattachement, numero_whatsapp), colonnes de site.tickets (cle_agence, date_fin_validite, routage), cle routage_demandes de site.parametre_site | feat/normalisation | reserve provisoirement le 13/10/2026 (accord de Roger sur la regle a 13h04) ; projet de Normalisation, non applique |
 | 066 | Production & Souscription | fn_agence_traitante (lecture seule), a appliquer apres la 065 | branche de la session | reserve provisoirement le 13/10/2026 ; projet a corriger (reserves de site public) |
+| 067 | Normalisation | controle du VIN (contrainte mouvements_vin_longueur_min, longueur >= 10 si renseigne) et sequence site.seq_identifiant_risque avec son GRANT | feat/normalisation | reserve le 13/10/2026 (un seul numero ; le 068 est libere) ; releve du 13/10 : 9 mouvements (8 AUTOMOBILE, 1 RC_GENERALE sans VIN), 0 VIN court ; rollback a fournir ; non applique |
 
 ## Repartition par branche (relevee le 13/10/2026)
 
@@ -80,4 +81,4 @@ Cree le 13/10/2026 depuis les noms de fichiers presents sur les branches. La col
 
 ## Numeros absents de toutes les branches
 
-023, 027, 029, 030, 040 et 041 ne figurent sur aucune branche. A verifier dans vin-decoder-api/migrations de la production : soit ces numeros n'ont jamais ete utilises, soit des migrations appliquees n'ont jamais ete versees.
+023, 027, 029, 030, 040 et 041 ne figurent sur aucune branche, et aucun fichier portant ces numeros n existe dans la production (releve du 13/10/2026). Ils ne sont reattribues a personne. Une modification faite directement en base, sans fichier, ne peut pas etre exclue.
