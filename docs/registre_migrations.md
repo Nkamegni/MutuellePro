@@ -68,3 +68,16 @@ Cree le 13/10/2026 depuis les noms de fichiers presents sur les branches. La col
 | 061 | Normalisation | suppression de la vue catalogue.vehicules_catalogue | feat/normalisation | reserve, conditionnel (code de production a controler) |
 | 063 | Tarification | tarif RC propre a AFG (tarif + bareme_tranche, variante dans criteres) | feat/tarification | attribue le 13/10/2026, script non livre |
 | 064 | Tarification | fonction RC (compagnie propre sinon compagnie 0, lecture de la variante) | feat/tarification | reserve le 13/10/2026, libere si fusionne avec la 063 |
+| 065 | Normalisation | Etape 0 du routage des demandes : colonnes de site.agences (cle_rattachement, numero_whatsapp), colonnes de site.tickets (cle_agence, date_fin_validite, routage), cle routage_demandes de site.parametre_site | feat/normalisation | reserve provisoirement le 13/10/2026 (accord de Roger sur la regle a 13h04) ; projet de Normalisation, non applique |
+| 066 | Production & Souscription | fn_agence_traitante (lecture seule), a appliquer apres la 065 | branche de la session | reserve provisoirement le 13/10/2026 ; projet a corriger (reserves de site public) |
+
+## Repartition par branche (relevee le 13/10/2026)
+
+- 004 a 021 : presentes sur toutes les branches, dont main.
+- 022 a 044 : presentes seulement sur feat/myspace-core ; absentes de main.
+- 045 a 059 et 062 : presentes seulement sur feat/tarification ; absentes de main.
+- main s'arrete donc a la 021 : ce n'est pas l'etat de la base, seulement celui du depot.
+
+## Numeros absents de toutes les branches
+
+023, 027, 029, 030, 040 et 041 ne figurent sur aucune branche. A verifier dans vin-decoder-api/migrations de la production : soit ces numeros n'ont jamais ete utilises, soit des migrations appliquees n'ont jamais ete versees.
