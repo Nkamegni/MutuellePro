@@ -221,6 +221,24 @@
                 const memoField = document.getElementById('contact_memo_complet');
                 if (memoField) memoField.value = buildContactMemoText(this);
 
+                // Ticket backend (Helpdesk Volet 2, site.tickets, type
+                // "info") — en parallèle, jamais bloquant. Rétabli le
+                // 08/10/2026 (confirmé actif avant la réorganisation du
+                // 25/08/2026, voir devis.js pour l'historique vérifié).
+                const contactEmail = this.elements['user_email'] ? this.elements['user_email'].value.trim() : '';
+                const contactPrefixEl = this.querySelector('.devis-prefix-select');
+                const contactPhone = this.elements['user_phone'] ? this.elements['user_phone'].value.trim() : '';
+                const contactTelephone = `${contactPrefixEl ? contactPrefixEl.value : ''}${contactPhone}`;
+                const contactSujetSelect = this.elements['sujet_categorie'];
+                const contactSujetLabel = contactSujetSelect && contactSujetSelect.selectedIndex > 0
+                    ? contactSujetSelect.options[contactSujetSelect.selectedIndex].textContent
+                    : undefined;
+                creerTicketBackend('info', contactEmail, contactTelephone, {
+                    sujet: contactSujetLabel,
+                    objet: this.elements['subject'] ? this.elements['subject'].value.trim() : undefined,
+                    message: this.elements['message'] ? this.elements['message'].value.trim() : undefined,
+                });
+
                 // Routage par sujet — voir CONTACT_ROUTING plus haut. Repli sur
                 // contact@ si, par un cas limite, aucun sujet n'était sélectionné
                 // (le champ est "required", donc ça ne devrait jamais arriver).
@@ -262,7 +280,23 @@
                 // lors d'un clic sur "Archiver", jamais sur une soumission
                 // directe. Utilise la même source unique que l'archivage,
                 // donc les deux contenus sont désormais toujours identiques.
-                populateMemoCompletField(buildMemoData());
+                const memoData = buildMemoData();
+                populateMemoCompletField(memoData);
+
+                // Ticket backend (Helpdesk Volet 2, site.tickets) — en
+                // parallèle, jamais bloquant. Rétabli le 08/10/2026 (confirmé
+                // actif avant la réorganisation du 25/08/2026, voir devis.js
+                // pour l'historique vérifié).
+                const userEmail = document.getElementById('modal_user_email')
+                    ? document.getElementById('modal_user_email').value.trim()
+                    : '';
+                creerTicketBackend('devis', userEmail, memoData.telephone, {
+                    branche: memoData.insuranceLabel,
+                    vin: memoData.vin || undefined,
+                    details: memoData.detailsData,
+                    notes: memoData.notes || undefined,
+                    ref_memo: memoData.ref,
+                });
 
                 if (!(await warnIfAttachmentsTooLarge())) {
                     submitBtn.innerHTML = originalBtnContent;
@@ -303,4 +337,4 @@
             });
         }
     });
-    
+
