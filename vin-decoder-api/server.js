@@ -280,6 +280,15 @@ function hasUsableData(data) {
 //    la réponse est volontairement réduite aux 3 meilleurs seulement —
 //    inutile de proposer 30 choix quand la correspondance est quasi
 //    certaine.
+// Normalisation du VIN saisi (lot 1, 07/10/2026) — identique à la base
+// (vpic.decode_vin_flat) et au script d'import systeme_catalogue_vehicules.py.
+const CORRECTION_VIN = { '&': '1', 'É': '2', '"': '3', "'": '4', '(': '5', 'È': '7', '_': '8', 'Ç': '9', 'À': '0', I: '1', O: '0', Q: '0' };
+function normaliserVin(valeur) {
+  const vin = String(valeur || '').trim().toUpperCase().replace(/[_ ]+$/, '');
+  if (vin.startsWith("'")) return vin; // préfixe texte d'Excel : laissé tel quel
+  return vin.replace(/[&É"'(È_ÇÀIOQ]/g, (c) => CORRECTION_VIN[c]);
+}
+
 app.get('/api/vin/recherche', vinRateLimiter, async (req, res) => {
   const { marque, modele, energie, puissance, charge_utile, nombre_places } = req.query;
   const seuilSimilarite = req.query.seuil ? parseFloat(req.query.seuil) : SEUIL_SIMILARITE_DEFAUT;
@@ -312,7 +321,7 @@ app.get('/api/vin/recherche', vinRateLimiter, async (req, res) => {
     const filtreCountSql = filtreParts0.join(' AND ');
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM catalogue.vehicules_catalogue WHERE ${filtreCountSql}`,
+      `SELECT COUNT(*) FROM catalogue.profil_vehicule WHERE ${filtreCountSql}`,
       countParams
     );
     const nbCorrespondancesTotal = parseInt(countResult.rows[0].count, 10);
@@ -348,7 +357,7 @@ app.get('/api/vin/recherche', vinRateLimiter, async (req, res) => {
     const limiteIndex = finalParams.length;
 
     const colonnesSql = COLONNES_PROFIL.join(', ');
-    const requete = `SELECT ${colonnesSql}, (${scoreTotalSql}) AS score FROM catalogue.vehicules_catalogue WHERE ${filtreFinalSql} ORDER BY score DESC LIMIT $${limiteIndex}`;
+    const requete = `SELECT ${colonnesSql}, (${scoreTotalSql}) AS score FROM catalogue.profil_vehicule WHERE ${filtreFinalSql} ORDER BY score DESC LIMIT $${limiteIndex}`;
 
     const lignesResult = await pool.query(requete, finalParams);
 
@@ -379,7 +388,7 @@ app.get('/api/vin/recherche', vinRateLimiter, async (req, res) => {
 });
 
 app.get('/api/vin/:vin', vinRateLimiter, async (req, res) => {
-  const vin = req.params.vin.trim().toUpperCase();
+  const vin = normaliserVin(req.params.vin);
   const year = req.query.year ? parseInt(req.query.year, 10) : null;
 
   const formatError = checkVinFormat(vin);
@@ -531,13 +540,14 @@ app.post('/api/vin/verify', vinRateLimiter, async (req, res) => {
 // -----------------------------------------------------------------------
 // RECHERCHE VIN APPROXIMATIVE — 3 endpoints, portés depuis
 // systeme_catalogue_vehicules.py (session locale, documentation du
-// 05/08/2026). Utilisent catalogue.vehicules_catalogue (schéma déjà en
+// 05/08/2026). Utilisent catalogue.profil_vehicule (schéma déjà en
 // place depuis la fusion VIN). Constantes reprises À L'IDENTIQUE du
 // script source, pour un comportement fidèle :
-const NIVEAUX_CASCADE = [17, 14, 11, 10, 8, 5, 3];
+const VIN_LONGUEUR_MINIMALE = 10; // règle de Roger (07/10/2026) : aucune recherche sur moins de 10 caractères
+const NIVEAUX_CASCADE = [17, 14, 11, 10];
 const SEUIL_MAX_RESULTATS = 30;
 const SEUIL_SIMILARITE_DEFAUT = 0.3;
-const COLONNES_PROFIL = ['id', 'vin', 'marque', 'modele', 'genre', 'energie', 'puissance', 'charge_utile', 'nombre_places', 'taille_vin'];
+const COLONNES_PROFIL = ['id_vehicule_catalogue', 'vin', 'marque', 'modele', 'genre', 'terme_vehicule', 'code_categorie_usage_suggeree', 'avec_remorque', 'avec_double_commande', 'avec_double_cabine', 'energie', 'puissance', 'charge_utile', 'nombre_places', 'taille_vin'];
 
 // Contrairement à /api/vin/:vin (lookup précis, format VIN strictement
 // validé), ces 3 endpoints acceptent un VIN mal formé (I/O/Q compris) —
@@ -547,19 +557,35 @@ const COLONNES_PROFIL = ['id', 'vin', 'marque', 'modele', 'genre', 'energie', 'p
 // GET /api/vin/cascade/:vinPartiel — cascade de préfixes (17→14→11→10→8→5→3),
 // retourne le niveau le plus précis restant ≤ 30 résultats.
 app.get('/api/vin/cascade/:vinPartiel', vinRateLimiter, async (req, res) => {
-  const vinPartiel = req.params.vinPartiel.trim().toUpperCase();
+  const vinPartiel = normaliserVin(req.params.vinPartiel);
   if (!vinPartiel) return res.status(400).json({ error: 'VIN (même partiel) requis.' });
+  if (vinPartiel.length < VIN_LONGUEUR_MINIMALE) {
+    return res.status(400).json({
+      error: `VIN trop court : ${vinPartiel.length} caractère(s) saisi(s), ${VIN_LONGUEUR_MINIMALE - vinPartiel.length} manquant(s) pour lancer la recherche (minimum ${VIN_LONGUEUR_MINIMALE}).`,
+      code: 'VIN_TROP_COURT',
+      nb_caracteres_saisis: vinPartiel.length,
+      nb_caracteres_manquants: VIN_LONGUEUR_MINIMALE - vinPartiel.length,
+      nb_caracteres_manquants_vin_complet: 17 - vinPartiel.length,
+    });
+  }
+  // Filtre facultatif par catégorie (07/10/2026) : seuls les véhicules dont le terme autorise la catégorie.
+  const categorie = req.query.categorie ? String(req.query.categorie).trim() : '';
+  const filtreCategorie = categorie
+    ? ' AND EXISTS (SELECT 1 FROM referentiel.combinaison_categorie k WHERE k.id_terme_vehicule = profil_vehicule.id_terme_vehicule AND k.code_categorie_usage = $2)'
+    : '';
+  const parametres = (p) => (categorie ? [p, categorie] : [p]);
 
   try {
     let dernierValide = null;
+    let niveauPrecis = null; // palier le plus long ayant donné des résultats
 
     for (const n of NIVEAUX_CASCADE) {
       if (vinPartiel.length < n) continue;
       const prefixe = vinPartiel.slice(0, n);
 
       const countResult = await pool.query(
-        'SELECT COUNT(*) FROM catalogue.vehicules_catalogue WHERE vin LIKE $1',
-        [`${prefixe}%`]
+        'SELECT COUNT(*) FROM catalogue.profil_vehicule WHERE vin LIKE $1' + filtreCategorie,
+        parametres(`${prefixe}%`)
       );
       const nb = parseInt(countResult.rows[0].count, 10);
 
@@ -568,21 +594,40 @@ app.get('/api/vin/cascade/:vinPartiel', vinRateLimiter, async (req, res) => {
 
       const colonnesSql = COLONNES_PROFIL.join(', ');
       const lignesResult = await pool.query(
-        `SELECT ${colonnesSql} FROM catalogue.vehicules_catalogue WHERE vin LIKE $1`,
-        [`${prefixe}%`]
+        `SELECT ${colonnesSql} FROM catalogue.profil_vehicule WHERE vin LIKE $1${filtreCategorie}`,
+        parametres(`${prefixe}%`)
       );
       dernierValide = { n, prefixe, nb, lignes: lignesResult.rows };
+      if (!niveauPrecis) niveauPrecis = { n, nb };
     }
 
     if (!dernierValide) {
-      return res.json({ trouve: false, vin_interroge: vinPartiel, niveau_trouve: null, nb_references: 0 });
+      return res.json({ trouve: false, vin_interroge: vinPartiel, niveau_trouve: null, nb_references: 0,
+        categorie_filtre: categorie || null, nb_caracteres_manquants_vin_complet: Math.max(0, 17 - vinPartiel.length) });
     }
+
+    // Tri (07/10/2026) : VIN exact en tête, puis du plus ressemblant au moins ressemblant.
+    const prefixeCommun = (a, b) => { let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; return i; };
+    dernierValide.lignes.forEach((l) => {
+      l.longueur_prefixe_commun = prefixeCommun(l.vin || '', vinPartiel);
+      l.correspondance_exacte = l.vin === vinPartiel;
+    });
+    dernierValide.lignes.sort((a, b) =>
+      (b.correspondance_exacte - a.correspondance_exacte)
+      || (b.longueur_prefixe_commun - a.longueur_prefixe_commun)
+      || String(a.vin).localeCompare(String(b.vin)));
+    const exacts = dernierValide.lignes.filter((l) => l.correspondance_exacte);
+    // La synthèse s'appuie sur les profils les plus fiables : le VIN exact s'il existe,
+    // sinon ceux du palier le plus long.
+    const lignesAgregation = exacts.length
+      ? exacts
+      : dernierValide.lignes.filter((l) => l.longueur_prefixe_commun >= niveauPrecis.n);
 
     // Agrégation par majorité (marque/modèle/énergie/puissance/places les
     // plus fréquents parmi les résultats du niveau retenu), avec % de confiance.
     const agrege = {};
     ['marque', 'modele', 'energie', 'puissance', 'nombre_places'].forEach((champ) => {
-      const valeurs = dernierValide.lignes.map((l) => l[champ]).filter((v) => v !== null && v !== undefined);
+      const valeurs = lignesAgregation.map((l) => l[champ]).filter((v) => v !== null && v !== undefined);
       if (valeurs.length === 0) {
         agrege[champ] = null;
         agrege[`${champ}_confiance`] = 0;
@@ -599,6 +644,10 @@ app.get('/api/vin/cascade/:vinPartiel', vinRateLimiter, async (req, res) => {
       trouve: true,
       vin_interroge: vinPartiel,
       niveau_trouve: dernierValide.n,
+      niveau_precis: niveauPrecis.n,
+      nb_correspondances_exactes: exacts.length,
+      categorie_filtre: categorie || null,
+      nb_caracteres_manquants_vin_complet: Math.max(0, 17 - vinPartiel.length),
       prefixe: dernierValide.prefixe,
       nb_references: dernierValide.nb,
       resultats: dernierValide.lignes,
@@ -614,12 +663,12 @@ app.get('/api/vin/cascade/:vinPartiel', vinRateLimiter, async (req, res) => {
 // (un même VIN peut légitimement porter plusieurs profils : changement
 // de motorisation, occasion importée, etc.)
 app.get('/api/vin/profils/:vin', vinRateLimiter, async (req, res) => {
-  const vin = req.params.vin.trim().toUpperCase();
+  const vin = normaliserVin(req.params.vin);
   if (!vin) return res.status(400).json({ error: 'VIN requis.' });
 
   try {
     const countResult = await pool.query(
-      'SELECT COUNT(*) FROM catalogue.vehicules_catalogue WHERE vin = $1',
+      'SELECT COUNT(*) FROM catalogue.profil_vehicule WHERE vin = $1',
       [vin]
     );
     const nb = parseInt(countResult.rows[0].count, 10);
@@ -636,7 +685,7 @@ app.get('/api/vin/profils/:vin', vinRateLimiter, async (req, res) => {
 
     const colonnesSql = COLONNES_PROFIL.join(', ');
     const lignesResult = await pool.query(
-      `SELECT ${colonnesSql} FROM catalogue.vehicules_catalogue WHERE vin = $1`,
+      `SELECT ${colonnesSql} FROM catalogue.profil_vehicule WHERE vin = $1`,
       [vin]
     );
 
@@ -848,9 +897,9 @@ app.get('/api/agences', async (req, res) => {
 app.get('/api/listes-reference', async (req, res) => {
   try {
     const [constructeurs, unites, usages, carrosseries, genresEtats, genresUsages, combinaisons, partenaires] = await Promise.all([
-      pool.query('SELECT nom FROM site.constructeurs WHERE actif = true ORDER BY ordre_affichage, nom'),
-      pool.query('SELECT code, libelle FROM site.unites_puissance ORDER BY ordre_affichage'),
-      pool.query('SELECT code, designation, groupe FROM site.usages_categories ORDER BY groupe, ordre_affichage'),
+      pool.query('SELECT nom FROM referentiel.constructeur WHERE actif = true ORDER BY ordre_affichage, nom'),
+      pool.query('SELECT code_unite_puissance AS code, libelle FROM referentiel.unite_puissance ORDER BY ordre_affichage'),
+      pool.query('SELECT code_categorie_usage AS code, designation, groupe FROM referentiel.categorie_usage ORDER BY groupe, ordre_affichage'),
       pool.query('SELECT nom, genre_canonique FROM site.carrosseries WHERE actif = true ORDER BY ordre_affichage'),
       pool.query('SELECT alias, etat_nom, etat_options FROM site.genres_etats WHERE actif = true ORDER BY alias, ordre_affichage'),
       pool.query('SELECT genre_canonique, usage_libelle, code_categorie FROM site.genres_usages WHERE actif = true ORDER BY genre_canonique, ordre_affichage'),
