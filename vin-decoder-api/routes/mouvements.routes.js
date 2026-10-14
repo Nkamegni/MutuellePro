@@ -51,7 +51,7 @@ const VERSION_ROUTE = '2026-09-30-a';
 // lorsque l'écran et la route doivent évoluer ensemble). Journalisé au
 // chargement : `sudo pm2 logs vin-decoder-api --lines 5 --nostream` dit
 // immédiatement quelle version tourne, sans deviner depuis la console.
-const BUILD_ROUTE = '2026-10-06-c';
+const BUILD_ROUTE = '2026-10-13-a';
 console.log(`[mouvements.routes] build ${BUILD_ROUTE} chargé`);
 const requireStaffAuth = require('../middleware/requireStaffAuth');
 const requireStaffRole = require('../middleware/requireStaffRole');
@@ -94,6 +94,25 @@ function normaliserImmat(v) {
     return t ? t.toUpperCase().replace(/[^A-Z0-9]/g, '') || null : null;
 }
 function anneeDe(dateIso) { return Number(dateIso.slice(0, 4)); }
+
+// 13/10/2026 (Roger) -- identifiant du risque des branches hors automobile :
+// nom (7 caractères A-Z/0-9 au plus, accents retirés) + clé numérique tirée de
+// la séquence site.seq_identifiant_risque, complétée de zéros pour atteindre
+// 10 caractères (la clé a au moins 3 chiffres). Ex. « Maison » + 42 -> MAISON0042.
+// Appelée dans la transaction de l'émission : un trou de séquence est sans effet.
+function nomIdentifiantRisque(texte) {
+    const nom = String(texte || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+    return nom || 'RISQUE';
+}
+function composerIdentifiantRisque(texte, cle) {
+    const nom = nomIdentifiantRisque(texte);
+    return nom + String(cle).padStart(Math.max(3, 10 - nom.length), '0');
+}
+async function genererIdentifiantRisque(db, texte) {
+    const cle = (await db.query(`SELECT nextval('site.seq_identifiant_risque') AS n`)).rows[0].n;
+    return composerIdentifiantRisque(texte, cle);
+}
 
 // 28/09/2026 (Roger) : la Date Échéance d'un contrat automobile est son
 // anniversaire -- fixée UNE FOIS, à l'émission (NAF) ou au renouvellement
@@ -706,8 +725,31 @@ module.exports = function (pool) {
                 ? await dernierRisque(client, contrat.id_contrat_precedent && nature.code === 'REN' ? contrat.id_contrat_precedent : contrat.id_contrat)
                 : null;
             const src = herite || {};
-            const vin = normaliserVin(b.vin) || src.vin || null;
+            let vin = normaliserVin(b.vin) || src.vin || null;
             const immatriculation = normaliserImmat(b.immatriculation) || src.immatriculation || null;
+            // 13/10/2026 (Roger) -- VIN obligatoire, 10 caractères au moins, pour
+            // l'AUTOMOBILE ; pour les autres branches, le « VIN » est l'IDENTIFIANT DU
+            // RISQUE (nom du risque + clé numérique, 10 caractères au moins), calculé
+            // ici quand il est laissé vide. Le contrôle porte sur le VIN SAISI : un
+            // avenant sur une ancienne police à VIN court (hérité) n'est pas bloqué.
+            // normaliserVin (locale à ce fichier) ne remplace pas I/O/Q : un
+            // identifiant comme MAISON0042 reste intact.
+            const vinSaisi = normaliserVin(b.vin);
+            if (vinSaisi && vinSaisi.length < 10) {
+                throw new ErreurMetier(400, estAuto
+                    ? `VIN trop court : ${vinSaisi.length} caractère(s) saisi(s), 10 au moins sont exigés (17 pour un VIN complet)`
+                    : `identifiant du risque trop court : ${vinSaisi.length} caractère(s), 10 au moins (ou laissez le champ vide : il sera calculé)`);
+            }
+            if (estAuto) {
+                if (['NAF', 'REN'].includes(nature.code) && !vin) throw new ErreurMetier(400, 'le N° VIN est obligatoire (10 caractères au moins)');
+            } else if (!vin) {
+                // Reprendre l'identifiant déjà porté par la police (le risque n'est hérité
+                // plus haut que si la requête ne porte ni VIN, ni immatriculation, ni
+                // caractérisation) ; n'en générer un que si elle n'en a aucun.
+                const dr = await dernierRisque(client, contrat.id_contrat_precedent && nature.code === 'REN' ? contrat.id_contrat_precedent : contrat.id_contrat);
+                vin = dr && dr.vin ? dr.vin : null;
+                if (!vin) vin = await genererIdentifiantRisque(client, texteOuNull(b.caracterisation_risque, 2000) || src.caracterisation_risque || contrat.code_branche);
+            }
             // 30/09/2026 (Roger, point 4) : NAF/REN "réclament" un véhicule
             // pour toute l'année du contrat -- vérifié ici, une fois les
             // deux connus. contrat.date_effet/date_echeance sont déjà les
