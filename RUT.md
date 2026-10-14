@@ -1,13 +1,13 @@
 # RUT — Référentiel Unique de Tarification
-**v5.3 — Automobile (règles de calcul), cartographie hors automobile, architecture cible, référentiels, texte réglementaire de 1994 — 03/10/2026** (v3.0 livrée puis complétée en v3.1, étendue en v4.0, v5.0 et v5.1 : voir l'Historique)
+**v5.5 — 14/10/2026 — décisions de Roger du 14/10 (prime TTC avec DTA, carte rose, énergies et puissance, Voyage, DTA), rapport de Production intégré, faits constatés en base ; anomalies #48 à #52** (v5.4 archivée dans `RUT_v5.4_archive.md`, v5.3 dans `RUT_v5.3_archive.md` ; voir l'Historique)
 
 Document source, humain, de référence unique. `areas/tarification.md` (mémoire technique auto-générée) reste un journal de travail ; le RUT est ce qui fait autorité au-dessus — y compris, à terme, matérialisable directement en base de données.
 
-**Périmètre de cette version (v5.2)** : tout le contenu de la v4.0 (Automobile avec ses règles de calcul, cartographie hors automobile), **plus** la description de l'architecture cible : une table de tarif unique, ses tables de concepts, ses mécanismes et ses procédures (Pilier 2, v5.0). Toujours au niveau des règles et de la conception, **pas** de l'application de gestion. **Rien n'est implémenté** : le système n'est pas modifié par cette phase.
+**Périmètre des versions précédentes (v5.2)** : tout le contenu de la v4.0 (Automobile avec ses règles de calcul, cartographie hors automobile), **plus** la description de l'architecture cible : une table de tarif unique, ses tables de concepts, ses mécanismes et ses procédures (Pilier 2, v5.0). Toujours au niveau des règles et de la conception, **pas** de l'application de gestion. **Rien n'est implémenté** : le système n'est pas modifié par cette phase.
 
-**Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
+**Périmètre de la v5.4 (14/10/2026)** : objectif posé par Roger — le RUT est le **référentiel unique** de la tarification, **miroir** de ce que contiennent les tables de la base. La v5.4 (1) corrige les tableaux du barème RC d'après les 23 lignes corrigées en base le 13/10 et la 070, (2) ajoute le chapitre 8 (noms réels après la 050, migrations, règles de calcul décidées depuis le 03/10, fonctions déployées, surprimes, durée, catégorie 10, moteur cible), (3) met à jour le registre des anomalies, (4) retire la triple répétition du principe de lecture. **Ce qui manque encore** est recherché auprès de chaque session ayant travaillé sur la tarification (document `questionnaire_sessions_RUT_14102026.md`). Étiquettes utilisées au chapitre 8 : **[décidé]**, **[appliqué]**, **[proposé]**, **[à confirmer]**, **[à trancher]**.
 
-**Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
+**Périmètre de la v5.5 (14/10/2026, instruction expresse de Roger : « Réglons tout maintenant avant de publier »)** : (1) formule de la prime TTC corrigée dans les sections 3.1, 3.6 et 8.9 (la DTA entre dans le TTC) ; (2) section 3.4 (carte rose = chaque attestation) et 3.5 (DTA : aucun doublon constaté en base) ; (3) corrections des sections 3.1bis, 8.5 et 8.7 ; (4) nouvelles sections 8.13 (énergies, puissance fiscale, conversion cm³ → CV) et 8.14 (constats du 14/10 : zones absentes de la base, accessoires et échéance, DTA, énergies) ; (5) intégration des points « intégrer » du rapport de la session Production ; (6) anomalie #10 close, #48 à #52 ajoutées. Les points encore ouverts restent marqués **[à confirmer]** ou **[à trancher]**.
 
 **Principe de lecture** : ce document est une photographie de la connaissance à la date indiquée. Toute affirmation qui n'est pas sourcée dans nos données est marquée « à confirmer ».
 
@@ -104,6 +104,21 @@ Document source, humain, de référence unique. `areas/tarification.md` (mémoir
   - [7.4 — Accessoires SUNU (page 34) et comparaison avec la base](#74--accessoires-sunu-page-34-et-comparaison-avec-la-base)
   - [7.5 — Décisions de Roger du 03/10/2026 : accessoires, Fichier central, mise à jour de la base](#75--décisions-de-roger-du-03102026--accessoires-fichier-central-mise-à-jour-de-la-base)
   - [7.6 — Source Frais_et_accessoires.csv : décisions du 03/10/2026](#76--source-frais_et_accessoirescsv--décisions-du-03102026)
+- [Pilier 2 (v5.4) — Acquis du 06 au 14/10/2026 : état réel de la base, règles de calcul, moteur cible](#pilier-2-v54--acquis-du-06-au-14102026--état-réel-de-la-base-règles-de-calcul-moteur-cible)
+  - 8.1 — Noms réels en base depuis la migration 050
+  - 8.2 — Migrations et correctifs appliqués depuis la v5.3
+  - 8.3 — Le Tarif Automobile du 01/12/1995, référence du barème RC
+  - 8.4 — Catégorie 10
+  - 8.5 — Fonctions de calcul déployées
+  - 8.6 — Surprimes
+  - 8.7 — Durée, fractionnement, vocabulaire
+  - 8.8 — DR, IAC/IPT, minimum acceptable, Voyage
+  - 8.9 — Taxes et assemblage de la prime TTC
+  - 8.10 — Moteur de calcul cible
+  - 8.11 — Structure de tarif et bareme_tranche
+  - 8.12 — Règles de gouvernance ajoutées
+  - 8.13 — Énergies, puissance fiscale et conversion cm³ → CV (v5.5)
+  - 8.14 — Constats du 14/10 : zones, accessoires et échéance, DTA, énergies (v5.5)
 - [Pilier 3 — Mémoire : décisions et justifications](#pilier-3--mémoire--décisions-et-justifications)
 - [Pilier 4 — Pilotage](#pilier-4--pilotage)
   - [Dettes identifiées sur ce périmètre](#dettes-identifiées-sur-ce-périmètre)
@@ -124,14 +139,14 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 |---|---|---|---|---|
 | 1 | 04A | 0-2 CV, nombre_places=2, Zones B/C | Écart ×9 par rapport à la loi de zone attendue (103 500 FCFA d'écart) | **Non résolu** — tarif à lecture directe AFRINS non comparable (structure différente à cette catégorie) |
 | 2 | 03 | 7-10 CV, surprime matière inflammable, Zone B | Écart de 51% par rapport à la loi de zone attendue | **Cause racine identifiée (03/10/2026)** — `Tarif_automobile_automatisé.csv` (GMCSA) révèle que la surprime matière inflammable varie en réalité par **genre de véhicule** (Benne=20263, Camion=23414, Camion/DC+Remorque=22439 pour 11-14CV Zone B) — une dimension **absente de notre modèle actuel**, qui ne porte qu'une valeur unique par (catégorie, zone, force fiscale). Notre valeur stockée (22439) est juste, mais seulement pour un genre précis. **Correction requise : ajouter la dimension "genre de véhicule" au modèle**, pas une simple correction de valeur — chantier à part, non fait dans ce v1.0 |
-| 3 | 03 | 11-14 CV, surprime matière inflammable, Zone B | Écart de 6% par rapport à la loi de zone attendue | **Même cause racine que #2** |
-| 4 | 04B | 7-10 CV, 22 places | Écart de 12 000 FCFA par rapport à la progression linéaire confirmée (+9 133/place) — valeur attendue 386 514, valeur actuelle 398 514 | **Non résolu** — à vérifier au PDF source |
+| 3 | 03 | 11-14 CV, surprime matière inflammable, Zone B | Écart de 6% par rapport à la loi de zone attendue | **Même cause racine que #2.** Surprime matière inflammable cat. 3 zone B alignée sur le Tarif 1995 le 13/10/2026 (4 lignes corrigées, 8.3) ; la dimension « genre » reste à modéliser |
+| 4 | 04B | 7-10 CV, 22 places | Écart de 12 000 FCFA par rapport à la progression linéaire confirmée (+9 133/place) — valeur attendue 386 514, valeur actuelle 398 514 | **Non résolu** — au PDF source (Tarif 1995, comparaison du 13/10/2026) : le document donne **398 514, comme la base** ; la progression attendue serait 386 514. Identique au document mais suspect ; même cas 4B 20 places 8-10 CV (457 085 des deux côtés, attendu 456 965). Arbitrage de Roger |
 | 5 | IPT | ROYAL ONYX, formule 3 | Décès=1000 mais Incapacité Permanente=500 — rupture de parité avec les 5 autres formules de la même compagnie (où Décès=IPP systématiquement) | **Non résolu** — à vérifier auprès de la compagnie ou du document source |
 | 6 | IPT | Frais Médicaux absents pour au moins une formule chez 13 compagnies (ACTIVA, AFG, AGC, AREA, AUCUNE, BELIFE, CHANAS, CPA, GMCSA, SAAR, SANLAM, SUNU, LDASA) | Case vide — soit une vraie absence de couverture à cette formule (variante "Sans FM"), soit un oubli de saisie | **Non résolu** — nature de l'absence à confirmer |
 | 7 | IPT | ALLIANZ, toutes formules (Décès/IPP) | Doublon — même `tarif_id`, deux `bareme_tranche` distincts portant la même valeur pour chaque formule (10 lignes au lieu de 5 attendues) | **Corrigé le 03/10/2026** — audit exhaustif de `bareme_tranche` (12 doublons trouvés, exactement #7+#8, aucun autre cas) puis suppression des lignes redondantes |
 | 8 | Vol | SUNU, Vol Braquage/Partiel | Doublon — vérifié sur toutes les colonnes (dates de validité, statut, critères, offre commerciale identiques) : seul `bareme_tranche.id` diffère | **Corrigé le 03/10/2026** — même nettoyage que #7 |
 | 9 | Incendie | ROYAL ONYX, Cat.02 | Taux de 2,4%, alors que toutes les autres catégories (ROYAL ONYX et le reste du marché) se situent entre 0,18% et 0,5% — exactement 10× la valeur PROASSUR à la même catégorie (0,24%) | **Non résolu** — ressemble fortement à une virgule décalée, à vérifier auprès de la compagnie |
-| 10 | DTA | `site.bareme_dta`, lignes "par catégorie, 2023" | Redondance — valeurs reprises d'un tarif à lecture directe (AFRINS) sans vérifier si elles différaient du barème général ministériel ; interprétées à tort comme un changement réglementaire réel dans une version antérieure de ce document | **Confirmé par Roger, non corrigé dans cette session** — `bareme_dta` sera purgée par son équipe propriétaire ; cette session ne fait que cartographier |
+| 10 | DTA | `site.bareme_dta`, lignes "par catégorie, 2023" | Redondance supposée — valeurs reprises d'un tarif à lecture directe (AFRINS) ; interprétées à tort comme un changement réglementaire réel dans une version antérieure de ce document | **Close le 14/10/2026** — relevé : 96 lignes, aucun doublon (parfait ou à l'`id` près), pas de colonne `actif`. Règle de Roger (conserver l'historique, `actif = false` pour les doublons non parfaits, purge des parfaits) enregistrée en 3.5 ; rien à appliquer aujourd'hui |
 | 11 | Accessoires | AFRINS, catégorie 1, contrat annuel, prime nette supérieure à 100 000 FCFA | Règle : 3 150 FCFA (2 500 FCFA sinon). Le PDF AFRINS l'applique en Zones B et C ; en Zone A, trois lignes (101 997, 127 264, 148 363 FCFA) restent à 2 500 | **Résolu par décision de Roger (03/10/2026)** : règle maintenue, « source officielle » ; les trois lignes de la Zone A sont traitées comme des écarts du PDF, non vérifiés auprès d'AFRINS ; implémentée en B2, script non exécuté |
 | 12 | IPT | AFRINS, absent de la base | Le tarif à lecture directe AFRINS prévoit une IPT forfaitaire (7 500 FCFA en Cat.1 et 2 ; 5 000 FCFA en Cat.3 et 5A) mais AFRINS n'a aucune ligne IPT/IAC en base (17 compagnies seulement) | **Lacune constatée, non corrigée** — cette phase cartographie sans modifier le système |
 | 13 | Hors auto | Catalogue en base vs `Garanties.csv` | Deux référentiels de garanties non rapprochés. Noms identiques (garanties en base concernées) : Santé 5 sur 28, Incendie 19 sur 29, RC générale 10 sur 11, Transport 9 sur 12, Risques techniques 1 sur 2, Aviation 4 sur 6. Test strict : le recouvrement réel est probablement supérieur | **Non résolu** — pas de rapprochement à ce stade |
@@ -141,7 +156,7 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 | 17 | Hors auto | Assiette de prime dans `Garanties.csv` | « Nombre passagers » dominante y compris pour Crédit, RC générale, Incendie, Aviation : valeur par défaut sans sens | **Non résolu** — assiette hors automobile inexploitable en l'état |
 | 18 | Hors auto | Tarifs et offres | Aucun tarif ni offre commerciale en base ; six sources de prix (Individuelle accidents ×4, MRH, Voyage) en notre possession mais écartées | **Écarté sur décision de Roger (03/10/2026)** — voir 4.8 |
 | 19 | Hors auto | `Garanties.csv`, branche Transport | « Défense Recours », « Responsabilité civile des médecins » et « Responsabilité civile exploitation » sont classées sous la branche Transport alors qu'elles relèvent de la responsabilité civile (mauvais classement probable) ; toutes les lignes Transport à base de prime renseignée sont de ces trois garanties | **Non résolu** — à confirmer |
-| 20 | Architecture | `fn_calculer_prime_nette_totale` | La fonction présentée comme « API bloquante pour myspace » dans la note de transmission Git du 02/10 **n'existe pas en base** (inventaire du 03/10) : elle a été écrite mais jamais déployée. Aucune procédure ne calcule une Prime nette ou TTC | **Constaté, non corrigé** — la note de transmission d'état initial est inexacte sur ce point |
+| 20 | Architecture | `fn_calculer_prime_nette_totale` | La fonction présentée comme « API bloquante pour myspace » dans la note de transmission Git du 02/10 **n'existe pas en base** (inventaire du 03/10) : elle a été écrite mais jamais déployée. Aucune procédure ne calcule une Prime nette ou TTC | **Constaté, non corrigé** — la note de transmission d'état initial est inexacte sur ce point. **Reconfirmé le 14/10/2026** (relevé des fonctions) : toujours absente ; la chaîne cible est décrite au 8.10 |
 | 21 | Architecture | `tarif` | Colonnes redondantes (`id_compagnie`, `id_garantie`, `id_sous_garantie`, `garantie_code`) en doublon de `id_offre_commerciale` ; deux contraintes d'exclusion en parallèle ; `id_offre_commerciale` nullable alors que renseignée sur 343 lignes sur 343 ; champs JSON `criteres_objet`/`criteres_risque` hérités, contenu non audité | **Constaté** — retrait prévu à la bascule (5.7) |
 | 22 | Architecture | `fn_generer_code_franchise` | Fonction sans trigger rattaché dans le schéma d'après l'inventaire : le code de franchise n'est peut-être plus généré automatiquement | **À vérifier** |
 | 23 | Architecture | `genre` | Le concept « genre de véhicule » existe en table (16 lignes) mais aucune colonne de `tarif` ni de `bareme_tranche` ne le référence : chaînon manquant de la cause racine des anomalies #2/#3 | **Constaté** — se résout par la coordonnée `id_genre` de la table cible |
@@ -151,7 +166,7 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 | 27 | RUT | Section 3.7 (v3.0 à v5.0) | Le RUT affirmait que les formules de souscription n'avaient « aucune donnée » alors que la base en contient 16 | **Corrigé en v5.1** (6.6) |
 | 28 | Sources | 19 fichiers non cités jusqu'à la v5.0 | Sources sans trace dans le RUT ; 3 contenus non relus (garanties facultatives n° 2, `Garanties_IAC_et_IPT.csv`, `OFFRE_COMMERCIALE.sql`), 2 scans non exploités pour les conditions de souscription et les zones, `devis.js` non analysé | **Partiellement traité** — registre des sources (6.11), lectures restantes en dettes |
 | 29 | Accessoires | Valeurs génériques et AFRINS | Trois valeurs concurrentes : 2 500 FCFA (`compagnie.accessoires_par_defaut`), 3 000 FCFA (`bareme_accessoire`, AUCUNE, Automobile) et une ligne AFRINS à 3 000 FCFA « [NON IDENTIFIEE] » | **Résolu par décision de Roger (03/10/2026)** : la valeur juste est **2 500 FCFA** (source `Frais_et_accessoires.csv`, tarif AFRINS, découpage du Pool, manuel SUNU) ; la base, qui porte 35 lignes à 3 000, est à corriger par `MAJ_BASE_03102026.sql`, non exécuté |
-| 30 | Majorations | `majoration_reduction` id 2 | Description « permis de moins de **3 ans** » alors que l'arrêté de 1994 (art. 5-3 b, vérifié visuellement) dit **« moins deux (2) ans »** ; le RUT 6.3 avait repris l'erreur | **Correction proposée, non demandée par Roger** — incluse comme bloc C de `MAJ_BASE_03102026.sql` (à retirer si elle n'est pas validée), non exécutée. Une fonction ou une application qui coderait « 3 ans » en dur est à corriger |
+| 30 | Majorations | `majoration_reduction` id 2 | Description « permis de moins de **3 ans** » alors que l'arrêté de 1994 (art. 5-3 b, vérifié visuellement) dit **« moins deux (2) ans »** ; le RUT 6.3 avait repris l'erreur | **Corrigé en base le 03-04/10/2026 (migration 047, « permis récent à 2 ans », selon le rapport de Normalisation du 09/10) ; décision du 13/10 : deux ans (art. 9-4). Valeur de `majoration_reduction` id 2 à vérifier par relevé.** (ancien statut : correction proposée, non demandée par Roger) — incluse comme bloc C de `MAJ_BASE_03102026.sql` (à retirer si elle n'est pas validée), non exécutée. Une fonction ou une application qui coderait « 3 ans » en dur est à corriger |
 | 31 | SUNU | Garanties facultatives | Tierce complète (2,50 %), Tierce collision (1,75 %), Incendie (0,25 %, minimum 5 000), Bris de glaces (0,50 % et 1,50 %), Avance sur recours (2,50 %), Assistance en réparation (1,50 %) : taux dans le document SUNU, **absents de la base** (qui n'a de SUNU que le Vol et la DR). Franchises SUNU absentes aussi | **Constaté, non corrigé** — à charger après décision |
 | 32 | SUNU | Accessoires | Base différente du manuel : courte période à 3 000 FCFA (manuel : 2 500 hors Fichier central) ; ligne « autres risques » de 0 à 100 000 FCFA absente ; tranche 5 000 FCFA rattachée à Flotte Automobile | **Résolu par décision de Roger (03/10/2026)** : le manuel de SUNU prévaut ; corrections B5 et B6 du script, non exécuté |
 | 33 | SUNU | IPT, formule 3 (page 33) | Capitaux imprimés (invalidité 1 000 000, frais médicaux 100 000) incohérents avec la prime imprimée de 20 500 pour 5 places ; elle suppose 2 000 000 et 200 000. La base suit la prime | **Anomalie de la source** — consignée |
@@ -159,6 +174,21 @@ Les anomalies ci-dessous sont celles connues à ce jour dans le barème RC minis
 | 35 | Accessoires | `bareme_accessoire` | Décalage systématique de +500 FCFA : 35 lignes à 3 000 FCFA là où la source dit 2 500 (15 compagnies) ; BELIFE a perdu une tranche ; trois lignes Pool, la ligne ZENITHE et les « autres risques » SUNU sont absentes | **Décidé le 03/10/2026** (7.6) : alignement sur la source, lignes ajoutées ; script `MAJ_BASE_03102026.sql` prêt, non exécuté |
 | 36 | Fichier central | `Frais_et_accessoires.csv` | Fichier central à 0 sur 14 lignes (GMCSA hors automobile, Green Assistance, Voyage, montants négatifs) | **Erreur de saisie** selon Roger : 1 000 FCFA partout, 500 FCFA pour le Pool ; aucune correction nécessaire dans la base (le Fichier central n'y figure pas) |
 | 37 | SUNU | Flotte | Le manuel donne un minimum de 5 000 et un maximum de 10 000 FCFA par flotte, plus 250 FCFA par véhicule ; la base le représente par deux tranches de prime (0 à 1 000 000 : 5 000 ; au-delà : 10 000) | **Approximation constatée, non corrigée** — `bareme_accessoire` ne sait pas porter un minimum et un maximum |
+| 38 | 10B / 10C, compagnie 0 | Tarifs 49 et 50 | Copies des montants de 10A (44 870 en zone A, ≤ 2 CV) ; le Tarif 1995 donne 50 435 (10B, moins de 3,5 t) et 80 721 (10C, plus de 3,5 t). Les tableaux 10B et 10C du 2.3 reflètent la copie | **Non résolu** — décision de Roger attendue ; AFG a ses propres tarifs (069) |
+| 39 | Architecture | `fn_calculer_prime_rc_automobile` | Ne reçoit pas la compagnie : le tarif AFG de la catégorie 10B (étiquette de tonnage) est servi à **toute** compagnie (102 cas sur 270 de l'essai du 14/10) | **Constaté** — consigne : ne pas passer `p_tonnage_label` en catégorie 10 ; fonction à compagnie (propre, sinon compagnie 0) à écrire |
+| 40 | Majorations | Article 9, `majoration_reduction` et `tarif_surprime` (062) | Les quatre facteurs en pourcentage (moins de 25 ans, permis de moins de deux ans, forte et faible circulation) existent deux fois ; une ou deux lignes pour « moins de 25 ans » et « permis récent » | **À trancher** — proposition : conserver `majoration_reduction`, retirer les 4 lignes pourcentage de `tarif_surprime` |
+| 41 | AFG | Défense et Recours | Base : 2 000 ; document AFG : forfait 7 500 ou 10 000. Roger : le tarif spécifique d'AFG s'applique | **À confirmer** |
+| 42 | RC | Diesel 1 CV, catégories 10A/10B/10C | Aucune ligne de barème : 12 cas sur 270 sans montant (avertissement, jamais 0) | **Constaté**, antérieur à la 069 |
+| 43 | RUT | Pilier 2.3 jusqu'à la v5.3 | Les tableaux reproduisaient 23 valeurs fautives de la base, corrigées le 13/10 (8.3), et deux valeurs 10A de la compagnie 0 corrigées par la 070 | **Corrigé en v5.4** |
+| 44 | RUT | Sections 3, 5, 6 | Noms de tables et colonnes antérieurs à la migration 050 (`bareme_accessoire`, `regles_calcul`, `fn_accessoires`…) | **Constaté** — correspondance au 8.1 ; réécriture à faire |
+| 45 | IAC/IPT | Tarif 1995 en possession de la session | Ne contient pas l'IAC/IPT ; la compagnie 0 n'a que l'IPT en base | **Source à fournir par Roger** |
+| 46 | Cat. 6 | Zone B, 5 cartes, tarif 2-3 | Reste à 1 279 329 alors que la zone A a été corrigée à 1 334 952 (la zone B n'était pas dans le correctif) | **À confirmer** au Tarif 1995 |
+| 47 | Voyage | Garantie 226 / code `SANTE_ASSURANCE_VOYAGE` | Rattachée à ASSISTANCE depuis le 06/10, code encore préfixé SANTE ; aucun tarif Voyage en base | **À arbitrer** |
+| 48 | Accessoires | `fn_frais_accessoires` et l'appel de Production | La fonction attend l'échéance (expiration + 1) ; Production passe l'expiration : décalage d'un jour sur la durée, risque de mauvais palier. L'appel utilise aussi le nom d'avant la 050 (`fn_accessoires`) | **Constaté le 14/10/2026** — consigne à Production par note écrite : passer l'échéance, appeler `fn_frais_accessoires` |
+| 49 | Énergie | `fn_calculer_prime_rc_automobile`, paramètre `p_energie` | Ne reconnaît que `ESSENCE` et `DIESEL` ; « Diesel (Gasoil) » et les autres libellés du référentiel sont traités comme Essence (avertissement) : prime fausse en silence si l'appelant ne mappe pas | **Constaté le 14/10/2026** — règle de mappage décidée (8.13) ; à appliquer chez l'appelant ou dans la future fonction à compagnie |
+| 50 | Zones | Base `vpiclist` | Aucune table ni fonction de zone ; les modèles de Production et de Normalisation ne sont pas appliqués ; la zone du RC est dans `criteres->>'zone'` | **Constaté le 14/10/2026** — modèle de Normalisation retenu (8.14) ; à implémenter avec un numéro de Git |
+| 51 | Puissance | Conversion cm³ → CV (voitures) | Aucune règle officielle ni en base ni dans `devis.js` ni dans `index.html` ; fiche de marché non officielle fournie par Roger (8.13), coefficients par catégorie 01 à 03 | **Décidé comme base approximative le 14/10/2026** — marquée « estimée » ; à vérifier sur des cas connus (Roger) et sur le catalogue VIN ; catégories 04 et suivantes : critère de choix à confirmer |
+| 52 | Prime TTC | Formule d'assemblage et `assemblage_prime.js` | Le RUT (3.1, 3.6) et la v1 de `assemblage_prime.js` omettaient la DTA et les autres frais dans le TTC | **Corrigé en v5.5 et dans `assemblage_prime.js` v2 (10 tests réussis)** — décision de Roger du 14/10/2026 |
 
 **Anomalies mineures, probable simple arrondi du document source** (écart <5%, mentionnées pour complétude, pas nécessairement bloquantes) :
 - Cat.06, nombre_cartes=5/TARIF_2_3, Zone B non réduite par rapport à Zone A (écart Zone C seul : 4,35%)
@@ -288,7 +318,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | B | 24-+ CV |  | Sans remorque **133 077** / Avec remorque **146 385** | 25 |
 | C | 0-2 CV |  | Sans remorque **48 124** / Avec remorque **52 935** | 26 |
 | C | 3-6 CV |  | Sans remorque **58 468** / Avec remorque **64 315** | 26 |
-| C | 7-10 CV |  | Sans remorque **64 970** / Avec remorque **71 467** | 26 |
+| C | 7-10 CV |  | Sans remorque **64 970** / Avec remorque **71 457** | 26 |
 | C | 11-14 CV |  | Sans remorque **84 789** / Avec remorque **93 268** | 26 |
 | C | 15-23 CV |  | Sans remorque **107 951** / Avec remorque **118 746** | 26 |
 | C | 24-+ CV |  | Sans remorque **127 291** / Avec remorque **140 020** | 26 |
@@ -326,12 +356,12 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | 11-14 CV |  | Sans remorque **196 282** / Avec remorque **255 167** / (+23 414 si matière inflammable) | 28 |
 | A | 15-23 CV |  | Sans remorque **250 210** / Avec remorque **325 272** / (+24 818 si matière inflammable) | 28 |
 | A | 24-+ CV |  | Sans remorque **290 326** / Avec remorque **377 426** / (+24 818 si matière inflammable) | 28 |
-| B | 0-2 CV |  | Sans remorque **90 126** / Avec remorque **117 163** / (+14 865 si matière inflammable) | 28 |
+| B | 0-2 CV |  | Sans remorque **90 126** / Avec remorque **117 163** / (+14 864 si matière inflammable) | 28 |
 | B | 3-6 CV |  | Sans remorque **111 210** / Avec remorque **144 572** / (+14 865 si matière inflammable) | 28 |
-| B | 7-10 CV |  | Sans remorque **127 363** / Avec remorque **165 572** / (+22 439 si matière inflammable) | 28 |
-| B | 11-14 CV |  | Sans remorque **188 103** / Avec remorque **244 535** / (+23 784 si matière inflammable) | 28 |
-| B | 15-23 CV |  | Sans remorque **239 794** / Avec remorque **311 719** / (+23 784 si matière inflammable) | 28 |
-| B | 24-+ CV |  | Sans remorque **278 229** / Avec remorque **361 700** | 28 |
+| B | 7-10 CV |  | Sans remorque **127 363** / Avec remorque **165 572** / (+14 865 si matière inflammable) | 28 |
+| B | 11-14 CV |  | Sans remorque **188 103** / Avec remorque **244 535** / (+22 439 si matière inflammable) | 28 |
+| B | 15-23 CV |  | Sans remorque **239 784** / Avec remorque **311 719** / (+23 784 si matière inflammable) | 28 |
+| B | 24-+ CV |  | Sans remorque **278 229** / Avec remorque **361 700** / (+23 784 si matière inflammable) | 28 |
 | C | 0-2 CV |  | Sans remorque **86 207** / Avec remorque **112 069** / (+14 219 si matière inflammable) | 28 |
 | C | 3-6 CV |  | Sans remorque **106 374** / Avec remorque **138 287** / (+14 219 si matière inflammable) | 28 |
 | C | 7-10 CV |  | Sans remorque **121 825** / Avec remorque **158 374** / (+14 219 si matière inflammable) | 28 |
@@ -343,15 +373,15 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 
 | Zone | Force fiscale / Cylindrée | Autres critères | Prime(s) (FCFA) | Page |
 |---|---|---|---|---|
-| A | 0-2 CV | nombre_places=2 | **11 953** | 29 |
+| A | 0-2 CV | nombre_places=2 | **119 953** | 29 |
 | A | 0-2 CV | nombre_places=4 | **159 938** | 29 |
 | A | 3-6 CV | nombre_places=6 | **250 333** | 29 |
-| A | 3-6 CV | nombre_places=3 | **136 614** | 29 |
+| A | 0-2 CV | nombre_places=3 | **136 614** | 29 |
 | A | 3-6 CV | nombre_places=4 | **193 808** | 29 |
 | A | 3-6 CV | nombre_places=5 | **222 070** | 29 |
 | A | 3-6 CV | nombre_places=7 | **278 596** | 29 |
 | A | 3-6 CV | nombre_places=8 | **306 859** | 29 |
-| A | 7-10 CV | nombre_places=3 | **165 545** | 29 |
+| A | 3-6 CV | nombre_places=3 | **165 545** | 29 |
 | A | 7-10 CV | nombre_places=4 | **215 897** | 29 |
 | A | 7-10 CV | nombre_places=5 | **247 382** | 29 |
 | A | 7-10 CV | nombre_places=6 | **278 867** | 29 |
@@ -362,11 +392,11 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | 11-14 CV | nombre_places=6 | **363 944** | 29 |
 | A | 11-14 CV | nombre_places=5 | **322 856** | 29 |
 | A | 11-14 CV | nombre_places=4 | **281 766** | 29 |
-| A | 11-14 CV | nombre_places=3 | **184 411** | 29 |
+| A | 7-10 CV | nombre_places=3 | **184 411** | 29 |
 | A | 15-23 CV | nombre_places=7 | **539 779** | 29 |
 | A | 15-23 CV | nombre_places=6 | **485 018** | 29 |
 | A | 15-23 CV | nombre_places=4 | **375 498** | 29 |
-| A | 15-23 CV | nombre_places=5 | **430 038** | 29 |
+| A | 15-23 CV | nombre_places=5 | **430 379** | 29 |
 | A | 15-23 CV | nombre_places=8 | **594 532** | 29 |
 | A | 24-+ CV | nombre_places=6 | **546 356** | 29 |
 | A | 24-+ CV | nombre_places=8 | **667 327** | 29 |
@@ -378,11 +408,11 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | B | 3-6 CV | nombre_places=7 | **266 987** | 29 |
 | B | 3-6 CV | nombre_places=5 | **212 817** | 29 |
 | B | 3-6 CV | nombre_places=4 | **185 733** | 29 |
-| B | 3-6 CV | nombre_places=3 | **130 922** | 29 |
+| B | 0-2 CV | nombre_places=3 | **130 922** | 29 |
 | B | 3-6 CV | nombre_places=8 | **294 073** | 29 |
 | B | 3-6 CV | nombre_places=6 | **239 903** | 29 |
 | B | 7-10 CV | nombre_places=7 | **297 420** | 29 |
-| B | 7-10 CV | nombre_places=3 | **158 647** | 29 |
+| B | 3-6 CV | nombre_places=3 | **158 647** | 29 |
 | B | 7-10 CV | nombre_places=4 | **206 901** | 29 |
 | B | 7-10 CV | nombre_places=8 | **327 595** | 29 |
 | B | 7-10 CV | nombre_places=5 | **237 075** | 29 |
@@ -390,7 +420,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | B | 11-14 CV | nombre_places=6 | **348 780** | 29 |
 | B | 11-14 CV | nombre_places=8 | **427 541** | 29 |
 | B | 11-14 CV | nombre_places=4 | **270 026** | 29 |
-| B | 11-14 CV | nombre_places=3 | **176 647** | 29 |
+| B | 7-10 CV | nombre_places=3 | **176 727** | 29 |
 | B | 11-14 CV | nombre_places=5 | **309 404** | 29 |
 | B | 11-14 CV | nombre_places=7 | **388 162** | 29 |
 | B | 15-23 CV | nombre_places=6 | **464 809** | 29 |
@@ -406,7 +436,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | C | 0-2 CV | nombre_places=4 | **146 610** | 30 |
 | C | 0-2 CV | nombre_places=2 | **109 957** | 30 |
 | C | 3-6 CV | nombre_places=5 | **203 564** | 30 |
-| C | 3-6 CV | nombre_places=3 | **125 230** | 30 |
+| C | 0-2 CV | nombre_places=3 | **125 230** | 30 |
 | C | 3-6 CV | nombre_places=4 | **177 658** | 30 |
 | C | 3-6 CV | nombre_places=8 | **281 288** | 30 |
 | C | 3-6 CV | nombre_places=7 | **255 379** | 30 |
@@ -416,9 +446,9 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | C | 7-10 CV | nombre_places=7 | **284 489** | 30 |
 | C | 7-10 CV | nombre_places=5 | **226 767** | 30 |
 | C | 7-10 CV | nombre_places=4 | **197 905** | 30 |
-| C | 7-10 CV | nombre_places=3 | **151 749** | 30 |
+| C | 3-6 CV | nombre_places=3 | **151 749** | 30 |
 | C | 11-14 CV | nombre_places=4 | **258 286** | 30 |
-| C | 11-14 CV | nombre_places=3 | **169 044** | 30 |
+| C | 7-10 CV | nombre_places=3 | **169 044** | 30 |
 | C | 11-14 CV | nombre_places=5 | **295 952** | 30 |
 | C | 11-14 CV | nombre_places=6 | **333 616** | 30 |
 | C | 11-14 CV | nombre_places=7 | **371 285** | 30 |
@@ -494,7 +524,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | — | 15-23 CV | nombre_places=40 | **689 416** | 31 |
 | — | 15-23 CV | nombre_places=23 | **559 723** | 31 |
 | — | 15-23 CV | nombre_places=39 | **682 840** | 31 |
-| — | 15-23 CV | nombre_places=38 | **676 284** | 31 |
+| — | 15-23 CV | nombre_places=38 | **676 264** | 31 |
 | — | 15-23 CV | nombre_places=37 | **669 688** | 31 |
 | — | 15-23 CV | nombre_places=36 | **663 112** | 31 |
 | — | 15-23 CV | nombre_places=35 | **656 536** | 31 |
@@ -628,7 +658,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | — | nombre_cartes=4, rang_vehicule=TARIF_1 | **890 148** | 36 |
 | A | — | nombre_cartes=4, rang_vehicule=TARIF_2_3 | **1 112 760** | 36 |
 | A | — | nombre_cartes=5, rang_vehicule=TARIF_1 | **1 068 178** | 36 |
-| A | — | nombre_cartes=5, rang_vehicule=TARIF_2_3 | **1 279 329** | 36 |
+| A | — | nombre_cartes=5, rang_vehicule=TARIF_2_3 | **1 334 952** | 36 |
 | A | — | rang_vehicule=TARIF_1 | **178 030** | 36 |
 | A | — | rang_vehicule=TARIF_2_3 | **222 552** | 36 |
 | A | 0-49 cm³ | nombre_cartes=1 | **25 898** | 37 |
@@ -807,7 +837,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | 7-10 CV | type_vehicule_base=CAT_2_3_4 | **103 742** | 40 |
 | A | 11-14 CV | type_vehicule_base=CAT_2_3_4 | **155 400** | 40 |
 | A | 11-14 CV | type_vehicule_base=CAT_1 | **118 586** | 38 |
-| A | 11-14 CV | type_vehicule_base=CAT_1, avec_double_commande=True | **96 821** | 38 |
+| A | 11-14 CV | type_vehicule_base=CAT_1, avec_double_commande=True | **98 821** | 38 |
 | A | 11-14 CV | type_vehicule_base=CAT_2_3_4, avec_double_commande=True | **129 499** | 40 |
 | A | 15-23 CV | type_vehicule_base=CAT_2_3_4, avec_double_commande=True | **160 349** | 40 |
 | A | 15-23 CV | type_vehicule_base=CAT_1 | **150 980** | 38 |
@@ -909,7 +939,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | 11-14 CV | tonnage_label=PLUS_3_5T | **334 326** | 42 |
 | A | 11-14 CV | tonnage_label=MOINS_3_5T | **207 200** | 42 |
 | A | 11-14 CV |  | **158 114** | 42 |
-| A | 15-23 CV |  | **201 306** | 42 |
+| A | 15-23 CV |  | **201 308** | 42 |
 | A | 15-23 CV | tonnage_label=PLUS_3_5T | **427 709** | 42 |
 | A | 15-23 CV | tonnage_label=MOINS_3_5T | **256 558** | 42 |
 | A | 24-+ CV |  | **237 373** | 42 |
@@ -945,7 +975,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | C | 11-14 CV | tonnage_label=PLUS_3_5T | **306 466** | 42 |
 | C | 11-14 CV | tonnage_label=MOINS_3_5T | **189 934** | 42 |
 | C | 11-14 CV |  | **144 938** | 42 |
-| C | 15-23 CV | tonnage_label=PLUS_3_5T | **392 006** | 42 |
+| C | 15-23 CV | tonnage_label=PLUS_3_5T | **392 066** | 42 |
 | C | 15-23 CV | tonnage_label=MOINS_3_5T | **235 178** | 42 |
 | C | 15-23 CV |  | **184 533** | 42 |
 | C | 24-+ CV | tonnage_label=PLUS_3_5T | **454 928** | 42 |
@@ -986,7 +1016,7 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | 15-23 CV |  | Sans remorque **125 639** / Avec remorque **150 767** | 43 |
 | A | 24-+ CV |  | Sans remorque **148 368** / Avec remorque **178 042** | 43 |
 | B | 0-2 CV |  | Sans remorque **48 130** / Avec remorque **57 755** | 43 |
-| B | 3-6 CV |  | Sans remorque **58 130** / Avec remorque **69 966** | 43 |
+| B | 3-6 CV |  | Sans remorque **58 305** / Avec remorque **69 966** | 43 |
 | B | 7-10 CV |  | Sans remorque **66 280** / Avec remorque **79 536** | 43 |
 | B | 11-14 CV |  | Sans remorque **99 283** / Avec remorque **119 140** | 43 |
 | B | 15-23 CV |  | Sans remorque **120 404** / Avec remorque **144 485** | 43 |
@@ -1005,9 +1035,9 @@ Une anomalie isolée (#4 au registre) rompt ce motif à la tranche 7-10CV/22 pla
 | A | 0-2 CV |  | **44 870** | — |
 | A | 3-6 CV |  | **54 516** | — |
 | A | 7-10 CV |  | **60 578** | — |
-| A | 11-14 CV |  | **79 054** | — |
+| A | 11-14 CV |  | **79 057** | — |
 | A | 15-23 CV |  | **100 654** | — |
-| A | 24-+ CV |  | **118 868** | — |
+| A | 24-+ CV |  | **118 686** | — |
 | B | 0-2 CV |  | **43 001** | — |
 | B | 3-6 CV |  | **52 245** | — |
 | B | 7-10 CV |  | **58 054** | — |
@@ -1568,12 +1598,16 @@ Point de jonction entre une compagnie, une sous-garantie, et sa dénomination r�
 Prime nette de la période = coefficient_durée × (RC + DR + IPT/IAC annuels)   [+ garanties facultatives souscrites]
 Assiette de TVA           = Prime nette + Accessoires + Fichier central
 TVA                       = 19,25 % × Assiette de TVA
-Prime TTC                 = Prime nette + Accessoires + Fichier central + TVA + Carte rose
+Prime TTC                 = Prime nette + Accessoires + Fichier central + TVA + Carte rose + DTA + Autres frais
 ```
 
+**[décidé par Roger le 14/10/2026]** : la **DTA entre dans la prime TTC** (hors base de TVA, après la TVA), de même que les « autres frais ». La formule du 03/10 (sans DTA) décrivait le tarif AFRINS, qui indique la DTA à part ; elle est remplacée. `assemblage_prime.js` v2 applique cette formule (`dta` obligatoire ≥ 0, `autresMontant` facultatif ≥ 0).
+
+**Calcul inverse (prime nette connaissant le TTC)** : **[décidé le 14/10]** PN = (PTTC − Carte rose − DTA − Autres frais) / 1,1925 − Accessoires − Fichier central. Pratique de marché plus ancienne, qui circule dans les fiches des rédacteurs : PN = (PTTC − CR) / 1,1925 − ACC (le Fichier central et la DTA y sont absents ou inclus dans les accessoires).
+
 - **Accessoires, Fichier central, Carte rose** : montants fixes par contrat, **non proratisés** selon la durée (AFRINS : mêmes valeurs à 60, 120, 180, 240 et 365 jours).
-- **Carte rose** : hors assiette de TVA (vérifié sur 504 lignes).
-- **DTA** : absent de la Prime TTC dans les tarifs AFRINS, qui l'indiquent à part (« à ajouter au besoin »). Sa nature exacte (taxe d'État collectée via le contrat et non reversée à l'assureur) est une **hypothèse non sourcée dans nos données — à confirmer**.
+- **Carte rose** : hors assiette de TVA (vérifié sur 504 lignes) ; émise chaque fois qu'une attestation est émise, avec les mêmes dates (3.4).
+- **DTA** : absente de la prime TTC dans les tarifs AFRINS, qui l'indiquent à part (« à ajouter au besoin »), mais **incluse dans la prime TTC par décision de Roger du 14/10/2026** (voir ci-dessus). Sa nature exacte (taxe d'État collectée via le contrat et non reversée à l'assureur) est une **hypothèse non sourcée dans nos données — à confirmer**.
 - **Garanties facultatives** : le tarif AFRINS ne contient que RC + DR + IPT. Que Dommages, Vol, etc. entrent dans la prime nette et dans l'assiette de TVA de la même façon est une **hypothèse — à confirmer**.
 - **Autres compagnies** : cette formule n'est vérifiée que sur AFRINS. Aucun autre tarif à lecture directe ne nous a été fourni.
 
@@ -1591,7 +1625,7 @@ Observé dans le tarif AFRINS, Cat.1, 2 et 3 (90 lignes par durée, 100 % confor
 
 Fiche Cat.4A (format Pool TPV) : 3 mois = 25 %, 6 mois = 50 %, 12 mois = 100 % (3 valeurs vérifiées). Cat.5A : prime annuelle seulement.
 
-Ces coefficients sont ceux de l'**article 6 de l'arrêté de 1994** (1 à 60 jours : 20 % ; 61 à 120 : 40 % ; 121 à 180 : 60 % ; 181 à 240 : 80 % ; 241 à 365 : 100 %) : ils sont **réglementaires et valables pour toutes les compagnies** (7.1). Ce n'est pas un prorata au jour (60/365 = 16,4 %). Le tarif AFRINS ne fait que les appliquer. La fiche Cat.4A (Pool TPV) a ses propres coefficients (25 % et 50 %). Cette notion de durée est la même que celle qui borne les paliers d'accessoires (3.2).
+Ces coefficients sont ceux de l'**article 6, alinéa 2, a à e de l'arrêté du 16/11/1994** (1 à 60 jours : 20 % ; 61 à 120 : 40 % ; 121 à 180 : 60 % ; 181 à 240 : 80 % ; 241 à 365 : 100 %), qui sont aussi l'**article 3-2 du Tarif Automobile du 01/12/1995** : deux documents, un même régime, **réglementaire et valable pour toutes les compagnies** (7.1, 8.7). *(Référence réconciliée le 14/10/2026.)* Ce n'est pas un prorata au jour (60/365 = 16,4 %). Le tarif AFRINS ne fait que les appliquer. La fiche Cat.4A (Pool TPV) a ses propres coefficients (25 % et 50 %). Cette notion de durée est la même que celle qui borne les paliers d'accessoires (3.2).
 
 ### 3.2 — Accessoires (`bareme_accessoire`)
 
@@ -1611,8 +1645,6 @@ Le palier le plus spécifique l'emporte (compagnie+catégorie précise avant com
 
 **État des données en base** : table peuplée pour plusieurs compagnies, non auditée exhaustivement dans cette version.
 
-**État des données en base** : table peuplée pour plusieurs compagnies, non auditée exhaustivement dans cette version.
-
 ### 3.3 — Fichier central (ASAC)
 
 **Valeurs observées chez AFRINS** : 1 000 FCFA en Cat.1, 2 et 3 (450 lignes) ; 500 FCFA en Cat.5A (54 lignes) ; montant fixe par contrat, non proratisé selon la durée ; il entre dans l'assiette de TVA (vérifié). En Cat.4A il est présenté avec les accessoires (3 000 FCFA au total, non décomposé).
@@ -1622,6 +1654,8 @@ Le palier le plus spécifique l'emporte (compagnie+catégorie précise avant com
 ### 3.4 — Carte rose
 
 **Fonction** : attestation de couverture RC pour circuler en zone CEMAC hors du pays d'immatriculation, pendant commercial de la sous-garantie `AUTO_RC__EXTENSION_CEMAC`. **Corroborée par la base** : l'acte réglementaire n° 9 s'intitule « Extension territoriale CEMAC (Carte Rose) » (convention CIMA / zone CEMAC), et la RC rend l'Extension CEMAC obligatoire en lien ADDITIF (6.4). *Le lien exact entre cette garantie et le forfait de 1 000 FCFA d'AFRINS reste à confirmer.*
+
+**Règle d'émission [décidée par Roger le 14/10/2026]** : une carte rose est émise **chaque fois qu'une nouvelle attestation est émise**, car la carte rose porte obligatoirement les **mêmes dates** que l'attestation. **Constaté en base** : `delivre_carte_rose` est égal à `delivre_attestation` pour les 25 natures d'opération (11 vraies) ; la règle est donc déjà portée par les données, aucun enregistrement à créer.
 
 **Calcul observé chez AFRINS** : forfait de 1 000 FCFA sur les 504 lignes lues, quelles que soient la catégorie, la zone et la durée ; hors assiette de TVA. Aucune autre compagnie vérifiée, aucune table dédiée dans notre schéma.
 
@@ -1637,7 +1671,7 @@ Table source : `site.bareme_dta` (schéma `site`, propriété historique de Prod
 
 **Ce qui est réellement arrivé** : les lignes "par catégorie, 2023" ne sont pas un nouveau barème réglementaire — ce sont des valeurs reprises d'un **tarif à lecture directe** (AFRINS), qui relit simplement le barème général ministériel compagnie par catégorie, pour la commodité de lecture. Une valeur issue d'un tarif à lecture directe **ne doit générer un nouvel enregistrement dans `bareme_dta` que si elle contredit le barème général ministériel** — si elle y correspond, elle n'apporte aucune valeur distinctive et n'a pas lieu d'exister comme ligne séparée. `site.bareme_dta` contient actuellement cette redondance, non intentionnelle.
 
-**Conséquence** : `site.bareme_dta` sera purgée de ces doublons. Cette session ("Mise en place du RUT") ne modifie pas le système de tarification — seule la cartographie de l'état actuel est faite ici, la purge revient à la session/équipe propriétaire de cette table.
+**Relevé du 14/10/2026** : `site.bareme_dta` contient **96 lignes, sans aucun doublon** (ni parfait, ni à l'identifiant près) ; la table n'a **pas de colonne `actif`** ; la clé étrangère `code_categorie` pointe vers `branche_categorie`. Les lignes « par catégorie, 2023 » forment trois groupes (A, B, 09A). **Règle de Roger (14/10)** : conserver l'historique ; mettre `[actif] = false` sur les doublons non parfaits ; purger les doublons parfaits (qui ne diffèrent que par `id`). **Conséquence : rien à purger ni à désactiver aujourd'hui** ; l'anomalie #10 est close. Si une colonne `actif` est ajoutée un jour, la règle s'appliquera à elle.
 
 ### Barème DTA complet, véhicules (`site.bareme_dta`, source : `site`, historisée)
 
@@ -1843,7 +1877,7 @@ Table source : `site.bareme_dta` (schéma `site`, propriété historique de Prod
 | `Tarif_automobile_automatisé.csv` (GMCSA) | Colonne « Taux Taxes » = 19,25 % sur 5 112 lignes sur 5 112 |
 | `Offre_commerciale_autre_source.csv` | Colonne `Taux_TVA` = 19,25 sur 1 170 lignes (35 sans valeur), avec un `Code_Taxe` par branche (code 2 sur 162 lignes, correspondant au nombre de lignes de la branche Automobile) |
 
-**Assiette** : prime nette + accessoires + Fichier central. Carte rose et DTA sont exclus.
+**Assiette** : prime nette + accessoires + Fichier central. Carte rose, DTA et autres frais sont exclus de l'assiette (mais la DTA et les autres frais figurent dans la prime TTC, 3.1).
 
 **Réserves** :
 - `Garanties_canoniques.csv` porte une colonne « Taux Taxes » à 0,00 % sur 244 lignes : sens à clarifier (peut-être une autre taxe).
@@ -2346,14 +2380,14 @@ Chaque coordonnée, chaque unité, chaque étape de calcul et chaque notion du m
 | 4 | DR | montant fixe + RC ajustée × taux | Établi |
 | 5 | IPT / IAC | Forfait, ou montant par place × nombre de places, par composante | Établi (17 compagnies) |
 | 6 | Garanties facultatives | Valeur assurée × taux ; **Vol partiel et Vol braquage s'ajoutent au Vol véhicule** (liens ADDITIF, 6.4) | Établi pour PROASSUR et ROYAL ONYX seulement |
-| 7 | Coefficient de durée | Appliqué à RC + DR + IPT annuels (art. 6 de l'arrêté de 1994) | **Réglementaire** (toutes compagnies) |
+| 7 | Coefficient de durée | Appliqué à RC + DR + IPT annuels (art. 6 al. 2 de l'arrêté de 1994 = art. 3-2 du Tarif de 1995) | **Réglementaire** (toutes compagnies) |
 | 8 | Accessoires | Palier selon prime nette et durée ; 2 500 FCFA par défaut ; 3 150 FCFA pour AFRINS, catégorie 1, annuel, prime nette supérieure à 100 000 | Établi par décision de Roger (03/10/2026) |
 | 9 | Fichier central | Montant fixe par contrat : 1 000 FCFA, 500 FCFA pour le Pool TPV | Établi par décision de Roger (03/10/2026) ; absent de `tarification` |
 | 10 | Assiette de TVA | Prime nette + accessoires + Fichier central | Établi sur AFRINS |
 | 11 | TVA | 19,25 % × assiette | Établi (trois sources) |
 | 12 | Carte rose | Montant fixe par contrat, hors assiette de TVA | Observé chez AFRINS seul |
-| 13 | Prime TTC | Prime nette + accessoires + Fichier central + TVA + Carte rose | Établi sur AFRINS |
-| hors prime | DTA | Lu dans le barème DTA, ajouté à la quittance | Nature à confirmer |
+| 13 | Prime TTC | Prime nette + accessoires + Fichier central + TVA + Carte rose + DTA + autres frais | Établi sur AFRINS pour les rubriques sans DTA ; **DTA et autres frais ajoutés au TTC par décision de Roger du 14/10/2026** |
+| 14 | DTA | Lu dans le barème DTA, entre dans la prime TTC (hors assiette de TVA) | Décidé le 14/10 ; nature fiscale à confirmer |
 
 **Modes de calcul à créer** pour ces étapes : coefficient, palier de prime, montant fixe par contrat, ajustement en pourcentage, taxe sur assiette cumulée.
 
@@ -2944,6 +2978,162 @@ Le manuel ne dit pas si les montants des « autres risques » incluent le Fichie
 
 ---
 
+## Pilier 2 (v5.4) — Acquis du 06 au 14/10/2026 : état réel de la base, règles de calcul, moteur cible
+
+**Statut de ce chapitre.** Il consigne ce que la session Tarification a établi, reçu ou fait appliquer par Roger entre la v5.3 (03/10) et le 14/10/2026. Chaque ligne est étiquetée : **[décidé]** (Roger l'a dit ou l'a validé), **[appliqué]** (script exécuté par Roger, résultat vu), **[proposé]** (document de la session, non validé), **[à confirmer]**. Les sections antérieures (3.x, 5.x, 6.x) n'ont pas été réécrites : là où elles diffèrent de ce chapitre, **ce chapitre prévaut** jusqu'à relecture complète (dette consignée au Pilier 4).
+
+### 8.1 — Noms réels en base depuis la migration 050 (07/10/2026)
+Les sections 3, 5 et 6 citent encore les anciens noms. Correspondance **[appliqué]** (source : rapport de la session Normalisation du 09/10/2026 et relevé de la base du 13/10/2026) :
+
+| Ancien nom (cité dans les sections antérieures) | Nom réel |
+|---|---|
+| `tarif.id` | `tarif.id_tarif` |
+| `bareme_accessoire` | `bareme_frais_accessoires` |
+| `regles_calcul` | `regle_calcul` |
+| `regles_reduction_franchise` | `regle_reduction_franchise` |
+| `ref_base_calcul.code` | `ref_base_calcul.code_base_calcul` |
+| `garantie_lien.id_lien` | `garantie_lien.id_garantie_lien` |
+| `compagnie.accessoires_par_defaut` | `compagnie.frais_accessoires_par_defaut` |
+| `fn_accessoires` | `fn_frais_accessoires` (ancienne signature supprimée) |
+| `<table>.<x>_id` (clés étrangères) | `id_<x>` (migrations 045-046, 02/10) |
+Convention appliquée : clé primaire `id_<table>` ou `code_<table>` ; clé étrangère nommée comme la clé référencée ; tables au singulier ; contraintes `<table>_pkey`, `<table>_<colonne>_fkey` ; ISO/IEC 11179 (convention v1.1 de la session Normalisation).
+Réserves : la vue de compatibilité `tarification.compagnies` expose encore `partenaire_id` ; `fn_resoudre_tarif_categorie` garde sa colonne de sortie `id_tarif` (l'API en dépend) ; `branche_categorie.categorie_code` reste une clé naturelle ; 5 tables ont encore une clé nommée `id` **[à confirmer par Normalisation]**.
+
+### 8.2 — Migrations et correctifs appliqués depuis la v5.3
+| Date | Objet | Contenu | Statut |
+|---|---|---|---|
+| 02/10 | 045, 046 | 27 clés `<x>_id` → `id_<x>` ; 24 contraintes ; 5 fonctions réécrites | [appliqué] |
+| 03-04/10 | 047 | Base alignée sur les décisions du 03/10 : SAMIRIS inactive, accessoires alignés sur la source, permis récent à **2 ans** | [appliqué] (selon Normalisation) |
+| 06/10 | 048 | RISQUES_TECHNIQUES : code de numérotation 13 → 09 (art. 328 CIMA) ; branche ASSISTANCE (18°) créée ; produit 4 et garantie 226 rattachés ; garantie 239 reste en SANTE | [appliqué] |
+| 06/10 | 049 | 3 polices de test renumérotées | [appliqué] |
+| 07/10 | 050 | Renommages du 8.1 | [appliqué] |
+| 08/10 | 052-059 | Catalogue, référentiel, schéma `site`, `categorie_usage` maître dans `referentiel` (057), synchronisée vers `branche_categorie`, `categorie`, `sous_categorie` | [appliqué selon Normalisation] (hors périmètre tarifaire direct) |
+| 13/10 | `CORRECTIF_RC_TARIF1995_13102026.sql` | 23 lignes de `bareme_tranche` corrigées d'après le Tarif Automobile du 01/12/1995 (8.3) | [appliqué] |
+| 13-14/10 | **062** `062_surprimes_facteurs.sql` | Tables `facteur_surprime`, `mode_application_surprime`, `tarif_surprime`, `tranche_tarif_surprime` + chargement (8.6) | [appliqué] |
+| 14/10 | **069** `069_rc_categorie10_afg.sql` | Tarifs RC catégorie 10 d'AFG : 445 (10A, 18 lignes), 446 (10B, 36), 447 (10C, 18) ; compagnie 9, offre 154, validité 16/11/1994 ; 72 lignes de barème | [appliqué] |
+| 14/10 | **070** `070_correctif_10A_cie0.sql` | Tarif 48 (10A, compagnie 0), zone A : 11-14 CV 79 054 → **79 057** ; 24 CV et plus 118 868 → **118 686** | [appliqué] |
+| — | zones géographiques (Normalisation, 09/10) | Modèle normalisé des zones tarifaires, 365 divisions, 297 affectations A/B/C ; Tarification a donné son accord avec 3 conditions (zone inconnue = aucun montant ; type du paramètre zone ; pas de seconde fonction de résolution). Le script n'a pas été reçu par cette session | [à confirmer] : appliqué ou non |
+Les numéros 051, 060 et 061 : 060 est réservé ; 061 et 051 ne relèvent pas de cette session **[à confirmer par Git]**.
+
+### 8.3 — Le Tarif Automobile du 01/12/1995 est la référence officielle du barème RC (compagnie 0)
+**[décidé]** Validité : RC à compter du **16/11/1994** (arrêté n° 00380/MINEF/DCE/A) ; garanties facultatives à compter du **01/12/1995**. Règle de Roger : si une règle est déjà en base, aucun nouvel enregistrement ; toute contradiction entre le document et la base est arbitrée par Roger.
+Comparaison du 13/10/2026 (712 lignes RC de la compagnie 0 contre 946 montants du document) : 795 cellules identiques, 63 contradictoires, 88 absentes de la base (72 surprimes passagers, 12 tracteurs 10D-10E, 4 d'un décalage). **La base est fidèle au document à 84 %** ; les écarts forment quatre familles : fautes de frappe, décalage de colonne, catégorie 10, surprimes.
+**[appliqué]** 23 lignes corrigées (tableaux du 2.3 mis à jour en v5.4) :
+- 10 fautes de frappe : cat. 1 zone C 7-10 CV avec remorque 71 467 → 71 457 ; cat. 3 zone B 15-23 CV sans remorque 239 794 → 239 784 ; cat. 4A zone A 2 places 11 953 → 119 953 ; cat. 4A zone A 5 places 15-23 CV 430 038 → 430 379 ; cat. 4B 38 places 15-23 CV 676 284 → 676 264 ; cat. 6 zone A 5 cartes tarif 2-3 1 279 329 → 1 334 952 ; cat. 7 zone A 11-14 CV CAT_1 double commande 96 821 → 98 821 ; cat. 8 zone A 15-23 CV 201 306 → 201 308 ; cat. 8 zone C 15-23 CV PLUS_3_5T 392 006 → 392 066 ; cat. 9 zone B 3-6 CV sans remorque 58 130 → 58 305.
+- Décalage 4A « 3 places », zones A, B, C : les trois montants glissent d'une tranche (2 / 3-6 / 7-10 CV au lieu de 3-6 / 7-10 / 11-14 CV). La tranche 11-14 CV n'existe plus pour 3 places. Zone B : 176 647 → **176 727**.
+- Surprime matière inflammable, cat. 3 zone B : 14 864 / 14 865 / 14 865 / 22 439 / 23 784 / 23 784 pour 0-2, 3-6, 7-10, 11-14, 15-23, 24+ CV (la dernière était vide).
+**Non touchés** (Roger garde la valeur de la base, ou à arbitrer) : cat. 5B scooter zone C avec remorque 21 265 (document 21 000) ; cat. 6 carte supplémentaire zone A 222 552 (document 222 192), zone B 170 612 / 213 279 (document 170 611 / 212 934) ; cat. 7 zone C 11-14 CV avec RC élèves 130 446 (document 130 746) ; 4A zone C 7 places 24 CV et plus : base 557 371, document 657 371 (la base avait déjà corrigé l'écart). **Cat. 6 zone B 5 cartes tarif 2-3 : 1 279 329 conservé dans le tableau (non listé par le correctif) [à confirmer].**
+**4B 22 places (anomalie #4)** : le document 1995 donne **398 514, comme la base** (progression attendue 386 514) ; 4B 20 places 8-10 CV : 457 085 dans les deux (attendu 456 965). Identiques au document, mais suspects : arbitrage de Roger.
+
+### 8.4 — Catégorie 10 : règles décidées et état
+- **[décidé]** La catégorie 10 se limite à **10A, 10B, 10C** ; 10D et 10E n'existent pas (terminologie propre à AFG). Le code de catégorie est déterminé par le véhicule avant que la compagnie intervienne.
+- **[décidé]** AFG reçoit des **variantes tarifaires propres** selon genre, carrosserie ou tonnage ; la compagnie 0 reste inchangée ; l'extraction prend les lignes AFG en priorité. Tonnage lu sur la **charge utile** : à partir de 3,5 t = `PLUS_3_5T`, en dessous `MOINS_3_5T`. Tracteurs rangés en **10C**. Tracteurs 2 CV et 3-6 CV (sans montant au tarif) : tarif minimum connu appliqué.
+- **[appliqué]** Tarifs AFG 445/446/447 (8.2). Les valeurs 10B AFG (collectivité moins de 3,5 t) et 10C AFG diffèrent de 10A (exemple zone A, 1 CV : 50 435 en `MOINS_3_5T`, 80 721 en `PLUS_3_5T`). Somme de contrôle des 72 lignes : 6 835 099.
+- **[décidé, confirmé par un tarif tiers]** Compagnie 0, 10A : **essence 11-14 CV ou diesel 8-10 CV = 79 057** ; **essence 15-23 CV ou diesel 11-16 CV = 100 654** ; **essence 24 CV et plus ou diesel 17 CV et plus = 118 686** (zone A). La 070 a fait concorder la base.
+- **[à trancher]** Compagnie 0, 10B et 10C : les tarifs 49 et 50 sont des **copies de 10A** (44 870 en zone A, ≤ 2 CV) alors que le document donne pour 10B 50 435 et pour 10C 80 721. Aucun script ; décision de Roger. Les tableaux 10B et 10C du 2.3 restent donc des copies de 10A (anomalie #38).
+- **[constaté]** Essai avant/après de la fonction RC sur 270 cas (10A, 10B, 10C × zones × énergie × 9 puissances × 3 étiquettes de tonnage) : 168 inchangés, **102 modifiés, tous en 10B avec étiquette de tonnage** (le tarif retenu passe du 49 de la compagnie 0 au 446 d'AFG, **pour toute compagnie**). 12 cas diesel 1 CV sans montant avant comme après (avertissement, jamais 0).
+
+### 8.5 — Les fonctions de calcul réellement déployées (relevé du 14/10/2026)
+| Fonction | Rôle | Constat |
+|---|---|---|
+| `fn_calculer_prime_rc_automobile` (16 arguments) | RC | **Ne reçoit pas la compagnie.** Zone lue dans `criteres->>'zone'`. Choisit la ligne de barème la plus précise puis le plus petit identifiant ; ne filtre pas la compagnie. Sortie : prime_base, surprime_matiere_inflam, prime_totale, id_tarif, id_bareme_base, id_bareme_surprime, source_page, force_fiscale_utilisee, cylindree_utilisee, avertissements. Prime **annuelle**, ne lit pas les tables de surprimes (062). **Énergie : n'accepte que les chaînes `ESSENCE` et `DIESEL`** (casse indifférente) ; toute autre valeur, dont « Diesel (Gasoil) » du référentiel, est traitée comme Essence avec un avertissement (#49) ; le mappage se fait chez l'appelant (8.13). Convertit une valeur en CV ou en cm³ trouvée dans le catalogue VIN en étiquette de cylindrée (2-3 roues) |
+| `fn_calculer_prime_garantie_dependante(p_sous_garantie_code, p_id_compagnie, p_categorie_code, p_prime_garantie_declenchee, p_date_effet)` | Défense et Recours | Lit `taux_pct` seul, **ignore `montant_fixe`** ; cherche la compagnie exacte, **sans repli sur la compagnie 0** |
+| `fn_resoudre_tarif_categorie(p_id_compagnie, p_garantie_code, p_categorie_code, p_date_effet)` | Résolution | Précision sur la catégorie seulement (exacte, sinon `ALL`) ; **pas de repli sur la compagnie 0** |
+| `fn_frais_accessoires(p_id_compagnie, p_code_branche, p_code_categorie, p_prime_nette, p_date_effet, p_date_echeance, p_date_reference)` | Accessoires | Rend (montant, origine, id_ligne, detail). Durée = `p_date_echeance − p_date_effet` ; tests `p_date_echeance > p_date_effet + durée_min` et `<= p_date_effet + durée_max`. Choix : catégorie renseignée > branche renseignée > type de palier (plage 2, seuil 1, sinon 0) > durée renseignée > identifiant ; repli sur `compagnie.frais_accessoires_par_defaut`. Aucun garde-fou d'ambiguïté. **Elle attend l'échéance (expiration + 1)** : Production lui passe l'expiration, d'où un décalage d'un jour (#48). `categorie_code_tarif_reel` ne sert qu'à 05-TRI → 05 |
+| `fn_controle_plafond_reduction_franchise` | Déclencheur | Plafond des réductions et franchises |
+Aucune de ces fonctions n'en appelle une autre ; aucune vue ne lit le barème ; les appelants sont dans le code Node (relevé de Git en attente). `fn_calculer_prime_nette_totale` **n'existe pas** (anomalie #20). Les tables de cotation (`cotation`, `police_cotation`, `prime_element`, `derogation`, `flotte`) sont vides.
+**Consigne [décidée] en attendant la fonction qui connaît la compagnie : ne pas passer `p_tonnage_label` pour la catégorie 10.**
+
+### 8.6 — Surprimes : modèle, règles, valeurs (migration 062)
+- **[décidé]** Cumul des pourcentages **par addition sur la prime RC** (un prêtre −10 % qui a moins de 25 ans +10 % tombe à 0 %). Permis récent = **deux ans** (art. 9-4 ; la description « 3 ans » de `majoration_reduction` id 2 était fausse, #30).
+- **[décidé]** Le mode d'application (forfait, par passager, pourcentage) est une **donnée du tarif**, pas du code ; toutes les valeurs sont enregistrées. Forfait unique pour les passagers (mode `PAR_PASSAGER` prévu, non utilisé).
+- **Structure [appliqué]** : `facteur_surprime` (13 facteurs retenus ; l'ancien numéro du fichier source est conservé à part et ne sert jamais de clé ; le facteur 6, doublon, est écarté), `mode_application_surprime` (`FORFAIT`, `PAR_PASSAGER`, `TAUX_PCT`), `tarif_surprime` (compagnie, catégorie, facteur, mode, base de calcul, dates, statut), `tranche_tarif_surprime` (bornes, force fiscale, critères dont zone, `taux_pct`, `montant_fixe`). Raison : un tarif de surprime rangé dans `tarif` sous la RC violerait `excl_tarifs_non_chevauchement`, et aucune garantie ne naît spontanément.
+- **Valeurs au tarif 1995 [appliqué]** : 132 lignes = 72 forfaits (facteurs 5 « passagers hors cabine » et 10 « passagers à l'insu », 6 puissances × 3 zones, catégories 2 et 3) + 60 pourcentages (facteurs 3 moins de 25 ans +10 %, 4 permis de moins de deux ans +10 %, 1 forte circulation +10 %, 2 faible circulation (clergé) −10 %, **étendus aux 15 catégories** : l'article 9 est général). En 5B le permis récent ne vise que les véhicules de plus de 50 cm³ (noté, non codé). Facteurs 8 (usage commercial), 9, 11-15 : enregistrés, **sans valeur** au tarif 1995.
+- **[à trancher]** Doublon de l'article 9 entre `majoration_reduction` et les 4 lignes en pourcentage de `tarif_surprime` (proposition de la session : conserver `majoration_reduction`, retirer les 4 lignes pourcentage) ; une ou deux lignes pour « moins de 25 ans » et « permis de moins de deux ans » (#40).
+- **Non encore branché** : la fonction RC ne lit pas ces tables.
+
+### 8.7 — Durée, fractionnement, vocabulaire
+- **Vocabulaire [décidé]** : *effet* = premier jour couvert ; *expiration* = dernier jour couvert ; *échéance* = expiration + 1 (anniversaire) ; *durée* = expiration − effet + 1 (jours entiers, toute fraction de jour remonte au jour suivant : 60,1 jours = 61).
+- **Hors pool TPV [décidé] — paliers du Tarif ministériel (art. 3-2)** : 1-60 j = 20 % ; 61-120 j = 40 % ; 121-180 j = 60 % ; 181-240 j = 80 % ; 241-365 j = 100 % de la prime annuelle. Pas de prorata au jour. *(Référence réconciliée le 14/10/2026 : l'article 6, alinéa 2, a à e de l'arrêté du 16/11/1994 et l'article 3-2 du Tarif de 1995 énoncent les mêmes paliers ; ce sont deux documents, un seul régime. Tout contrat est souscrit pour un an, même fractionné.)*
+- **Pool TPV [décidé]** : barème **mensuel**, 1/12 par mois ; un mois entamé = un mois entier ; mois **calendaires** (contrat d'un mois pris le 15 février : expiration le 14 mars) ; **pas de limite à 105 %** ; le pool ne couvre que **04A, 04B, 04C**.
+- Autres règles de l'art. 3 (hors pool) : au-delà de 240 jours en plusieurs fractions, total plafonné à 105 % de l'annuel (3-3) ; une attestation ne couvre pas plus que la durée payée (3-4) ; au renouvellement d'un contrat de moins d'un an, même barème (3-5).
+- **[décidé]** « Fractionnement » dans le moteur = coefficient de durée seul ; l'échelonnement du paiement en quittances relève de l'échéancier.
+- **[proposé]** Modes `PALIERS_JOURS` et `MENSUEL_CALENDAIRE` enregistrés comme paramètres de tarification (migration séparée, numéro de Git).
+
+### 8.8 — Défense et Recours, IAC/IPT, minimum acceptable, Voyage
+- **Minimum acceptable d'une cotation [décidé] : RC + Défense-Recours + IAC/IPT.** Tant que les trois ne sont pas tarifées, le service de cotation ne peut pas être mis en service. État au 13/10 : RC disponible (compagnie 0, sans majorations) ; DR et IAC/IPT non disponibles au moteur ; facultatives non disponibles.
+- **DR [décidé]** : deux sous-garanties, « Défense » et « Recours », au lieu d'une. Le tarif de 1995 donne un forfait commun (7 500 pour recours 500 000 et défense 200 000 ; 10 000 pour 1 000 000 et 500 000 ; 1 500 / 2 000 en 5B). Roger a demandé la répartition **au prorata** ; lecture de la session : prorata des plafonds (7 500 → recours 5 357, défense 2 143 ; 10 000 → 6 667 / 3 333), le recours arrondi, la défense prenant le reste **[à confirmer : clé de répartition]**. Les sous-garanties portent `numero_formule` et `plafond_engagement`. Pour AFG, c'est son tarif spécifique qui s'applique ; la base porte 2 000 là où le document AFG donne 7 500 / 10 000 **[à confirmer, #41]**.
+- **IAC/IPT** : mécanique au Pilier 2 (v2.0). Exemple AFG, IAC conducteur et passagers formule 1 : forfait 6 500 / 10 000 / 14 500 / 19 000 / 23 500 pour 5 places au plus, plus 1 500 / 2 500 / 3 500 / 4 500 / 5 000 par place supplémentaire. Le Tarif de 1995 en possession de la session **ne contient pas** l'IAC/IPT (#45) ; la compagnie 0 n'a que l'IPT.
+- **Voyage [décidé]** : sous-garantie « Assistance de voyages internationaux » (id 387), validité 01/12/1995, prime nette seule ; compagnie 0 puis copie pour AFG ; 5 zones (Afrique, Schengen, Europe, Mondial Basic, Mondial Plus). Accessoires Voyage = TTC / 1,1925 − 1 000 − prime nette (vérifié sur 210 couples du PDF : 500 à 8 000 FCFA), paliers ronds fonction de la durée. Le relevé du 13/10 : aucun tarif Voyage en base pour aucune compagnie. **Rien n'est chargé.** **Décision de Roger du 14/10/2026** : le tarif par défaut de l'Assurance Voyage a déjà été fourni par AFG ; il se charge sous forme de **grille et de paliers** (décision du 13/10), pas en saisie manuelle. Ouvert : zonage Voyage, offre commerciale pour la sous-garantie 387, tranches de durée et d'âge (trou 18-19 ans), rabais de groupe (5 à 20 %) hors périmètre, code `SANTE_ASSURANCE_VOYAGE` (#47).
+
+### 8.9 — Taxes et assemblage de la prime TTC (précisions)
+- **[décidé]** TVA 19,25 % sur prime nette + accessoires + Fichier central ; **Carte rose et DTA hors base de TVA, présentés après la TVA**. Fichier central 1 000 (500 au pool). `prime_ttc = prime_nette + accessoires + Fichier central + TVA + carte_rose + DTA + autres frais` **[décidé le 14/10 : la DTA entre dans le TTC ; corrige 3.1, 3.6 et `assemblage_prime.js`]**, puis déductions (retenues à la source de TVA par certaines administrations) → net à percevoir.
+- **[décidé]** Exonération de TVA : indicateur porté par la **fiche client (KYC)**, chantier Personne/Rôle + Production + Normalisation ; Tarification n'en porte aucun. Exonération de DTA distincte.
+- **[décidé]** Commission : taux de la convention appliqué à la prime nette hors taxes et hors accessoires ; **acquise seulement à l'encaissement**.
+- **[à confirmer]** Les « autres frais » (`frais_gestion`, table à créer) entrent-ils dans l'assiette de TVA ?
+
+### 8.10 — Moteur de calcul cible (conception v1, **[proposé]**, en attente de validation par Roger)
+Source : `conception_moteur_calcul_prime_14102026.md`. Principes **[décidés par Roger le 14/10]** : une seule chaîne de fonctions pour toutes garanties, branches, compagnies (la compagnie est un paramètre ; ligne la plus précise = compagnie demandée, sinon compagnie 0) ; calcul **par sous-garantie** ; pourcentages signés ; anomalie = aucun montant (jamais 0 par défaut) ; avenant = ristourne négative par sous-garantie, `prime_nette = prime_nette_emise + ristourne`.
+Chaîne par sous-garantie : **11** annuité du tarif (forfait + taux × assiette, par palier ; prime minimum appliquée à l'annuité) → **111** surprimes → **112** franchises → **113** annuité de la prime → **12** coefficient de durée → **13** bonus-malus → **14** réduction (deux écoles, base brute ou nette, paramétrées par compagnie ; plafond par `fn_controle_plafond_reduction_franchise`) → **15** `prime = prime_période + (bonus_malus + réduction)` (montants signés) → **16** taxe → **17** commission potentielle. Puis récapitulation véhicule et flotte, accessoires, taxes, extension de garanties (zones CEMAC/CIMA, Carte rose), DTA, autres frais, TTC, déductions, net à percevoir.
+Assiette : caractéristique du risque, ou prime d'une autre sous-garantie (`garantie_lien`, mode ASSIETTE, déjà utilisé par DR). Arrondi unique au franc par ligne de sous-garantie, puis somme. Contexte de cotation unique (type composite) à la place des 16 arguments. Les fonctions renvoient des lignes (sous-garantie, étape, base, taux, montant, tarif et barème retenus).
+Colonnes de traitement **déjà existantes** dans `Garanties.csv` et `Garanties_canoniques.csv` (aucune nouvelle table) : BonusMalus, AppliquerBonusMalus, Réductible, PrimeFractionnable, Plancher, Plafond, Palliers, BasePrime, AssiettePrime, PondérerAssiette, PrimeForfaitaire, Prime Unitaire, BaseCalculPrime2/3, ValeurAssietteMin2/3, TauxCommission, Taux Taxes, Franchise. Leur présence dans les colonnes de `garantie` et `sous_garantie` en base n'est **pas vérifiée**.
+Exemples faits à la main (illustratifs) : RC 10A zone A, 12 CV essence, 90 jours : 79 057 × 40 % = **31 623** ; avec conducteur de moins de 25 ans : 79 057 × 1,10 × 40 % = **34 785** ; IAC formule 1, 7 places : 6 500 + 2 × 1 500 = **9 500** (annuité).
+Questions ouvertes : bonus-malus et art. 9 en 111 ou en 13/14 ; minimum de perception sur la période ; palier des accessoires en flotte (police entière ou véhicule) ; autres frais dans l'assiette de TVA ; relevé de `garantie`/`sous_garantie` ; session qui écrit les fonctions.
+
+### 8.11 — Structure de `tarif` et `bareme_tranche` (relevé du 13-14/10/2026)
+- `tarif` : id_tarif, id_acte_reglementaire, categorie_code, garantie_code, id_regle_calcul, libelle, dates de validité, statut, criteres_objet/risque, prime_minimum, id_garantie, id_sous_categorie, id_compagnie, id_sous_garantie, id_offre_commerciale. Deux contraintes d'exclusion : `excl_tarif_non_chevauchement_v2` (offre, catégorie, période) et `excl_tarifs_non_chevauchement` (compagnie, garantie_code, catégorie, période).
+- `bareme_tranche` : borne_min/max, force_fiscale_min/max_diesel, cylindree_min/max, prime_sans/avec_remorque, prime_unique, taux_pct, montant_fixe, surprime_matiere_inflammable, criteres jsonb ; clé étrangère vers `tarif` avec ON DELETE CASCADE. `police_cotation` référence `tarif`.
+- Règle de calcul 1 = `AUTO_BAREME_FF_ZONE` (BAREME_TRANCHE, GRILLE_ZONE_FORCE_FISCALE). Acte réglementaire 1 = arrêté n° 00380/MINEF/DCE/A du 16/11/1994. Offre 154 = AFG RC (compagnie 9, sous-garantie 217) ; offre 298 = compagnie 0 RC (placeholder).
+- Volumes au 13/10 : `tarif` 343 (puis 346 avec la 069), `bareme_tranche` 1 198 (puis 1 270), `bareme_frais_accessoires` 118, `sous_garantie` 571, `garantie` 109, `compagnie` 21 ; 83 tables (`tarification` et `site`). Compagnie 0 : 13 sous-garanties tarifées (RC stricte 17 tarifs, Extension CEMAC, Recours des tiers incendie, DR 4, Incendie 3, Bris de glaces 3, Tierce collision 3, Vol véhicule 3, Brigandage vol 1, Vol des accessoires 1, IPT : décès, frais médicaux, incapacité permanente 1 chacune). Pas de tarif générique pour « Dommages par accident » (fusion Dommages/Tierce) **[à confirmer]**.
+
+### 8.12 — Règles de gouvernance et de méthode ajoutées (décisions de Roger, 06-14/10)
+1. Un document AFG (ex-Atlantique Assurances) est officiel pour AFG ; en cas de conflit avec un autre tarif, l'arbitrage est celui de Roger.
+2. Pas de mise à jour du RUT sans instruction expresse de Roger (donnée le 14/10 pour la présente version).
+3. Aucune garantie ne naît spontanément ; quand une garantie n'est pas définie pour une compagnie, la mécanique générique (compagnie 0) s'applique, la ligne la plus précise l'emportant.
+4. Toute demande à une autre session est un **document écrit** transmis par Roger ; Roger exécute les scripts ; avant tout script : `pg_dump`, essai `-v commit=false`, sorties longues dans un fichier.
+5. Une migration reçoit un numéro de Git, valable le jour de son attribution, avec compte rendu le même jour.
+6. Aucune donnée inventée.
+
+
+### 8.13 — Énergies, puissance fiscale et conversion cm³ → CV (v5.5)
+Sources : décision de Roger du 14/10/2026, relevé de base `sortie_energies_rc_14102026.txt`, fiche de marché fournie par Roger le 14/10, formule officielle française (cartegrise.com).
+
+**État de la base [constaté]** : `referentiel.energie_vehicule` (12 valeurs actives : Essence, Diesel (Gasoil), Hybride (Essence-Électrique), Hybride Rechargeable (Plug-in), Électrique, GPL, GNC, Flex-fuel, Éthanol (E85), Hydrogène, Bicarburation Essence/GPL, Autre / Non précisé) ; `referentiel.unite_puissance` (cm3, CV, kW, **sans règle de conversion**). `site.mouvements` porte `energie`, `cylindree_cm3`, `puissance_cv` : 8 lignes d'essai, cylindrée vide partout.
+
+**Règle d'énergie [décidée par Roger le 14/10]** : « Essence » reste `ESSENCE` ; « Diesel (Gasoil) » et « Diesel » deviennent `DIESEL` ; **toutes les autres sources d'énergie sont prises comme `DIESEL`**. Pour ces autres sources, la puissance peut être donnée **en CV, en cm³ ou en kW** et se ramène à une puissance en CV selon la règle ci-dessous. **[à confirmer]** : traitement de « Autre / Non précisé » (Diesel, ou refus jusqu'à correction de la saisie). Le mappage se fait **chez l'appelant ou dans une fonction dédiée** (la fonction RC ne comprend que `ESSENCE` et `DIESEL`, #49).
+
+**Ordre de lecture de la puissance** : (1) CV porté sur la carte grise ou lu dans le catalogue VIN (`catalogue_puissance_fiscale_cv`) ; (2) sinon calcul à partir de la valeur donnée : kW, ou cm³ ; (3) sinon la prime n'est pas calculée (anomalie, aucun montant). Une valeur calculée est marquée **« estimée »** ; le CV de la carte grise prime dès qu'il est connu.
+
+**Conversions** :
+- **2-3 roues (cm³ → CV)** : table AFRINS, confirmée par le Tarif et par la règle française des motos : 51-125 cm³ = 1 CV, 126-175 = 2, 176-250 = 3, 251-350 = 4, 351-500 = 5, 501-625 = 6 (au-delà : +1 CV par tranche de 125 cm³).
+- **kW → CV** : PF = 1,8 × (kW/100)² + 3,87 × (kW/100) + 1,34, arrondi à l'entier. C'est la formule française pour les véhicules électriques et les réceptions après le 01/10/2019 ; `hpToFiscalCV` (`devis.js`) la reprend après avoir converti les HP en kW (× 0,7457). **[à confirmer]** : application à une entrée directe en kW, et pour les véhicules thermiques anciens (la formule officielle y ajoute le CO₂).
+- **Voitures, cm³ → CV [pratique de marché, non officielle]** : CV = (cylindre × coefficient + 5) / 1000, **arrondi à l'entier le plus proche** (décision de Roger du 14/10) :
+
+| Catégorie | Coefficient Essence | Coefficient Gasoil (Diesel) |
+|---|---|---|
+| 01 | 5,73 | 4,01 |
+| 02 | 4,77 | 3,34 |
+| 03 | 2,77 | 2,67 |
+
+Exemples (catégorie 01) : Essence 1 000 cm³ = 5,735 → 6 CV ; Essence 1 200 = 6,881 → 7 ; Essence 1 600 = 9,173 → 9 ; Essence 2 000 = 11,465 → 11 ; Diesel 2 000 = 8,025 → 8 ; Diesel 2 500 = 10,030 → 10. Catégorie 04 (Roger) : « souvent des berlines ou des bus », donc le cas 01 ou le cas 03, parfois le cas 02 **[à confirmer : critère de choix]** ; les catégories au-delà de 04 ne sont pas couvertes par la fiche (le moteur bloque et demande le CV).
+
+**Statut de la fiche [décidé par Roger le 14/10]** : source non officielle ; ces fiches circulent entre les rédacteurs de production lors des séminaires de formation (rédacteurs et commerciaux), et **chaque rédacteur a sa pratique**. Elles servent de **base approximative** pour proposer une valeur, qui peut être contestée. **Si une compagnie confirme une règle de calcul, elle est propre à cette compagnie** ; la pratique ci-dessus est enregistrée au catalogue de la **compagnie 0** avec sa période de validité, et les règles de compagnie s'y superposent (principe : propre, sinon compagnie 0). **[à vérifier]** : Roger garde en mémoire de contrôler ces chiffres sur des véhicules connus (cylindrée, énergie, CV de la carte grise) ; aucun cas de contrôle n'est encore disponible. Un contrôle sur les couples cylindrée/CV du catalogue VIN est possible (`lecture_cm3_cv_14102026.sql`, non exécuté à la date de cette version). Stockage en base de cette règle : non conçu, à faire avec un numéro de Git.
+
+**Ce que dit la documentation externe (lue le 14/10)** : la puissance fiscale d'une voiture est fixée par l'administration et inscrite sur la carte grise ; en France elle dépend des kW et du CO₂, pas de la cylindrée ; la cylindrée ne sert directement qu'aux motos. En Belgique, les CV fiscaux découlent de tranches de cylindrée (ce ne sont pas les CV du barème camerounais). Les diviseurs empiriques d'un document fourni par Roger (÷180 à 200, ÷220 à 250, ÷140 à 160, ÷350, ÷400, et « kW × 0,7 » pour les poids lourds) **ne sont écrits dans aucun texte** et ne sont pas retenus.
+
+### 8.14 — Constats du 14/10/2026 : zones, accessoires et échéance, DTA, énergies (v5.5)
+Sources : `sortie_verif_rapport_production_14102026.txt`, `sortie_dta_zones_energies_14102026.txt`, `sortie_energies_rc_14102026.txt` (lectures seules), rapport de Production du 14/10, rapport de Normalisation du 09/10.
+- **Zones [constaté]** : **aucune table ni fonction de zone n'existe en base**. Le modèle de Production (rejeté) et celui de Normalisation (redessiné : `id_zone`, code unique, noms non génériques) ne sont ni l'un ni l'autre appliqués. La zone du tarif RC vit dans `criteres->>'zone'`. Production doit adopter le modèle de Normalisation.
+- **Accessoires et échéance [constaté]** : `fn_frais_accessoires` attend l'**échéance** (expiration + 1) ; Production lui passe l'**expiration**, d'où un décalage d'un jour qui peut faire changer de palier de durée (#48). L'appel de Production s'appelait `fn_accessoires` (nom d'avant la 050).
+- **Fichier central** : 1 000 ; 500 pour le Pool (04A/04B/04C) ; le Pool n'est pas modélisé dans `site.production_frais_fixes`.
+- **DTA** : voir 3.5 (96 lignes, aucun doublon, pas de colonne `actif`).
+- **Carte rose** : voir 3.4 (`delivre_carte_rose` = `delivre_attestation`, 25 natures).
+- **Énergies et puissance** : voir 8.13.
+- **Voyage** : voir 8.8 (tarif par défaut AFG fourni, grille et paliers).
+- **Appels interdits à Production** : ne pas appeler la fonction RC avec `p_tonnage_label` en catégorie 10 (#39) ; codes compagnie BELIFE et AFG.
+
+---
+
 ## Pilier 3 — Mémoire : décisions et justifications
 
 | Date | Décision | Justification |
@@ -2979,6 +3169,25 @@ Le manuel ne dit pas si les montants des « autres risques » incluent le Fichie
 | 03/10 | Passage en v5.2 | Ajout du texte réglementaire et des directives SUNU sur la base de la v5.1 |
 | 03/10 | Accessoires : la source `Frais_et_accessoires.csv` fait foi (2 500 FCFA) ; la base portait 35 lignes à 3 000 FCFA par erreur ; le manuel SUNU et la note de service PROASSUR prévalent pour leurs compagnies ; Fichier central 1 000 FCFA partout, 500 FCFA pour le Pool, les zéros de la source étant des erreurs de saisie ; tranches de BELIFE non restaurées | Décisions de Roger, cas par cas, après comparaison ligne à ligne ; l'alignement se fait par identifiants explicites, jamais par un remplacement global de 3 000 par 2 500, car des lignes à 3 000 sont justes |
 | 03/10 | Passage en v5.3 | Ajout de la source des accessoires, de la section 7.6 et de l'annexe F sur la base de la v5.2 |
+| 06/10 | Branche ASSISTANCE (18°) ; numérotation commune par code de l'art. 328 CIMA | Migration 048 (Normalisation) |
+| 07/10 | Renommages de la migration 050 (8.1) | Convention ISO/IEC 11179 v1.1 |
+| 09/10 | Principe : compagnie propre, sinon compagnie 0 ; ligne la plus précise l'emporte | Roger ; généralise le repli du 03/10 |
+| 13/10 | Tarif Automobile du 01/12/1995 = barème RC officiel de la compagnie 0 ; RC valable depuis le 16/11/1994, facultatives depuis le 01/12/1995 ; règle déjà en base = aucun nouvel enregistrement | Roger |
+| 13/10 | 23 lignes RC corrigées (8.3) | Comparaison base ↔ document (795 identiques, 63 contradictoires) |
+| 13/10 | Surprimes : cumul par addition ; permis récent = 2 ans ; modèle en 4 tables ; art. 9 étendu aux 15 catégories ; migration 062 | Roger (8.6) |
+| 13/10 | Fractionnement : paliers 20/40/60/80/100 % hors pool ; mensuel calendaire au pool (04A/04B/04C seulement), mois entamé = mois entier, pas de 105 % | Roger (8.7) |
+| 13/10 | Minimum acceptable de cotation : RC + DR + IAC/IPT ; exonération de TVA portée par la fiche KYC | Roger (8.8, 8.9) |
+| 14/10 | Catégorie 10 = 10A/10B/10C seulement ; variantes AFG par tonnage (charge utile, 3,5 t) ; tracteurs en 10C ; migration 069 (tarifs AFG) et 070 (10A compagnie 0) | Roger (8.4) |
+| 14/10 | Un seul moteur de calcul pour toutes garanties, branches et compagnies, calcul par sous-garantie, pourcentages signés | Roger ; conception v1 en attente de validation (8.10) |
+| 14/10 | Objectif : le RUT est le référentiel unique et le miroir de la base ; chaque session fait remonter ses connaissances tarifaires absentes du RUT | Roger |
+| 14/10 | Passage en v5.4 | Chapitre 8, tableaux corrigés, anomalies #38 à #47 |
+| 14/10 | `prime_ttc` = nette + accessoires + Fichier central + TVA + carte rose + DTA + autres frais ; calcul inverse avec déduction de la DTA et du Fichier central | Roger (3.1, 8.9) |
+| 14/10 | DTA : conserver l'historique, `actif = false` pour les doublons non parfaits, purge des doublons parfaits (aucun doublon constaté) | Roger (3.5) |
+| 14/10 | Carte rose émise à chaque nouvelle attestation, mêmes dates | Roger (3.4) |
+| 14/10 | Énergies : Essence → ESSENCE ; Gasoil et Diesel → DIESEL ; toutes les autres sources → DIESEL, puissance en CV, cm³ ou kW ramenée en CV | Roger (8.13) |
+| 14/10 | Conversion cm³ → CV des voitures : fiche de marché (catégories 01 à 03), arrondi à l'entier le plus proche, base approximative propre à la compagnie 0, contrôle ultérieur sur des cas connus | Roger (8.13) |
+| 14/10 | Voyage : tarif par défaut fourni par AFG, chargé en grille et paliers | Roger (8.8) |
+| 14/10 | Passage en v5.5 | Décisions du 14/10, rapport de Production, constats de base ; anomalies #48 à #52, #10 close |
 
 ---
 
@@ -2990,7 +3199,7 @@ Le manuel ne dit pas si les montants des « autres risques » incluent le Fichie
 - **Format des tableaux du Pilier 2.3** — actuellement une colonne "Autres critères" en texte libre (JSON). Devrait devenir des colonnes explicites propres à chaque catégorie (nombre de places, remorque, RC élèves, genre de véhicule...) plutôt qu'un bloc texte — aurait rendu l'anomalie "genre de véhicule" visible immédiatement au lieu de la masquer. Restructuration non faite dans ce v1.0, risque trop élevé en fin de session.
 - Sous-catégories 04A/B/C, 05/05bis, 06, 07ARC/SRC, 09A/B, 10A/B/C : la logique de distinction entre elles n'est documentée nulle part de façon narrative — seulement implicite dans la structure du barème. À expliciter si une vraie règle écrite existe.
 - Directives de souscription par compagnie : absentes de ce document, jamais fournies à cette session.
-- Catégories 10B et 10C portent exactement les mêmes montants que 10A — à confirmer si c'est une vraie distinction réglementaire (trois catégories séparées existant pour une autre raison que le montant) ou une simplification de notre construction.
+- **(mis à jour le 14/10/2026)** Pour la compagnie 0, les catégories 10B et 10C portent encore les mêmes montants que 10A, alors que le Tarif 1995 les distingue (#38) ; AFG a ses tarifs propres. Ancien libellé : Catégories 10B et 10C portent exactement les mêmes montants que 10A — à confirmer si c'est une vraie distinction réglementaire (trois catégories séparées existant pour une autre raison que le montant) ou une simplification de notre construction.
 - **Deux sources de vérité, aucun contrôle automatique.** Le RUT et la base peuvent diverger sans que personne ne le voie, ce qui recréerait le problème que le RUT devait résoudre. À construire : un script qui compare chaque tableau du RUT à la base et signale les écarts (priorité haute).
 - **Cause d'origine des doublons ALLIANZ/SUNU non recherchée** : 12 lignes supprimées, mais pas pourquoi elles existaient (script rejoué ? import sans clé d'unicité ?). Risque de récidive au prochain import.
 - **Dimension « genre de véhicule » à auditer sur Dommages et Vol** (Benne/Camion/Camion+Remorque) : hypothèse non vérifiée, par analogie avec la matière inflammable.
@@ -3020,6 +3229,13 @@ Le manuel ne dit pas si les montants des « autres risques » incluent le Fichie
 - **Aucune API de Prime nette ou TTC n'existe** (#20) : c'est le chemin critique pour myspace ; la procédure cible `fn_calculer_prime_ttc` (5.6) la fournirait.
 - **Purger `site.bareme_dta`** (#10) avant de charger l'élément DTA dans la table cible.
 - **Reconstituer les cas de référence RC** de la session du 01/10 (5.7) : la liste que contenait une première rédaction de ce tableau s'est révélée non fiable (un des montants est absent du barème) et a été retirée.
+
+- **(v5.4) Contrôle automatique RUT ↔ base** : script en lecture seule qui compare chaque tableau du chapitre 2.3, de DR, d'IAC/IPT, d'accessoires aux tables, et sort les écarts ; sans lui, le RUT ne peut pas être déclaré « miroir » (priorité haute, déjà notée plus haut).
+- **(v5.4) Relecture des sections 3, 5, 6 avec les noms de la migration 050** (8.1).
+- **(v5.4) Sections absentes du RUT** à demander aux sessions : fonctions et API de Production/Souscription (cotation, souscription, devis), site public (`devis.js`), myspace (assemblage), Normalisation (zones, convention), Git (numérotation, état des migrations 051-061).
+- **(v5.4) Fonction RC à compagnie, DR sur `montant_fixe`, accessoires sur `p_date_expiration`** (8.5) ; moteur cible à valider (8.10).
+- **(v5.5) À faire** : note écrite à Production (échéance, nom de fonction, Fichier central 500 pour le Pool, zones de Normalisation, mappage des énergies) ; fonction RC à compagnie qui accepte les libellés d'énergie ; stockage de la règle cm³ → CV avec numéro de Git ; cas de contrôle de la fiche cm³ → CV ; chargement du tarif Voyage AFG (grille et paliers) ; modèle de zones de Normalisation à implémenter ; corriger `assemblage_prime.js` côté appelants (DTA obligatoire).
+- **(v5.4) Décisions de Roger en attente** : 10B/10C compagnie 0 ; doublon de l'article 9 (062) ; clé de répartition DR ; Voyage (zonage, offre 387, tranches) ; source IAC/IPT du Tarif 1995 ; 4B 22 et 20 places ; cat. 6 zone B ; suppression de `tmp_benchmark_meta`.
 
 ### Chantiers hors périmètre de cette v5.0 (RUT v5.n, périmètre étendu)
 Franchises (`franchise`, `franchise_application`, non branchées au calcul de la prime), majorations et réductions hors RC (dont la réduction Vol SUNU de −20 %), Produit transversal (Essentiel/Classique/Confort/Premium), bordereau comme entité datée, tarification hors automobile (aucun prix exploitable à ce stade), implémentation de l'architecture cible (5.7).
@@ -3057,3 +3273,5 @@ Franchises (`franchise`, `franchise_application`, non branchées au calcul de la
 | 03/10/2026 | Session Tarification, demandes Roger | **RUT v5.2** : lecture par OCR de `Tarif_Ministériel.pdf` (arrêté de 1994 : zones, usages, majorations, durée, sinistralité, bonification, flotte ; directives, taux, franchises, IPT/IAC et accessoires SUNU), décisions de Roger sur les accessoires et le Fichier central, scripts `MAJ_BASE_03102026.sql` et `export_rapprochement.sql` ; anomalies #30 à #34 ; #11, #25, #29 mises à jour ; 3.1bis et 3.8 corrigées | Roger : lire le tarif ministériel d'abord, puis rapprocher les CSV et la base ; mise à jour de la base autorisée. Constats : le « tarif ministériel » est en réalité un fichier de SUNU, l'arrêté dit 2 ans de permis (la base 3), et les taux de durée courte sont réglementaires |
 | 03/10/2026 | Session Tarification | Réconciliation de la v5.2 avant livraison : `MAJ_BASE_03102026.sql` rétabli après une suppression par erreur de ma part (j'avais pris ce script pour un doublon des miens ; il était mieux construit) ; autorisation de Roger limitée aux blocs A et B, le bloc C (permis à 2 ans) étant une proposition ; ZENITHE : c'est `nom`, et non `nom_commercial`, qui valait « SOCAR » ; export complété par `site.production_frais_fixes` | Contrôle croisé du RUT, des scripts et de la base avant livraison ; l'état annoncé du RUT doit correspondre aux fichiers réellement présents |
 | 03/10/2026 | Session Tarification, décisions Roger | **RUT v5.3** : source `Frais_et_accessoires.csv` comparée à la base (annexe F) ; décisions cas par cas consignées (7.6) ; `MAJ_BASE_03102026.sql` réécrit (alignement de 30 lignes par identifiant, Pool, ZENITHE, SUNU selon son manuel, AFRINS 3 150), syntaxe vérifiée ; anomalies #11, #29, #32 résolues par décision, #35 à #37 ajoutées | Roger : « voici les bonnes valeurs » pour la source ; le manuel SUNU et la note PROASSUR prévalent ; Fichier central 1 000 FCFA partout (Pool 500). Le décalage de +500 FCFA était systématique et non un cas isolé |
+| 14/10/2026 | Session Tarification, instruction expresse de Roger | **RUT v5.4** : première mise à jour depuis le 03/10 ; chapitre 8 (noms après la 050, migrations 045 à 070, Tarif 1995 comme référence, catégorie 10, fonctions déployées, surprimes, durée et fractionnement, DR/IAC/IPT/Voyage, taxes, moteur cible, structure de `tarif`, règles de méthode) ; 23 valeurs fautives et 2 valeurs 10A corrigées dans les tableaux du 2.3 ; anomalies #38 à #47 ; statuts de #2, #3, #4, #20, #30 mis à jour ; triple répétition du « principe de lecture » retirée ; v5.3 archivée | Roger : le RUT doit devenir le référentiel unique, miroir de la base ; chaque session ayant travaillé sur la tarification fera remonter ce qui lui manque |
+| 14/10/2026 | Session Tarification, instruction expresse de Roger (« Réglons tout maintenant avant de publier ») | **RUT v5.5** : prime TTC avec DTA et autres frais (3.1, 3.6, 8.9) ; calcul inverse ; carte rose à chaque attestation (3.4) ; DTA sans doublon, anomalie #10 close (3.5) ; références d'article réconciliées (3.1bis, 8.7) ; `fn_frais_accessoires` et énergie dans le relevé des fonctions (8.5) ; Voyage en grille et paliers (8.8) ; sections 8.13 (énergies, puissance, conversion cm³ → CV) et 8.14 (constats) ; anomalies #48 à #52 ; v5.4 archivée | Roger : cinq décisions du 14/10, règle d'énergie, fiche de marché cm³ → CV (arrondi le plus proche, valeur approximative propre à la compagnie 0). Constats : aucune table de zone en base, `p_energie` mal lue par la fonction RC, décalage d'un jour entre Production et `fn_frais_accessoires` |
