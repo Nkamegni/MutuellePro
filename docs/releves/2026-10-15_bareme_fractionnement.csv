@@ -1,0 +1,6 @@
+palier,jours_min,jours_max,pourcentage,date_debut,date_fin,texte_reference
+1-60,1,60,20.00,2000-01-01,2099-12-31,"Tarif Ministériel, Article 6(2)a"
+61-120,61,120,40.00,2000-01-01,2099-12-31,"Tarif Ministériel, Article 6(2)b"
+121-180,121,180,60.00,2000-01-01,2099-12-31,"Tarif Ministériel, Article 6(2)c"
+181-240,181,240,80.00,2000-01-01,2099-12-31,"Tarif Ministériel, Article 6(2)d"
+241-365,241,365,100.00,2000-01-01,2099-12-31,"Tarif Ministériel, Article 6(2)e"

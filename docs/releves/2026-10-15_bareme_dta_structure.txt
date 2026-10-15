@@ -1,0 +1,24 @@
+                                                    Table « site.bareme_dta »
+     Colonne     |          Type          | Collationnement | NULL-able |                       Par défaut                       
+-----------------+------------------------+-----------------+-----------+--------------------------------------------------------
+ id_bareme_dta   | integer                |                 | not null  | nextval('site.bareme_dta_id_bareme_dta_seq'::regclass)
+ genre_vehicule  | character varying(10)  |                 | not null  | 
+ code_categorie  | character varying(20)  |                 |           | 
+ cv_min          | integer                |                 |           | 
+ cv_max          | integer                |                 |           | 
+ montant         | numeric(14,0)          |                 | not null  | 
+ date_debut      | date                   |                 | not null  | 
+ date_fin        | date                   |                 | not null  | '2099-12-31'::date
+ libelle         | character varying(200) |                 | not null  | 
+ texte_reference | character varying(200) |                 | not null  | 
+Index :
+    "bareme_dta_pkey" PRIMARY KEY, btree (id_bareme_dta)
+    "bareme_dta_genre_vehicule_code_categorie_date_debut_idx" btree (genre_vehicule, code_categorie, date_debut)
+Contraintes de vérification :
+    "bareme_dta_cv_check" CHECK (cv_max IS NULL OR cv_min IS NULL OR cv_max >= cv_min)
+    "bareme_dta_dates_check" CHECK (date_fin >= date_debut)
+    "bareme_dta_genre_check" CHECK (genre_vehicule::text = ANY (ARRAY['MOTO2'::character varying, 'MOTO3'::character varying, 'VEHICULE'::character varying]::text[]))
+    "bareme_dta_montant_check" CHECK (montant >= 0::numeric)
+Contraintes de clés étrangères :
+    "bareme_dta_code_categorie_fkey" FOREIGN KEY (code_categorie) REFERENCES tarification.branche_categorie(categorie_code)
+

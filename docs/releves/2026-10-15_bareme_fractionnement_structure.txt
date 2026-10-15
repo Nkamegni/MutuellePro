@@ -1,0 +1,18 @@
+                            Table « site.bareme_fractionnement »
+     Colonne     |          Type          | Collationnement | NULL-able |     Par défaut     
+-----------------+------------------------+-----------------+-----------+--------------------
+ palier          | character varying(20)  |                 | not null  | 
+ jours_min       | integer                |                 | not null  | 
+ jours_max       | integer                |                 | not null  | 
+ pourcentage     | numeric(5,2)           |                 | not null  | 
+ date_debut      | date                   |                 | not null  | 
+ date_fin        | date                   |                 | not null  | '2099-12-31'::date
+ texte_reference | character varying(200) |                 | not null  | 
+Index :
+    "bareme_fractionnement_pkey" PRIMARY KEY, btree (palier)
+Contraintes de vérification :
+    "bareme_fractionnement_dates_check" CHECK (date_fin >= date_debut)
+    "bareme_fractionnement_jours_check" CHECK (jours_max >= jours_min)
+    "bareme_fractionnement_jours_min_check" CHECK (jours_min > 0)
+    "bareme_fractionnement_pourcentage_check" CHECK (pourcentage > 0::numeric AND pourcentage <= 100::numeric)
+
