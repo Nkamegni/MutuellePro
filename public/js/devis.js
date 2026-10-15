@@ -900,6 +900,16 @@
             return;
         }
 
+        // Décision de Roger (13/10/2026) : le décodage n'est disponible qu'à
+        // partir de 10 caractères ("trop de réponses tuent le choix").
+        if (vin.replace(/[^A-Z0-9]/g, '').length < VIN_DECODAGE_MIN) {
+            showToast(currentLang === 'en'
+                ? `VIN decoding requires at least ${VIN_DECODAGE_MIN} characters (17 for a complete VIN).`
+                : `Le décodage du VIN nécessite au moins ${VIN_DECODAGE_MIN} caractères (17 pour un VIN complet).`, 'warning');
+            majMessageVin(true);
+            return;
+        }
+
         const originalLabel = btn.textContent;
         btn.disabled = true;
         btn.textContent = '...';
@@ -1943,3 +1953,120 @@
     }
 
     // LISTENERS DOM ATTACHMENTS
+
+
+// =======================================================================
+// VIN ET IMMATRICULATION : caractères autorisés + raccourci « CH »
+// Ajouté le 13/10/2026 sur demande de Roger.
+//   - Le VIN et l'immatriculation n'acceptent que des lettres et des chiffres :
+//     ni espaces, ni caractères spéciaux ; tout passe en MAJUSCULES.
+//   - Raccourci « CH » : l'immatriculation provisoire d'un véhicule sans
+//     numéro officiel s'écrit « CH » + les 6 derniers caractères du VIN
+//     (VIN 0123456 -> CH123456). Quand le VIN est déjà saisi (6 caractères
+//     au moins) et que l'utilisateur tape « CH » dans le champ
+//     immatriculation, « CH » devient « CH123456 ». Valable pour un VIN
+//     partiel (devis prospectif) : ce sont alors les 6 derniers caractères
+//     SAISIS. Délégation d'événement : indépendant du moment où les champs
+//     sont créés.
+// =======================================================================
+function nettoyerAlphanum(valeur) {
+    return String(valeur || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+}
+
+document.addEventListener('input', function (e) {
+    const champ = e.target;
+    if (!champ || (champ.id !== 'auto_vin' && champ.id !== 'auto_immatriculation')) return;
+
+    const propre = nettoyerAlphanum(champ.value);
+    if (champ.value !== propre) champ.value = propre;
+
+    if (champ.id === 'auto_immatriculation' && propre === 'CH') {
+        const vinChamp = document.getElementById('auto_vin');
+        const vin = nettoyerAlphanum(vinChamp ? vinChamp.value : '');
+        if (vin.length < VIN_SAISIE_MIN) return;
+        champ.value = 'CH' + vin.slice(-6);
+    }
+});
+
+// =======================================================================
+// LONGUEURS DU VIN (décision de Roger, 13/10/2026)
+//   - moins de 6 caractères : refusé (message d'erreur, envoi bloqué) ;
+//   - de 6 à 9 caractères : accepté (devis prospectif, raccourci « CH »),
+//     mais AUCUN décodage ;
+//   - dès 10 caractères : le bouton « Décoder » est disponible ;
+//   - 17 caractères : VIN complet.
+// Un message d'information sous le champ devient rouge quand le champ,
+// incomplet (moins de 10 caractères), perd le focus.
+// =======================================================================
+const VIN_SAISIE_MIN = 6;
+const VIN_DECODAGE_MIN = 10;
+
+function vinNormalise() {
+    const c = document.getElementById('auto_vin');
+    return c ? c.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '';
+}
+
+function majMessageVin(rouge) {
+    const champ = document.getElementById('auto_vin');
+    if (!champ) return;
+    let msg = document.getElementById('vin-info-longueur');
+    if (!msg) {
+        msg = document.createElement('p');
+        msg.id = 'vin-info-longueur';
+        msg.className = 'text-[10px] mt-1';
+        (champ.parentElement || champ).insertAdjacentElement('afterend', msg);
+    }
+    const n = vinNormalise().length;
+    const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
+    let texte;
+    if (n === 0) {
+        texte = en ? `Complete VIN: 17 characters. Decoding from ${VIN_DECODAGE_MIN} characters.`
+                   : `VIN complet : 17 caractères. Décodage à partir de ${VIN_DECODAGE_MIN} caractères.`;
+    } else if (n < VIN_SAISIE_MIN) {
+        texte = en ? `A VIN needs at least ${VIN_SAISIE_MIN} characters (${n} entered).`
+                   : `Un VIN doit comporter au moins ${VIN_SAISIE_MIN} caractères (${n} saisi${n > 1 ? 's' : ''}).`;
+    } else if (n < VIN_DECODAGE_MIN) {
+        texte = en ? `${n} characters: accepted for a prospective quote, but decoding needs ${VIN_DECODAGE_MIN}.`
+                   : `${n} caractères : accepté pour un devis prospectif, mais le décodage demande ${VIN_DECODAGE_MIN} caractères.`;
+    } else if (n < 17) {
+        texte = en ? `${n} characters: decoding available (17 for a complete VIN).`
+                   : `${n} caractères : décodage disponible (17 pour un VIN complet).`;
+    } else {
+        texte = en ? 'Complete VIN.' : 'VIN complet.';
+    }
+    msg.textContent = texte;
+    const alerte = rouge && n > 0 && n < VIN_DECODAGE_MIN;
+    // Style en ligne : tailwind.css est compilé localement et ne contient
+    // que les classes présentes dans les fichiers analysés ; une classe
+    // ajoutée par script peut donc ne pas exister (cause du message jamais rouge).
+    msg.style.color = alerte ? '#dc2626' : '#6b7280';
+    msg.style.fontWeight = alerte ? '700' : '400';
+}
+
+document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'auto_vin') majMessageVin(false);
+});
+// focusout remonte (contrairement à blur) : délégation possible
+document.addEventListener('focusout', function (e) {
+    if (e.target && e.target.id === 'auto_vin') majMessageVin(true);
+});
+document.addEventListener('DOMContentLoaded', function () { majMessageVin(false); });
+
+// Bloque l'envoi si un VIN est saisi avec moins de 6 caractères.
+// Phase de capture : s'exécute avant le gestionnaire d'envoi de main.js.
+document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'devisFormNormalized') return;
+    const n = vinNormalise().length;
+    if (n > 0 && n < VIN_SAISIE_MIN) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        majMessageVin(true);
+        const champ = document.getElementById('auto_vin');
+        if (champ) champ.focus();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'en'
+                ? `The VIN must have at least ${VIN_SAISIE_MIN} characters (or be left empty).`
+                : `Le VIN doit comporter au moins ${VIN_SAISIE_MIN} caractères (ou rester vide).`, 'error');
+        }
+    }
+}, true);
