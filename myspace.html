@@ -45,17 +45,94 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.10.06-b
-    Dernière modification : 06/10/2026
+    Version actuelle    : 2026.10.14-a
+    Dernière modification : 14/10/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
 
     Résumé de cette version :
-      - Production & Souscription (session « Production & Souscription »,
-        2026.10.06-b, INCLUT intégralement la 2026.10.06-a ci-dessous) :
-        décodage VIN -- une mini-fiche par véhicule trouvé (marque, modèle,
-        VIN, énergie, puissance, confiance) dans un conteneur à ascenseurs,
-        5 fiches par page, pagination au-delà ; « Aucun ne convient »
-        ramène à la saisie manuelle. VERSION_ECRAN inchangée (2026-09-30-a).
+      - Production & Souscription (14/10/2026, Roger) : rétablissement des
+        mini-fiches du décodage VIN (une fiche par véhicule trouvé : marque,
+        modèle, VIN, énergie · puissance, confiance ; 5 par page avec
+        pagination ; « Aucun ne convient »), perdues au déploiement du
+        13/10/2026 à 20h11 parce que la lignée 2026.10.13 était bâtie sur la
+        2026.10.06-a. Code repris de la 2026.10.06-b ; les fiches sont aussi
+        remises à zéro dès l'entrée dans deduireVinMouvement (VIN devenu trop
+        court). Aucun autre changement.
+        FICHIER UNIQUE : cette version CUMULE tout (2026.10.13-a à -h et les
+        mini-fiches) ; aucune autre copie n'est à conserver.
+
+    Résumé de la version 2026.10.13-h :
+      - Configurateur de colonnes, retouches (13/10/2026, 20h53, Roger) :
+        bord droit de la liste exactement aligné sur celui du bouton
+        (le repère tient compte de la barre de défilement de la page) ; un peu
+        d'air à gauche et à droite des items et entre case et libellé.
+        FICHIER UNIQUE : cette version CUMULE tout (-d, -e, -f, -g) ; aucune
+        autre copie n'est à conserver.
+
+    Résumé de la version 2026.10.13-g :
+      - Configurateur de colonnes revu (13/10/2026, 20h00, Roger) : bouton
+        « ☰ Configurer » dans la barre d'outils (à droite, comme Filtres /
+        Fiches / Exporter) -- la gouttière qui rétrécissait la grille est
+        supprimée ; sélection d'une ou plusieurs lignes puis boutons Monter /
+        Descendre en tête de liste (plus de flèches par ligne) ; cases à
+        cocher alignées à gauche, sans marge, largeur de l'item le plus long,
+        ascenseur vertical seulement ; corps 11 px ; titre « Configuration
+        de la grille — <nom> ». Infobulle du logo : « myspace.html <version> ».
+
+    Résumé de la version 2026.10.13-f :
+      - Grilles de liste (13/10/2026, 19h03, Roger) : bouton ☰ sur la bordure
+        droite de l'en-tête de chaque grille (Prospects, Clients, Personnel,
+        Partenaires, Renouvellements, Émissions, Mes contrats, Journal
+        no-reply) : afficher / masquer / ordonner les colonnes, choix mémorisé
+        par navigateur (localStorage ; à terme dans le profil). La vue
+        Fiches montre les mêmes colonnes visibles dans l'ordre logique FIGÉ
+        (jamais l'ordre de la grille). Export CSV inchangé (toutes les
+        colonnes). Bouton retiré d'une grille dont les lignes ne
+        correspondent pas aux colonnes déclarées.
+
+    Résumé de la version 2026.10.13-e :
+      - Suivi de version (13/10/2026, 18h40, Roger) : infobulle « Version
+        AAAA.MM.JJ-x » sur le logo de l'en-tête (attribut title de l'image).
+        ATTENTION : ce numéro est écrit à la main dans le <img class="logo">,
+        en plus de la ligne « Version actuelle » ci-dessus : changer les deux
+        à chaque version.
+
+    Résumé de la version 2026.10.13-d :
+      - Production & Souscription (13/10/2026, 17h48, Roger) : raccourci « CH »
+        corrigé : l'immatriculation devient « CH » + 6 derniers caractères du
+        VIN (VIN 0123456 -> CH123456). VIN et immatriculation n'acceptent
+        plus que A-Z et 0-9 (ni espaces ni caractères spéciaux), toujours en
+        majuscules.
+
+    Résumé de la version 2026.10.13-c :
+      - Production & Souscription (13/10/2026, 15h03, Roger) : pour les
+        branches AUTRES QUE l'automobile, le champ VIN devient
+        « Identifiant du risque » (nom du risque + clé numérique, 10
+        caractères au moins). Laissé vide, il est CALCULÉ À
+        L'ENREGISTREMENT PAR LE SERVEUR (génération proposée par document,
+        non encore appliquée) ; saisi, il doit avoir 10 à 17 caractères
+        A-Z/0-9. Repris à l'identique pour les avenants et renouvellements.
+
+    Résumé de la version 2026.10.13-b :
+      - Production & Souscription (13/10/2026, 14h50, Roger) : VIN
+        obligatoire et d'au moins 10 caractères pour la branche
+        AUTOMOBILE (recommandations légales) : à l'enregistrement, NAF et
+        REN exigent un VIN de 10 à 17 caractères ; un avenant peut le
+        laisser vide (repris du dernier mouvement) mais s'il est saisi il
+        doit avoir 10 caractères au moins. Contrôle de l'écran seulement :
+        le même contrôle côté serveur et en base est soumis par document.
+
+    Résumé de la version 2026.10.13-a :
+      - Production & Souscription (13/10/2026, demandes de Roger) :
+        (1) décodage VIN : au moins 10 caractères (règle de Roger du
+        07/10, alignée sur le serveur) ; en dessous, message local sans
+        appel réseau, saisie manuelle des caractéristiques possible ;
+        (2) raccourci « CH » : taper CH dans Immatriculation, VIN déjà
+        saisi, y met les 6 derniers caractères du VIN (usage courant du
+        numéro de châssis comme immatriculation). Modifiable ensuite.
+        Aucun changement de route ni de base.
+
+    Résumé de la version précédente (2026.10.06-a) :
       - Production & Souscription : valeur par défaut du champ
         « Expiration » corrigée à effet + 1 an - 1 jour (dernier jour
         couvert, vocabulaire de Roger du 03/10/2026) au lieu d'effet +
@@ -69,7 +146,7 @@
       - Production & Souscription : proposition automatique des
         accessoires dans « Nouveau Mouvement » (compagnie, branche,
         prime nette et durée), calculée par le serveur
-        (tarification.fn_frais_accessoires), reprise tant que le gestionnaire
+        (tarification.fn_accessoires), reprise tant que le gestionnaire
         ne l'a pas modifiée à la main, avec un lien pour y revenir
 
     Résumé de cette version :
@@ -725,6 +802,24 @@
        Exporter (plus de select séparé, redondant à l'écran). */
     .menu-separateur-csv { display:none; position:absolute; margin-top:2px; background:white; border:1px solid var(--border); border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.12); z-index:60; min-width:170px; overflow:hidden; }
     .menu-separateur-csv.ouvert { display:block; }
+    /* 13/10/2026 -- configurateur de colonnes des grilles. Corps 11 px
+       (2 points sous le standard de 13 px). Les règles globales
+       « input { width:100%; padding; margin-bottom } » et « label » sont
+       neutralisées ici : cases alignées, sans marge à gauche ni entre la
+       case et le libellé. Largeur = item le plus long ; ascenseur vertical
+       seulement. */
+    #menu-colonnes { position:fixed; z-index:9000; width:max-content; min-width:200px; max-width:min(92vw, 440px); max-height:70vh; overflow-y:auto; overflow-x:hidden; background:white; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.18); padding:8px 0; font-size:11px; text-align:left; box-sizing:border-box; }
+    #menu-colonnes .titre-menu-col { padding:2px 10px 6px; font-weight:700; color:var(--navy); white-space:nowrap; }
+    #menu-colonnes .note-menu-col { padding:0 10px 6px; color:var(--gray); font-size:10px; }
+    #menu-colonnes .actions-menu-col { display:flex; gap:4px; padding:0 10px 6px; }
+    #menu-colonnes button { font-size:10px; padding:4px 8px; border:1px solid var(--border); border-radius:5px; background:white; color:var(--navy); cursor:pointer; white-space:nowrap; }
+    #menu-colonnes button:disabled { opacity:0.35; cursor:default; }
+    #menu-colonnes .ligne-colonne { display:flex; align-items:center; justify-content:flex-start; margin:0; padding:1px 12px 1px 10px; text-align:left; }
+    #menu-colonnes .ligne-colonne.choisie { background:#ede9fe; }
+    #menu-colonnes .ligne-colonne.masquee .texte-colonne { color:var(--gray); }
+    #menu-colonnes .ligne-colonne input[type="checkbox"] { flex:0 0 14px; width:14px; height:14px; min-width:14px; margin:0 6px 0 0; padding:0; border:none; accent-color:var(--purple); cursor:pointer; }
+    #menu-colonnes .texte-colonne { flex:1 1 auto; margin:0; padding:3px 0; text-align:left; white-space:nowrap; cursor:pointer; user-select:none; }
+    #menu-colonnes .pied-menu-col { border-top:1px solid var(--border); margin-top:6px; padding:6px 10px 0; }
     .menu-separateur-csv button { display:block; width:100%; text-align:left; padding:8px 12px; font-size:11px; border:none; background:white; cursor:pointer; color:var(--navy); }
     .menu-separateur-csv button:hover { background:#f8fafc; }
     .defilement-tableau table { border-radius:0; box-shadow:none; } /* coins arrondis perdus dans le défilement : reportés sur l'enveloppe */
@@ -1018,7 +1113,7 @@
 <div id="pied-impression">Document imprimé le <span id="pied-impression-date"></span></div>
 
 <header>
-    <h1><img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="logo"> Mon Espace</h1>
+    <h1><img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="logo" title="myspace.html 2026.10.14-a"> Mon Espace</h1>
     <div style="display:flex; align-items:center;">
         <button id="btn-hamburger" onclick="toggleMenuMobile()" style="display:none; background:none; border:1px solid #475569; color:white; width:34px; height:34px; border-radius:8px; font-size:16px; cursor:pointer; margin-right:8px;">☰</button>
         <span id="identite"></span>
@@ -2766,10 +2861,222 @@
         </div>`;
     }
 
+    // ------------------------------------------------------------------
+    // Disposition des colonnes (13/10/2026, Roger) -- bouton ☰ sur la
+    // bordure droite de l'en-tête de chaque grille de liste : afficher,
+    // masquer et ORDONNER les colonnes. La vue Fiches montre les mêmes
+    // colonnes visibles mais dans l'ordre logique figé du code (jamais
+    // l'ordre choisi pour la grille). Mémorisé par navigateur
+    // (localStorage) pour aujourd'hui ; à terme, dans le profil de
+    // l'utilisateur. Les lignes du corps sont produites par chaque page
+    // dans l'ordre déclaré des colonnes : la disposition est appliquée sur
+    // le DOM déjà produit (cellules déplacées / masquées), et abandonnée --
+    // bouton retiré -- si le nombre de cellules d'une ligne ne correspond
+    // pas aux colonnes déclarées (jamais de grille désalignée).
+    // L'export CSV reste complet (toutes les colonnes) ; l'impression
+    // reprend ce qui est affiché.
+    const PREFIXE_STOCKAGE_DISPOSITION = 'myspace.disposition.';
+    const colonnesFixesParTableau = {};
+
+    function lireDisposition(nomTableau) {
+        try {
+            const j = JSON.parse(localStorage.getItem(PREFIXE_STOCKAGE_DISPOSITION + nomTableau) || 'null');
+            if (j && typeof j === 'object') return { ordre: Array.isArray(j.ordre) ? j.ordre : [], masquees: Array.isArray(j.masquees) ? j.masquees : [] };
+        } catch (err) { /* stockage indisponible ou illisible : disposition par défaut */ }
+        return { ordre: [], masquees: [] };
+    }
+
+    function ecrireDisposition(nomTableau, disposition) {
+        try { localStorage.setItem(PREFIXE_STOCKAGE_DISPOSITION + nomTableau, JSON.stringify(disposition)); } catch (err) { /* sans conséquence : valable pour cette session seulement */ }
+    }
+
+    // Colonnes déclarées, dans l'ordre choisi par l'utilisateur (les colonnes
+    // nouvelles ou inconnues du choix mémorisé suivent, dans l'ordre déclaré).
+    function colonnesDansOrdre(nomTableau) {
+        const colonnes = colonnesEnregistrees[nomTableau] || [];
+        const parCle = new Map(colonnes.map((c) => [c.cle, c]));
+        const resultat = [];
+        lireDisposition(nomTableau).ordre.forEach((cle) => { if (parCle.has(cle)) { resultat.push(parCle.get(cle)); parCle.delete(cle); } });
+        colonnes.forEach((c) => { if (parCle.has(c.cle)) resultat.push(c); });
+        return resultat;
+    }
+
+    function colonneEstMasquee(nomTableau, cle) {
+        return lireDisposition(nomTableau).masquees.includes(cle);
+    }
+
+    // Fiches : colonnes visibles, ordre déclaré (figé), jamais l'ordre de la grille.
+    function colonnesPourFiches(nomTableau, colonnes) {
+        const visibles = colonnes.filter((c) => !colonneEstMasquee(nomTableau, c.cle));
+        return visibles.length ? visibles : colonnes;
+    }
+
+    function dispositionPersonnalisee(nomTableau) {
+        const colonnes = colonnesEnregistrees[nomTableau] || [];
+        const cles = colonnes.map((c) => c.cle);
+        const ordre = colonnesDansOrdre(nomTableau).map((c) => c.cle);
+        return ordre.some((cle, i) => cle !== cles[i]) || colonnes.some((c) => colonneEstMasquee(nomTableau, c.cle));
+    }
+
+    // Applique la disposition aux lignes pas encore traitées (data-disp).
+    // Renvoie false si la structure ne correspond pas aux colonnes déclarées.
+    function appliquerDispositionColonnes(nomTableau) {
+        const idConteneur = idConteneurParTableau[nomTableau];
+        const conteneur = idConteneur ? document.getElementById(idConteneur) : null;
+        const table = conteneur ? conteneur.querySelector('.defilement-tableau table') : null;
+        if (!table) return true;
+        const colonnes = colonnesEnregistrees[nomTableau] || [];
+        const fixes = colonnesFixesParTableau[nomTableau] || { avant: 0, apres: 0 };
+        const n = colonnes.length, total = fixes.avant + n + fixes.apres;
+        const lignes = [...table.rows].filter((r) => !r.dataset.disp && ![...r.cells].some((c) => c.colSpan > 1));
+        if (lignes.some((r) => r.cells.length !== total)) return false;
+        const ordre = colonnesDansOrdre(nomTableau);
+        const position = new Map(colonnes.map((c, i) => [c.cle, i]));
+        const masquees = new Set(lireDisposition(nomTableau).masquees);
+        lignes.forEach((r) => {
+            const cellules = [...r.cells];
+            const apres = cellules[fixes.avant + n] || null;
+            const cellulesColonnes = cellules.slice(fixes.avant, fixes.avant + n);
+            ordre.forEach((c) => {
+                const cellule = cellulesColonnes[position.get(c.cle)];
+                r.insertBefore(cellule, apres);
+                if (masquees.has(c.cle)) { cellule.style.display = 'none'; cellule.dataset.masqueeCol = '1'; }
+                else if (cellule.dataset.masqueeCol) { cellule.style.display = ''; delete cellule.dataset.masqueeCol; }
+            });
+            r.dataset.disp = '1';
+        });
+        return true;
+    }
+
+    function texteBrut(html) {
+        const el = document.createElement('div');
+        el.innerHTML = html;
+        return el.textContent;
+    }
+
+    // Titres lisibles des grilles pour l'en-tête du configurateur.
+    const TITRES_GRILLES = {
+        'prospects': 'Prospects', 'clients': 'Clients', 'journal-no-reply': 'Journal no-reply',
+        'renouvellements': 'Renouvellements', 'emissions': 'Émissions', 'mes-contrats': 'Mes contrats',
+        'personnel': 'Personnel', 'partenaires': 'Partenaires',
+    };
+    let nomTableauMenuColonnes = null;
+    let selectionMenuColonnes = new Set();
+
+    function fermerMenuColonnes() {
+        const menu = document.getElementById('menu-colonnes');
+        if (menu) menu.remove();
+        nomTableauMenuColonnes = null;
+        selectionMenuColonnes = new Set();
+    }
+
+    function ouvrirMenuColonnes(nomTableau, bouton) {
+        if (nomTableauMenuColonnes === nomTableau) { fermerMenuColonnes(); return; }
+        fermerMenuColonnes();
+        nomTableauMenuColonnes = nomTableau;
+        const menu = document.createElement('div');
+        menu.id = 'menu-colonnes';
+        menu.onclick = (e) => {
+            e.stopPropagation();
+            const cible = e.target.closest('[data-action]');
+            if (!cible || cible.disabled) return;
+            const action = cible.dataset.action;
+            if (action === 'selection') basculerSelectionColonne(cible.dataset.cle);
+            else if (action === 'monter') deplacerSelection(nomTableauMenuColonnes, -1);
+            else if (action === 'descendre') deplacerSelection(nomTableauMenuColonnes, 1);
+            else if (action === 'reinitialiser') reinitialiserDisposition(nomTableauMenuColonnes);
+        };
+        menu.onchange = (e) => {
+            const c = e.target;
+            if (c && c.dataset && c.dataset.action === 'visible') basculerColonneVisible(nomTableauMenuColonnes, c.dataset.cle);
+        };
+        const r = bouton.getBoundingClientRect();
+        menu.style.top = Math.round(r.bottom + 4) + 'px';
+        menu.style.right = Math.max(0, Math.round(document.documentElement.clientWidth - r.right)) + 'px';
+        document.body.appendChild(menu);
+        rafraichirMenuColonnes();
+    }
+
+    function rafraichirMenuColonnes() {
+        const menu = document.getElementById('menu-colonnes');
+        const nomTableau = nomTableauMenuColonnes;
+        if (!menu || !nomTableau) return;
+        const enFiches = etatTableau(nomTableau).vue === 'fiches';
+        const ordre = colonnesDansOrdre(nomTableau);
+        const attr = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        const aucune = selectionMenuColonnes.size === 0;
+        const lignes = ordre.map((c) => {
+            const visible = !colonneEstMasquee(nomTableau, c.cle);
+            const choisie = selectionMenuColonnes.has(c.cle);
+            return `<div class="ligne-colonne${choisie ? ' choisie' : ''}${visible ? '' : ' masquee'}">
+                <input type="checkbox" ${visible ? 'checked' : ''} data-action="visible" data-cle="${attr(c.cle)}" title="Afficher ou masquer cette colonne">
+                <span class="texte-colonne" data-action="selection" data-cle="${attr(c.cle)}" title="Cliquer pour sélectionner la ligne (sélection multiple possible)">${echapperHtml(texteBrut(c.libelle))}</span>
+            </div>`;
+        }).join('');
+        menu.innerHTML = `<div class="titre-menu-col">Configuration de la grille${TITRES_GRILLES[nomTableau] ? ' — ' + echapperHtml(TITRES_GRILLES[nomTableau]) : ''}</div>
+            ${enFiches
+                ? '<div class="note-menu-col">En vue Fiches, l\'ordre des champs est fixe : seul l\'affichage s\'applique.</div>'
+                : `<div class="actions-menu-col"><button data-action="monter" ${aucune ? 'disabled' : ''} title="Monter les lignes sélectionnées">▲ Monter</button><button data-action="descendre" ${aucune ? 'disabled' : ''} title="Descendre les lignes sélectionnées">▼ Descendre</button></div>`}
+            ${lignes}
+            <div class="pied-menu-col"><button data-action="reinitialiser">↺ Rétablir l'affichage d'origine</button></div>`;
+    }
+
+    function basculerSelectionColonne(cle) {
+        if (selectionMenuColonnes.has(cle)) selectionMenuColonnes.delete(cle); else selectionMenuColonnes.add(cle);
+        rafraichirMenuColonnes();
+    }
+
+    function enregistrerEtRedessiner(nomTableau, disposition) {
+        ecrireDisposition(nomTableau, disposition);
+        rafraichirTableau(nomTableau);
+        rafraichirMenuColonnes();
+    }
+
+    function basculerColonneVisible(nomTableau, cle) {
+        const disposition = lireDisposition(nomTableau);
+        const colonnes = colonnesEnregistrees[nomTableau] || [];
+        const deja = disposition.masquees.includes(cle);
+        if (deja) {
+            disposition.masquees = disposition.masquees.filter((k) => k !== cle);
+        } else {
+            const visibles = colonnes.filter((c) => !disposition.masquees.includes(c.cle));
+            if (visibles.length <= 1) { rafraichirMenuColonnes(); return; } // au moins une colonne visible
+            disposition.masquees.push(cle);
+        }
+        disposition.ordre = colonnesDansOrdre(nomTableau).map((c) => c.cle);
+        enregistrerEtRedessiner(nomTableau, disposition);
+    }
+
+    // Déplace d'un cran toutes les lignes sélectionnées (blocs contigus
+    // conservés, arrêt au bord de la liste).
+    function deplacerSelection(nomTableau, sens) {
+        if (!selectionMenuColonnes.size) return;
+        const disposition = lireDisposition(nomTableau);
+        const ordre = colonnesDansOrdre(nomTableau).map((c) => c.cle);
+        const choisie = (cle) => selectionMenuColonnes.has(cle);
+        if (sens < 0) {
+            for (let i = 1; i < ordre.length; i++) if (choisie(ordre[i]) && !choisie(ordre[i - 1])) [ordre[i], ordre[i - 1]] = [ordre[i - 1], ordre[i]];
+        } else {
+            for (let i = ordre.length - 2; i >= 0; i--) if (choisie(ordre[i]) && !choisie(ordre[i + 1])) [ordre[i], ordre[i + 1]] = [ordre[i + 1], ordre[i]];
+        }
+        disposition.ordre = ordre;
+        enregistrerEtRedessiner(nomTableau, disposition);
+    }
+
+    function reinitialiserDisposition(nomTableau) {
+        try { localStorage.removeItem(PREFIXE_STOCKAGE_DISPOSITION + nomTableau); } catch (err) { /* rien */ }
+        rafraichirTableau(nomTableau);
+        rafraichirMenuColonnes();
+    }
+
+    document.addEventListener('click', fermerMenuColonnes);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fermerMenuColonnes(); });
+
     function creerRenduTableau(nomTableau, { obtenirDonnees, colonnes, genererLignes, genererFiches, idConteneur, avant = '', apres = '', colgroup = '', messageVide = 'Aucune donnée.', totaux = null }) {
         colonnesEnregistrees[nomTableau] = colonnes;
         obtenirDonneesEnregistrees[nomTableau] = obtenirDonnees;
         idConteneurParTableau[nomTableau] = idConteneur;
+        colonnesFixesParTableau[nomTableau] = { avant: (avant.match(/<th/g) || []).length, apres: (apres.match(/<th/g) || []).length };
         function traiter() {
             const brutes = obtenirDonnees();
             const traitees = trierEtFiltrerDonnees(brutes, colonnes, nomTableau);
@@ -2779,7 +3086,7 @@
         function contenuCorps(page, total) {
             const etat = etatTableau(nomTableau);
             if (etat.vue === 'fiches') {
-                return total ? (genererFiches ? genererFiches(page) : genererFichesGenerique(colonnes, page)) : '<p class="vide">Aucun résultat pour ce filtre.</p>';
+                return total ? (genererFiches ? genererFiches(page) : genererFichesGenerique(colonnesPourFiches(nomTableau, colonnes), page)) : '<p class="vide">Aucun résultat pour ce filtre.</p>';
             }
             return total ? genererLignes(page) : `<tr><td colspan="20" class="vide">Aucun résultat pour ce filtre.</td></tr>`;
         }
@@ -2790,6 +3097,7 @@
             if (!brutes.length) { conteneur.innerHTML = `<p class="vide">${messageVide}</p>`; return; }
 
             const etat = etatTableau(nomTableau);
+            const boutonColonnes = `<button id="btn-colonnes-${nomTableau}" onclick="event.stopPropagation(); ouvrirMenuColonnes('${nomTableau}', this)" title="Configuration de la grille : afficher, masquer et ordonner les colonnes" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; margin-left:auto;">☰ Configurer</button>`;
             const barreOutils = `<div style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
                 <button onclick="ouvrirPanneauFiltres('${nomTableau}')" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Filtres</button>
                 <div style="display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
@@ -2800,6 +3108,7 @@
                     <button onclick="exporterTableauCsv('${nomTableau}')" title="Exporter en CSV" style="font-size:11px; padding:6px 6px 6px 12px; border:1px solid var(--border); border-right:none; border-radius:6px 0 0 6px; background:white; cursor:pointer;">⬇️ Exporter CSV « <span id="csv-sep-${nomTableau}">${echapperHtml(separateurCsvTableaux)}</span> »</button><button onclick="event.stopPropagation(); basculerMenuCsv('${nomTableau}')" title="Choisir le séparateur" style="font-size:9px; padding:6px 8px; border:1px solid var(--border); border-radius:0 6px 6px 0; background:white; cursor:pointer; color:var(--gray);">▾</button><div id="csv-menu-${nomTableau}" class="menu-separateur-csv" style="top:100%; right:0;"><button onclick="choisirSeparateurCsv('${nomTableau}', ';')">CSV « ; » (français)</button><button onclick="choisirSeparateurCsv('${nomTableau}', ',')">CSV « , » (anglais)</button></div>
                 </div>
                 <button onclick="imprimerTableau('${nomTableau}')" title="Imprime toutes les lignes filtrées" style="font-size:11px; padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🖨️ Imprimer</button>
+                ${boutonColonnes}
             </div>`;
 
             const bandeauFiltres = construireBandeauFiltresActifs(nomTableau, colonnes);
@@ -2820,7 +3129,12 @@
                 // débordement de toute la page sur petit écran. Ici, chaque
                 // tableau porte son propre défilement, quel que soit le
                 // conteneur qui l'accueille -- aucune liste à maintenir.
-                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div>${blocTotaux}<div class="defilement-tableau"><table>${colgroup}${thead}<tbody id="tbody-${nomTableau}">${corps}</tbody></table></div><div id="pagination-${nomTableau}">${pagination}</div>`;
+                conteneur.innerHTML = `${barreOutils}<div id="filtre-actif-${nomTableau}">${bandeauFiltres}</div>${blocTotaux}<div class="defilement-tableau"><table>${dispositionPersonnalisee(nomTableau) ? '' : colgroup}${thead}<tbody id="tbody-${nomTableau}">${corps}</tbody></table></div><div id="pagination-${nomTableau}">${pagination}</div>`;
+                if (!appliquerDispositionColonnes(nomTableau)) {
+                    // structure incohérente : grille laissée dans l'ordre d'origine, bouton retiré
+                    const b = document.getElementById(`btn-colonnes-${nomTableau}`);
+                    if (b) b.remove();
+                }
             }
         }
 
@@ -2836,7 +3150,7 @@
                 if (conteneurFiches) conteneurFiches.innerHTML = corps;
             } else {
                 const tbody = document.getElementById(`tbody-${nomTableau}`);
-                if (tbody) tbody.innerHTML = corps;
+                if (tbody) { tbody.innerHTML = corps; appliquerDispositionColonnes(nomTableau); }
             }
 
             const paginationDiv = document.getElementById(`pagination-${nomTableau}`);
@@ -3415,7 +3729,7 @@
     // "modifié", sans reconstruire toute la bulle (préserve la position
     // de défilement et l'état des autres messages du fil).
     function mettreAJourMessageModifie(message) {
-        const bulle = document.getElementById(`bulle-message-${message.id_message_dossier}`);
+        const bulle = document.getElementById(`bulle-message-${message.id_message}`);
         if (!bulle) return;
         bulle.dataset.contenuBrut = message.contenu;
         const zone = bulle.querySelector('.zone-contenu-message');
@@ -3824,7 +4138,7 @@
         const delai = prochaineExpiration - Date.now();
         if (delai <= 0) return; // ne devrait pas arriver (le bouton n'aurait pas dû être affiché), sécurité silencieuse
         setTimeout(() => {
-            const bloc = document.getElementById(`bloc-corriger-${m.id_message_dossier}`);
+            const bloc = document.getElementById(`bloc-corriger-${m.id_message}`);
             if (bloc) bloc.remove();
         }, delai);
     }
@@ -3852,10 +4166,10 @@
         // proprement (séparateur " · " compris) quand le délai de grâce
         // expire, sans attendre un rechargement.
         const boutonCorriger = (estMoi && !messageBloqueCorrectionApresLecture(m))
-            ? ` <span id="bloc-corriger-${m.id_message_dossier}"> · <button onclick="basculerEditionMessage('${m.type_auteur}', ${m.id_message_dossier})" style="border:none; background:none; cursor:pointer; padding:0; color:inherit; text-decoration:underline; font-size:10px; opacity:0.85;">Corriger</button></span>`
+            ? ` <span id="bloc-corriger-${m.id_message}"> · <button onclick="basculerEditionMessage('${m.type_auteur}', ${m.id_message})" style="border:none; background:none; cursor:pointer; padding:0; color:inherit; text-decoration:underline; font-size:10px; opacity:0.85;">Corriger</button></span>`
             : '';
         if (estMoi && boutonCorriger) programmerMasquageCorrection(m);
-        return `<div id="bulle-message-${m.id_message_dossier}" data-contenu-brut="${echapperHtml(m.contenu)}" style="display:flex; justify-content:${estMoi ? 'flex-end' : 'flex-start'}; margin-bottom:8px;">
+        return `<div id="bulle-message-${m.id_message}" data-contenu-brut="${echapperHtml(m.contenu)}" style="display:flex; justify-content:${estMoi ? 'flex-end' : 'flex-start'}; margin-bottom:8px;">
             <div style="max-width:70%; background:${estMoi ? 'var(--purple)' : '#f1f5f9'}; color:${estMoi ? 'white' : 'var(--navy)'}; border-radius:12px; padding:8px 12px; font-size:13px;">
                 ${etiquetteAuteur}
                 <div class="zone-contenu-message" style="word-break:break-word;">${rendreContenuMessage(m.contenu)}</div>
@@ -7488,8 +7802,8 @@
             <p id="mvt-echeance-anniversaire" style="font-size:10px; color:var(--gray); margin:-4px 0 8px;"></p>`, 'mvt-section-dates')}
 
             ${section('Identification du risque — véhicule', `<div style="${grille}">
-                ${champProduction('N° VIN (série / châssis)', `<div style="display:flex; gap:6px;"><input id="mvt-vin" maxlength="17" oninput="this.value = this.value.toUpperCase(); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION} flex:1; font-family:monospace;"><button onclick="deduireVinMouvement()" title="Décoder le VIN (même service que le site public)" style="font-size:11px; padding:0 10px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Décoder</button></div>`)}
-                ${champProduction('Immatriculation', `<input id="mvt-immatriculation" oninput="this.value = this.value.toUpperCase(); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`)}
+                ${champProduction('N° VIN (série / châssis)', `<div style="display:flex; gap:6px;"><input id="mvt-vin" maxlength="17" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION} flex:1; font-family:monospace;"><button onclick="deduireVinMouvement()" title="Décoder le VIN (même service que le site public)" style="font-size:11px; padding:0 10px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Décoder</button></div>`)}
+                ${champProduction('Immatriculation', `<input id="mvt-immatriculation" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); raccourciChassisImmat(this); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`)}
                 ${champProduction('Catégorie (classement CIMA)', `<select id="mvt-categorie" onchange="planifierVerificationDta(); planifierPropositionAccessoires(); planifierPropositionFractionnement()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.categories_automobile, 'categorie_code', (c) => `${echapperHtml(c.categorie_code)} — ${echapperHtml(c.categorie_libelle)}`, '')}</select>`)}
                 ${champProduction('Genre du véhicule', `<select id="mvt-genre" onchange="planifierVerificationDta(); basculerCvCylindree()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${Object.entries(LIBELLES_GENRE_VEHICULE).map(([code, l]) => `<option value="${code}">${l}</option>`).join('')}</select>`)}
                 ${champProduction('Puissance fiscale (CV)', `<input id="mvt-cv" type="number" min="1" step="1" oninput="planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`, 'mvt-bloc-cv')}
@@ -7500,7 +7814,7 @@
             <div id="mvt-vin-resultat" style="font-size:11px; margin:-2px 0 8px;"></div>
             <div id="mvt-vin-candidats"></div>`, 'mvt-section-vehicule', true)}
 
-            ${section('Identification du risque', champProduction('Caractérisation du risque (bien ou personnes assurés)', `<textarea id="mvt-caracterisation" rows="2" style="${STYLE_CHAMP_PRODUCTION} resize:vertical;"></textarea>`), 'mvt-section-risque', true)}
+            ${section('Identification du risque', champProduction('Caractérisation du risque (bien ou personnes assurés)', `<textarea id="mvt-caracterisation" rows="2" style="${STYLE_CHAMP_PRODUCTION} resize:vertical;"></textarea>`) + champProduction('Identifiant du risque (nom du risque + clé numérique, 10 caractères au moins)', `<input id="mvt-identifiant-risque" maxlength="17" placeholder="laisser vide : calculé automatiquement à l'enregistrement" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="${STYLE_CHAMP_PRODUCTION} font-family:monospace;">`), 'mvt-section-risque', true)}
 
             ${section('Droit de Timbre Automobile (DTA)', `
                 <div id="mvt-dta-resultat" style="font-size:12px; margin:0 0 8px;">Renseignez le VIN ou l'immatriculation, le genre et la puissance.</div>
@@ -7685,7 +7999,7 @@
             // Risque connu repris (modifiable : changement de véhicule, d'immatriculation…)
             const r = data.risque || {};
             const poser = (id, v) => { const el = document.getElementById(id); if (el && v !== null && v !== undefined) el.value = v; };
-            poser('mvt-vin', r.vin); poser('mvt-immatriculation', r.immatriculation); poser('mvt-genre', r.genre_vehicule);
+            poser('mvt-vin', r.vin); poser('mvt-identifiant-risque', r.vin); poser('mvt-immatriculation', r.immatriculation); poser('mvt-genre', r.genre_vehicule);
             poser('mvt-cv', r.puissance_cv); poser('mvt-cylindree', r.cylindree_cm3); poser('mvt-marque', r.marque); poser('mvt-modele', r.modele); poser('mvt-energie', r.energie);
             poser('mvt-categorie', r.code_categorie_cima); poser('mvt-caracterisation', r.caracterisation_risque);
             if (natureSaisie()?.code !== 'REN' && natureSaisie()?.code !== 'PRG') poser('mvt-echeance', c.date_echeance);
@@ -7745,12 +8059,25 @@
     // ayant suffi) et data.nb_references. L'enveloppe EXACTE de chaque
     // élément n'a pas pu être observée (aucun exemple réel transmis) :
     // recherche de clé élargie, comme pour l'ancienne route.
+    // Raccourci « CH » (13/10/2026, Roger) : il est fréquent que les 6
+    // derniers caractères du châssis servent de numéro d'immatriculation.
+    // Taper exactement « CH » dans Immatriculation, VIN déjà saisi (6
+    // caractères au moins), les remplace par ces 6 caractères. Sans VIN
+    // suffisant, rien ne change (la personne tape peut-être une plaque).
+    function raccourciChassisImmat(champ) {
+        if (champ.value !== 'CH') return;
+        const vin = (valeurChampProduction('mvt-vin') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (vin.length < 6) return;
+        champ.value = 'CH' + vin.slice(-6);
+        champ.title = 'CH + six derniers caractères du VIN (raccourci CH) — modifiable';
+    }
+
     async function deduireVinMouvement() {
         const vin = valeurChampProduction('mvt-vin');
         const zone = document.getElementById('mvt-vin-resultat');
-        if (vin.length < 5) { zone.innerHTML = '<span style="color:#b45309;">Au moins 5 caractères du VIN sont nécessaires pour rechercher.</span>'; return; }
+        candidatsVin = []; indexCandidatVinChoisi = null; afficherCandidatsVin();   // pas de fiches périmées (VIN trop court ou recherche suivante)
+        if (vin.length < 10) { zone.innerHTML = `<span style="color:#b45309;">Au moins 10 caractères du VIN sont nécessaires pour la recherche automatique (${vin.length} saisi${vin.length > 1 ? 's' : ''}) — sinon, saisissez les caractéristiques à la main.</span>`; return; }
         zone.innerHTML = '<span style="color:var(--gray);">Recherche…</span>';
-        candidatsVin = []; indexCandidatVinChoisi = null; afficherCandidatsVin();   // pas de fiches périmées pendant la recherche suivante
         const controleur = new AbortController();
         const delai = setTimeout(() => controleur.abort(), 8000);
         try {
@@ -7775,10 +8102,6 @@
         }
     }
 
-    // Applique un candidat (agrégat ou élément de data.resultats[]) aux
-    // champs du véhicule. principal=true : message de succès normal ;
-    // false : reprise explicite d'une alternative (clic de l'utilisateur),
-    // message différent pour que le geste soit visible.
     // ---- Mini-fiches des véhicules trouvés par le décodage VIN (06/10/2026) ----
     // Conteneur à ascenseurs, 5 fiches par page ; pagination dès que les résultats
     // dépassent 5. Sélection par index (jamais de JSON dans un attribut HTML).
@@ -7849,6 +8172,11 @@
         planifierVerificationDta();
     }
 
+
+    // Applique un candidat (agrégat ou élément de data.resultats[]) aux
+    // champs du véhicule. principal=true : message de succès normal ;
+    // false : reprise explicite d'une alternative (clic de l'utilisateur),
+    // message différent pour que le geste soit visible.
     let dernierNiveauVin = null;
     function appliquerCandidatVin(candidat, principal) {
         const zone = document.getElementById('mvt-vin-resultat');
@@ -8007,7 +8335,7 @@
     }
 
     // Proposition d'accessoires (25/09/2026) -- barème de la compagnie
-    // (tarification.bareme_frais_accessoires : risque, palier de prime nette,
+    // (tarification.bareme_accessoires : risque, palier de prime nette,
     // durée), sinon son montant par défaut. Elle remplit le champ tant que
     // le gestionnaire ne l'a pas modifié ; sa saisie n'est jamais écrasée.
     let accessoiresSaisisMain = false;
@@ -8140,7 +8468,7 @@
             cle_agence: valeurChampProduction('mvt-agence'),
             date_effet: valeurChampProduction('mvt-effet'),
             date_echeance: valeurChampProduction('mvt-echeance') || null,
-            vin: valeurChampProduction('mvt-vin') || null,
+            vin: (brancheSaisie() === 'AUTOMOBILE' ? valeurChampProduction('mvt-vin') : valeurChampProduction('mvt-identifiant-risque')) || null,
             immatriculation: valeurChampProduction('mvt-immatriculation') || null,
             genre_vehicule: valeurChampProduction('mvt-genre') || null,
             puissance_cv: valeurChampProduction('mvt-cv') || null,
@@ -8159,6 +8487,12 @@
             statut_paiement: valeurChampProduction('mvt-paiement'),
             observations: valeurChampProduction('mvt-observations') || null,
         };
+        if (brancheSaisie() === 'AUTOMOBILE') {
+            const vinSaisi = corps.vin || '';
+            if (['NAF', 'REN'].includes(nature.code) && !vinSaisi) { erreurSousFormulaire('emissions', 'le N° VIN est obligatoire (10 caractères au moins)'); return; }
+            if (vinSaisi && vinSaisi.length < 10) { erreurSousFormulaire('emissions', `VIN trop court : ${vinSaisi.length} caractère(s) saisi(s), 10 au moins sont exigés (17 pour un VIN complet)`); return; }
+        }
+        if (brancheSaisie() !== 'AUTOMOBILE' && corps.vin && corps.vin.length < 10) { erreurSousFormulaire('emissions', `identifiant du risque trop court : ${corps.vin.length} caractère(s), 10 au moins (ou laissez le champ vide : il sera calculé)`); return; }
         if (exempte && (!corps.dta_motif_exemption || !corps.dta_justificatif)) { erreurSousFormulaire('emissions', 'exemption de DTA : motif et référence du justificatif obligatoires'); return; }
         if (estNaf) {
             Object.assign(corps, {
