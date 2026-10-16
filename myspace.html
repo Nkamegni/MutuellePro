@@ -45,11 +45,22 @@
     =====================================================================
     SUIVI DE VERSION — myspace.html
     =====================================================================
-    Version actuelle    : 2026.10.14-a
-    Dernière modification : 14/10/2026
+    Version actuelle    : voir const VERSION_MYSPACE (script principal) -- 2026.10.15-a
+    Dernière modification : 15/10/2026
     Historique complet  : voir CHANGELOG_myspace.md (même dépôt)
 
-    Résumé de cette version :
+    Résumé de cette version (2026.10.15-a, base 2026.10.14-a) :
+      - Numéro de version unique : const VERSION_MYSPACE, qui pose l'infobulle
+        du logo au démarrage. L'attribut title du <img class="logo"> n'est
+        plus écrit à la main. Ne pas confondre avec VERSION_ECRAN (marqueur
+        de synchronisation écran/serveur).
+      - Fiches du décodage VIN : elles disparaissent dès la frappe quand le
+        VIN passe sous 10 caractères (et non plus seulement au clic sur
+        « Décoder »).
+      - Fractionnement : références corrigées en « Tarif Ministériel, Art. 3-2 »
+        (l'article 6 est la bonification non-sinistre).
+
+    Résumé de la version 2026.10.14-a :
       - Production & Souscription (14/10/2026, Roger) : rétablissement des
         mini-fiches du décodage VIN (une fiche par véhicule trouvé : marque,
         modèle, VIN, énergie · puissance, confiance ; 5 par page avec
@@ -93,9 +104,8 @@
     Résumé de la version 2026.10.13-e :
       - Suivi de version (13/10/2026, 18h40, Roger) : infobulle « Version
         AAAA.MM.JJ-x » sur le logo de l'en-tête (attribut title de l'image).
-        ATTENTION : ce numéro est écrit à la main dans le <img class="logo">,
-        en plus de la ligne « Version actuelle » ci-dessus : changer les deux
-        à chaque version.
+        (Depuis 2026.10.15-a : le numéro n'est plus écrit à la main dans le
+        <img class="logo"> ; changer seulement const VERSION_MYSPACE.)
 
     Résumé de la version 2026.10.13-d :
       - Production & Souscription (13/10/2026, 17h48, Roger) : raccourci « CH »
@@ -1113,7 +1123,7 @@
 <div id="pied-impression">Document imprimé le <span id="pied-impression-date"></span></div>
 
 <header>
-    <h1><img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="logo" title="myspace.html 2026.10.14-a"> Mon Espace</h1>
+    <h1><img src="/Logo_MPRO.png" alt="Mutuelle Pro Assurances" class="logo"> Mon Espace</h1>
     <div style="display:flex; align-items:center;">
         <button id="btn-hamburger" onclick="toggleMenuMobile()" style="display:none; background:none; border:1px solid #475569; color:white; width:34px; height:34px; border-radius:8px; font-size:16px; cursor:pointer; margin-right:8px;">☰</button>
         <span id="identite"></span>
@@ -2278,6 +2288,10 @@
 </div>
 
 <script>
+    // Numéro de version unique de myspace.html (15/10/2026, Roger) : change à chaque
+    // livraison, et seulement ici. Pose l'infobulle du logo « myspace.html AAAA.MM.JJ-x ».
+    const VERSION_MYSPACE = '2026.10.15-a';
+    (() => { const logo = document.querySelector('img.logo'); if (logo) logo.title = 'myspace.html ' + VERSION_MYSPACE; })();
     // =====================================================================
     // Mon Espace — page unifiée Client/Collaborateur (21/08/2026).
     // Les deux systèmes d'authentification restent TOTALEMENT séparés en
@@ -7618,7 +7632,7 @@
                 <td style="font-size:11px;" title="${echapperAttribut(m.point_de_vente)}">${echapperHtml(m.code_point_de_vente)}</td>
                 <td style="white-space:nowrap;">${formaterDateIso(m.date_effet)}</td>
                 <td style="font-size:11px;">${echapperHtml(m.immatriculation || m.vin || m.caracterisation_risque || '—')}${m.energie ? `<div style="color:var(--gray);">${echapperHtml(m.energie)}</div>` : ''}</td>
-                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.prime_nette, false)}${m.prime_annuelle_reference && Number(m.prime_annuelle_reference) !== Number(m.prime_nette) ? `<div style="font-size:10px; color:var(--gray); font-weight:normal;" title="Prime annuelle équivalente (Tarif Ministériel, Art. 6)">annuité : ${formaterMontantFcfa(m.prime_annuelle_reference, false)}</div>` : ''}</td>
+                <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.prime_nette, false)}${m.prime_annuelle_reference && Number(m.prime_annuelle_reference) !== Number(m.prime_nette) ? `<div style="font-size:10px; color:var(--gray); font-weight:normal;" title="Prime annuelle équivalente (Tarif Ministériel, Art. 3-2)">annuité : ${formaterMontantFcfa(m.prime_annuelle_reference, false)}</div>` : ''}</td>
                 <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.chiffre_affaires, false)}</td>
                 <td style="white-space:nowrap; text-align:right;">${formaterMontantFcfa(m.dta, false)}${libelleDta(m)}</td>
                 <td style="white-space:nowrap; text-align:right;"><strong>${formaterMontantFcfa(m.prime_ttc, false)}</strong></td>
@@ -7802,7 +7816,7 @@
             <p id="mvt-echeance-anniversaire" style="font-size:10px; color:var(--gray); margin:-4px 0 8px;"></p>`, 'mvt-section-dates')}
 
             ${section('Identification du risque — véhicule', `<div style="${grille}">
-                ${champProduction('N° VIN (série / châssis)', `<div style="display:flex; gap:6px;"><input id="mvt-vin" maxlength="17" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION} flex:1; font-family:monospace;"><button onclick="deduireVinMouvement()" title="Décoder le VIN (même service que le site public)" style="font-size:11px; padding:0 10px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Décoder</button></div>`)}
+                ${champProduction('N° VIN (série / châssis)', `<div style="display:flex; gap:6px;"><input id="mvt-vin" maxlength="17" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); effacerFichesVinSiTropCourt(this.value); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION} flex:1; font-family:monospace;"><button onclick="deduireVinMouvement()" title="Décoder le VIN (même service que le site public)" style="font-size:11px; padding:0 10px; height:30px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer;">🔍 Décoder</button></div>`)}
                 ${champProduction('Immatriculation', `<input id="mvt-immatriculation" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); raccourciChassisImmat(this); planifierVerificationDta()" style="${STYLE_CHAMP_PRODUCTION}">`)}
                 ${champProduction('Catégorie (classement CIMA)', `<select id="mvt-categorie" onchange="planifierVerificationDta(); planifierPropositionAccessoires(); planifierPropositionFractionnement()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${opt(ref.categories_automobile, 'categorie_code', (c) => `${echapperHtml(c.categorie_code)} — ${echapperHtml(c.categorie_libelle)}`, '')}</select>`)}
                 ${champProduction('Genre du véhicule', `<select id="mvt-genre" onchange="planifierVerificationDta(); basculerCvCylindree()" style="${STYLE_CHAMP_PRODUCTION}"><option value="">— choisir —</option>${Object.entries(LIBELLES_GENRE_VEHICULE).map(([code, l]) => `<option value="${code}">${l}</option>`).join('')}</select>`)}
@@ -8152,6 +8166,17 @@
         </div>`;
     }
 
+    // 15/10/2026 (essai 8, Roger) : sous 10 caractères, plus aucune fiche ni message de
+    // résultat périmé -- dès la frappe, pas seulement au clic sur « Décoder ».
+    function effacerFichesVinSiTropCourt(vin) {
+        if (String(vin || '').length >= 10) return;
+        if (!candidatsVin.length && indexCandidatVinChoisi === null) return;
+        candidatsVin = []; indexCandidatVinChoisi = null; pageCandidatsVin = 0;
+        afficherCandidatsVin();
+        const zone = document.getElementById('mvt-vin-resultat');
+        if (zone) zone.innerHTML = '';
+    }
+
     function changerPageVin(delta) { pageCandidatsVin += delta; afficherCandidatsVin(); }
 
     function choisirCandidatVin(i) {
@@ -8248,7 +8273,7 @@
     // (l'anniversaire du contrat, effet + 1 an) est fixe et jamais
     // modifiable, mais c'est une notion SÉPARÉE, affichée à part --
     // l'Expiration du mouvement, elle, reste modifiable : c'est elle qui
-    // porte un fractionnement (Art. 6), donc potentiellement plus courte
+    // porte un fractionnement (Art. 3-2), donc potentiellement plus courte
     // qu'un an. La verrouiller comme je l'ai fait hier soir cassait
     // justement le fractionnement construit deux jours plus tôt.
     function afficherEcheanceAnniversaire() {
@@ -8385,7 +8410,7 @@
             + (ecart ? ` — <a href="#" onclick="event.preventDefault(); accessoiresSaisisMain = false; document.getElementById('mvt-accessoires').value = propositionAccessoires.montant; recalculerDecompteMouvement(); afficherPropositionAccessoires();" style="color:var(--purple);">↺ reprendre la proposition</a>` : '');
     }
 
-    // Fractionnement -- Tarif Ministériel, Art. 6 (26/09/2026). Purement
+    // Fractionnement -- Tarif Ministériel, Art. 3-2 (26/09/2026, article corrigé le 15/10/2026). Purement
     // informatif : contrairement aux accessoires, rien n'est réinjecté
     // dans un champ modifiable -- la prime nette saisie reste celle du
     // gestionnaire, cet aperçu affiche seulement la prime annuelle que le
